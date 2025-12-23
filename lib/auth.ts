@@ -1,21 +1,23 @@
-'use server';
+"use server";
 
-import { cookies } from 'next/headers';
-import bcrypt from 'bcryptjs';
-import { createGraphQLClient } from './graphql/client';
-import { SIGN_IN_MUTATION } from './graphql/mutations';
-import type { SignInInput, SignInResponse } from './types';
+import bcrypt from "bcryptjs";
+import { cookies } from "next/headers";
+import { createGraphQLClient } from "./graphql/client";
+import { SIGN_IN_MUTATION } from "./graphql/mutations";
+import type { SignInInput, SignInResponse } from "./types";
 
-const COOKIE_NAME = 'sorare_jwt_token';
-const COOKIE_OTP_CHALLENGE = 'sorare_otp_challenge';
+const COOKIE_NAME = "sorare_jwt_token";
+const COOKIE_OTP_CHALLENGE = "sorare_otp_challenge";
 
-const SORARE_API_BASE = 'https://api.sorare.com';
+const SORARE_API_BASE = "https://api.sorare.com";
 
 /**
  * Recupera il salt per l'hashing della password dall'API Sorare
  */
 async function getSalt(email: string): Promise<string> {
-  const response = await fetch(`${SORARE_API_BASE}/api/v1/users/${encodeURIComponent(email)}`);
+  const response = await fetch(
+    `${SORARE_API_BASE}/api/v1/users/${encodeURIComponent(email)}`
+  );
 
   if (!response.ok) {
     throw new Error(`Failed to fetch salt: ${response.statusText}`);
@@ -24,7 +26,7 @@ async function getSalt(email: string): Promise<string> {
   const data = await response.json();
 
   if (!data.salt) {
-    throw new Error('No salt returned from Sorare API');
+    throw new Error("No salt returned from Sorare API");
   }
 
   return data.salt;
@@ -74,9 +76,9 @@ export async function setAuthToken(token: string): Promise<void> {
     name: COOKIE_NAME,
     value: token,
     httpOnly: true,
-    secure: process.env.NODE_ENV === 'production',
-    sameSite: 'lax',
-    path: '/',
+    secure: process.env.NODE_ENV === "production",
+    sameSite: "lax",
+    path: "/",
     maxAge: 30 * 24 * 60 * 60, // 30 giorni
   });
 }
@@ -90,9 +92,9 @@ export async function setOtpChallenge(challenge: string): Promise<void> {
     name: COOKIE_OTP_CHALLENGE,
     value: challenge,
     httpOnly: true,
-    secure: process.env.NODE_ENV === 'production',
-    sameSite: 'lax',
-    path: '/',
+    secure: process.env.NODE_ENV === "production",
+    sameSite: "lax",
+    path: "/",
     maxAge: 10 * 60, // 10 minuti
   });
 }
@@ -117,7 +119,10 @@ export async function isAuthenticated(): Promise<boolean> {
 /**
  * Login prima fase: email e password
  */
-export async function login(email: string, password: string): Promise<AuthResult> {
+export async function login(
+  email: string,
+  password: string
+): Promise<AuthResult> {
   try {
     // Recupera il salt per l'email
     const salt = await getSalt(email);
@@ -142,7 +147,7 @@ export async function login(email: string, password: string): Promise<AuthResult
     const signInData = response.signIn;
 
     // Log per debug della risposta completa
-    console.log('SignIn response:', JSON.stringify(signInData, null, 2));
+    console.log("SignIn response:", JSON.stringify(signInData, null, 2));
 
     // Prima controlla se richiede 2FA (ha la precedenza sugli errori)
     if (signInData.otpSessionChallenge) {
@@ -156,18 +161,19 @@ export async function login(email: string, password: string): Promise<AuthResult
     // Controlla errori (ignora l'errore 2fa_missing se c'è un otpSessionChallenge)
     if (signInData.errors && signInData.errors.length > 0) {
       // Se l'errore è "2fa_missing", potrebbe significare che serve 2FA ma non abbiamo ricevuto il challenge
-      const has2faError = signInData.errors.some(e =>
-        e.code === '2fa_missing' || e.message?.includes('2fa')
+      const has2faError = signInData.errors.some(
+        (e) => e.code === "2fa_missing" || e.message?.includes("2fa")
       );
 
       if (has2faError) {
         return {
           success: false,
-          error: 'Two-factor authentication is required. Please use your authenticator app.',
+          error:
+            "Two-factor authentication is required. Please use your authenticator app.",
         };
       }
 
-      const errorMsg = signInData.errors.map(e => e.message).join(', ');
+      const errorMsg = signInData.errors.map((e) => e.message).join(", ");
       return {
         success: false,
         error: errorMsg,
@@ -188,13 +194,13 @@ export async function login(email: string, password: string): Promise<AuthResult
     // Caso non previsto
     return {
       success: false,
-      error: 'Unexpected response from server',
+      error: "Unexpected response from server",
     };
   } catch (error) {
-    console.error('Login error:', error);
+    console.error("Login error:", error);
     return {
       success: false,
-      error: error instanceof Error ? error.message : 'Login failed',
+      error: error instanceof Error ? error.message : "Login failed",
     };
   }
 }
@@ -209,7 +215,7 @@ export async function loginWithTwoFactor(otpCode: string): Promise<AuthResult> {
     if (!otpChallenge) {
       return {
         success: false,
-        error: 'No 2FA challenge found. Please start login again.',
+        error: "No 2FA challenge found. Please start login again.",
       };
     }
 
@@ -231,7 +237,7 @@ export async function loginWithTwoFactor(otpCode: string): Promise<AuthResult> {
 
     // Controlla errori
     if (signInData.errors && signInData.errors.length > 0) {
-      const errorMsg = signInData.errors.map(e => e.message).join(', ');
+      const errorMsg = signInData.errors.map((e) => e.message).join(", ");
       return {
         success: false,
         error: errorMsg,
@@ -256,13 +262,16 @@ export async function loginWithTwoFactor(otpCode: string): Promise<AuthResult> {
     // Caso non previsto
     return {
       success: false,
-      error: 'Unexpected response from server',
+      error: "Unexpected response from server",
     };
   } catch (error) {
-    console.error('2FA login error:', error);
+    console.error("2FA login error:", error);
     return {
       success: false,
-      error: error instanceof Error ? error.message : 'Two-factor authentication failed',
+      error:
+        error instanceof Error
+          ? error.message
+          : "Two-factor authentication failed",
     };
   }
 }
@@ -273,4 +282,3 @@ export async function loginWithTwoFactor(otpCode: string): Promise<AuthResult> {
 export async function logout(): Promise<void> {
   await clearAuthCookies();
 }
-

@@ -1,0 +1,17 @@
+---
+alwaysApply: true
+description: Panoramica e flussi base di seshat
+---
+
+# Seshat in breve
+
+- Progetto Next.js 15 con React 19, TypeScript 5 e Tailwind CSS v4, dettagli in [README.md](mdc:README.md).
+- Chat AI multi-provider via `@ai-sdk/react` e API `app/api/chat/route.ts` con integrazione Google, Groq e OpenAI.
+- Deploy pensato per Cloudflare Workers con build gestita da `pnpm preview` e `pnpm deploy`.
+- Variabili ambiente locali da `.env.local`; i tipi Cloudflare si generano con `pnpm cf:typegen`.
+
+# File chiave
+
+- `pages/index.tsx`: UI chat, switch modello e rendering markdown memoizzato.
+- `components/memoized-markdown.tsx`: suddivide il Markdown e memoizza i blocchi.
+- `app/api/chat/route.ts`: routing POST che sceglie il modello e gestisce tool GA4.

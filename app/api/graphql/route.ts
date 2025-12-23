@@ -1,6 +1,6 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { createGraphQLClient } from '@/lib/graphql/client';
-import { getAuthToken } from '@/lib/auth';
+import { type NextRequest, NextResponse } from "next/server";
+import { getAuthToken } from "@/lib/auth";
+import { createGraphQLClient } from "@/lib/graphql/client";
 
 /**
  * API route che agisce come proxy per le query GraphQL verso Sorare
@@ -22,11 +22,13 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({ data });
   } catch (error) {
-    console.error('GraphQL proxy error:', error);
+    console.error("GraphQL proxy error:", error);
 
     // Gestisci errori GraphQL
-    if (error instanceof Error && 'response' in error) {
-      const errorResponse = error as { response?: { errors?: Array<{ message: string }> } };
+    if (error instanceof Error && "response" in error) {
+      const errorResponse = error as {
+        response?: { errors?: Array<{ message: string }> };
+      };
       if (errorResponse.response?.errors) {
         return NextResponse.json(
           { errors: errorResponse.response.errors },
@@ -37,7 +39,12 @@ export async function POST(request: NextRequest) {
 
     // Errore generico
     return NextResponse.json(
-      { error: error instanceof Error ? error.message : 'Failed to execute GraphQL query' },
+      {
+        error:
+          error instanceof Error
+            ? error.message
+            : "Failed to execute GraphQL query",
+      },
       { status: 500 }
     );
   }
@@ -48,10 +55,9 @@ export async function OPTIONS() {
   return new NextResponse(null, {
     status: 200,
     headers: {
-      'Access-Control-Allow-Origin': '*',
-      'Access-Control-Allow-Methods': 'POST, OPTIONS',
-      'Access-Control-Allow-Headers': 'Content-Type',
+      "Access-Control-Allow-Origin": "*",
+      "Access-Control-Allow-Methods": "POST, OPTIONS",
+      "Access-Control-Allow-Headers": "Content-Type",
     },
   });
 }
-

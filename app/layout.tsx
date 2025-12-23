@@ -14,7 +14,8 @@ const geistMono = Geist_Mono({
 
 export const metadata: Metadata = {
   title: "Sorare AI - Gestisci la tua collezione",
-  description: "Applicazione per interagire con Sorare API e gestire le tue carte collezionabili",
+  description:
+    "Applicazione per interagire con Sorare API e gestire le tue carte collezionabili",
 };
 
 export default function RootLayout({

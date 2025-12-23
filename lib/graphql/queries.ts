@@ -1,5 +1,3 @@
-import type { CardsResponse } from '../types';
-
 /**
  * Query per ottenere le carte dell'utente
  */
@@ -60,4 +58,3 @@ export type GetCardsQueryResponse = {
 export type GetCardsVariables = {
   after?: string | null;
 };
-

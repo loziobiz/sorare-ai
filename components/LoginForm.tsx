@@ -1,13 +1,19 @@
-'use client';
+"use client";
 
-import { useState } from 'react';
-import { login } from '@/lib/auth';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Loader2 } from 'lucide-react';
+import { Loader2 } from "lucide-react";
+import { useState } from "react";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { login } from "@/lib/auth";
 
 interface LoginFormProps {
   onSuccess?: () => void;
@@ -15,15 +21,15 @@ interface LoginFormProps {
 }
 
 export function LoginForm({ onSuccess, onTwoFactorRequired }: LoginFormProps) {
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState('');
+  const [error, setError] = useState("");
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
-    setError('');
+    setError("");
 
     try {
       const result = await login(email, password);
@@ -33,17 +39,17 @@ export function LoginForm({ onSuccess, onTwoFactorRequired }: LoginFormProps) {
       } else if (result.requiresTwoFactor) {
         onTwoFactorRequired?.();
       } else {
-        setError(result.error || 'Login failed');
+        setError(result.error || "Login failed");
       }
     } catch (err) {
-      setError('An unexpected error occurred');
+      setError("An unexpected error occurred");
     } finally {
       setIsLoading(false);
     }
   };
 
   return (
-    <Card className="w-full max-w-md mx-auto">
+    <Card className="mx-auto w-full max-w-md">
       <CardHeader>
         <CardTitle>Accedi a Sorare AI</CardTitle>
         <CardDescription>
@@ -51,29 +57,29 @@ export function LoginForm({ onSuccess, onTwoFactorRequired }: LoginFormProps) {
         </CardDescription>
       </CardHeader>
       <CardContent>
-        <form onSubmit={handleSubmit} className="space-y-4">
+        <form className="space-y-4" onSubmit={handleSubmit}>
           <div className="space-y-2">
             <Label htmlFor="email">Email</Label>
             <Input
-              id="email"
-              type="email"
-              placeholder="nome@esempio.com"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              required
               disabled={isLoading}
+              id="email"
+              onChange={(e) => setEmail(e.target.value)}
+              placeholder="nome@esempio.com"
+              required
+              type="email"
+              value={email}
             />
           </div>
 
           <div className="space-y-2">
             <Label htmlFor="password">Password</Label>
             <Input
+              disabled={isLoading}
               id="password"
-              type="password"
-              value={password}
               onChange={(e) => setPassword(e.target.value)}
               required
-              disabled={isLoading}
+              type="password"
+              value={password}
             />
           </div>
 
@@ -83,7 +89,7 @@ export function LoginForm({ onSuccess, onTwoFactorRequired }: LoginFormProps) {
             </Alert>
           )}
 
-          <Button type="submit" className="w-full" disabled={isLoading}>
+          <Button className="w-full" disabled={isLoading} type="submit">
             {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
             Accedi
           </Button>
@@ -92,4 +98,3 @@ export function LoginForm({ onSuccess, onTwoFactorRequired }: LoginFormProps) {
     </Card>
   );
 }
-
