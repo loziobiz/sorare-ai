@@ -1,27 +1,18 @@
 "use client";
 
-import { Loader2, LogOut, RefreshCw } from "lucide-react";
-import Image from "next/image";
+import { LogOut, RefreshCw, Trophy, User } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
+import { CardsGrid } from "@/components/cards/card-grid";
+import { LoadingSpinner } from "@/components/loading-spinner";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { logout } from "@/lib/auth";
+import type { CardData } from "@/lib/sorare-api";
+import { fetchAllCards } from "@/lib/sorare-api";
 
 type RarityFilter = "all" | "limited" | "rare";
-
-interface CardData {
-  slug: string;
-  name: string;
-  rarityTyped: string;
-  anyPositions?: string[];
-  pictureUrl?: string;
-  l5Average?: number;
-  l10Average?: number;
-  l15Average?: number;
-  l40Average?: number;
-}
 
 interface CachedData {
   cards: CardData[];
@@ -32,30 +23,6 @@ interface CachedData {
 const CACHE_KEY = "sorare_cards_cache";
 const CACHE_DURATION = 24 * 60 * 60 * 1000; // 24 ore
 const ENABLE_PAGINATION = true; // Imposta a true per abilitare il caricamento completo
-const GRAPHQL_QUERY = `
-  query GetCards($after: String) {
-    currentUser {
-      slug
-      cards(first: 100, after: $after) {
-        nodes {
-          slug
-          name
-          rarityTyped
-          anyPositions
-          pictureUrl
-          l5Average: averageScore(type: LAST_FIVE_SO5_AVERAGE_SCORE)
-          l10Average: averageScore(type: LAST_TEN_PLAYED_SO5_AVERAGE_SCORE)
-          l15Average: averageScore(type: LAST_FIFTEEN_SO5_AVERAGE_SCORE)
-          l40Average: averageScore(type: LAST_FORTY_SO5_AVERAGE_SCORE)
-        }
-        pageInfo {
-          hasNextPage
-          endCursor
-        }
-      }
-    }
-  }
-`;
 
 function formatLastUpdate(date: Date): string {
   const now = new Date();
@@ -90,46 +57,8 @@ function filterCardsByRarity(cards: CardData[], rarityFilter: RarityFilter) {
     });
 }
 
-interface LoadingSpinnerProps {
-  icon: "loader" | "refresh";
-  message?: string;
-}
-
-function LoadingSpinner({ icon, message }: LoadingSpinnerProps) {
-  const Icon = icon === "loader" ? Loader2 : RefreshCw;
-  return (
-    <div className="flex flex-col items-center justify-center space-y-4 py-12">
-      <Icon className="h-8 w-8 animate-spin text-muted-foreground" />
-      {message && <p className="text-muted-foreground text-sm">{message}</p>}
-    </div>
-  );
-}
-
-interface CardImageProps {
-  src: string;
-  alt: string;
-}
-
-function CardImage({ src, alt }: CardImageProps) {
-  return (
-    <div className="flex justify-center">
-      <Image
-        alt={alt}
-        className="h-auto max-w-[200px] rounded-lg"
-        height={200}
-        src={src}
-        unoptimized
-        width={200}
-      />
-    </div>
-  );
-}
-
-interface CardsGridProps {
-  cards: CardData[];
-  rarityFilter: RarityFilter;
-  onRefresh: () => void;
-  isRefreshing: boolean;
+function getRarityCount(cards: CardData[], rarity: string): number {
+  return cards.filter((c) => c.rarityTyped.toLowerCase() === rarity).length;
 }
 
 function saveCardsToCache(cards: CardData[], currentUserSlug: string): void {
@@ -139,125 +68,6 @@ function saveCardsToCache(cards: CardData[], currentUserSlug: string): void {
     timestamp: Date.now(),
   };
   localStorage.setItem(CACHE_KEY, JSON.stringify(cacheData));
-}
-
-async function fetchCardPage(
-  cursor: string | null,
-  pageCount: number,
-  signal?: AbortSignal
-): Promise<{ cards: CardData[]; cursor: string | null; userSlug?: string }> {
-  const response = await fetch("/api/graphql", {
-    body: JSON.stringify({
-      query: GRAPHQL_QUERY,
-      variables: { after: cursor },
-    }),
-    headers: {
-      "Content-Type": "application/json",
-    },
-    method: "POST",
-    signal,
-  });
-
-  if (response.status === 429) {
-    const retryAfter = response.headers.get("Retry-After");
-    const waitTime = retryAfter ? Number.parseInt(retryAfter, 10) * 1000 : 2000;
-    await new Promise((resolve) => setTimeout(resolve, waitTime));
-    return fetchCardPage(cursor, pageCount, signal);
-  }
-
-  const data = await response.json();
-
-  if (data.errors) {
-    throw new Error(
-      data.errors.map((e: { message: string }) => e.message).join(", ")
-    );
-  }
-
-  if (!data.data?.currentUser) {
-    return { cards: [], cursor: null };
-  }
-
-  const newCards = data.data.currentUser.cards?.nodes || [];
-  const pageInfo = data.data.currentUser.cards?.pageInfo;
-  const nextCursor = pageInfo?.hasNextPage ? pageInfo?.endCursor : null;
-
-  return {
-    cards: newCards,
-    cursor: nextCursor,
-    userSlug: pageCount === 1 ? data.data.currentUser.slug : undefined,
-  };
-}
-
-function CardsGrid({
-  cards,
-  rarityFilter,
-  onRefresh,
-  isRefreshing,
-}: CardsGridProps) {
-  if (cards.length === 0) {
-    return (
-      <Card>
-        <CardContent className="py-12 text-center text-muted-foreground">
-          No {rarityFilter === "all" ? "limited or rare" : rarityFilter} cards
-          found in your collection
-        </CardContent>
-      </Card>
-    );
-  }
-
-  return (
-    <>
-      <div className="grid grid-cols-1 gap-4 md:grid-cols-4 lg:grid-cols-5">
-        {cards.map((card) => (
-          <Card key={card.slug}>
-            <CardContent>
-              <div className="space-y-3">
-                {card.pictureUrl && (
-                  <CardImage alt={card.name} src={card.pictureUrl} />
-                )}
-                {/* Averages */}
-                <div className="grid grid-cols-4 gap-2 text-center text-xs">
-                  <div>
-                    <div className="text-muted-foreground">L5</div>
-                    <div className="font-medium">
-                      {card.l5Average?.toFixed(1) ?? "-"}
-                    </div>
-                  </div>
-                  <div>
-                    <div className="text-muted-foreground">L10</div>
-                    <div className="font-medium">
-                      {card.l10Average?.toFixed(1) ?? "-"}
-                    </div>
-                  </div>
-                  <div>
-                    <div className="text-muted-foreground">L15</div>
-                    <div className="font-medium">
-                      {card.l15Average?.toFixed(1) ?? "-"}
-                    </div>
-                  </div>
-                  <div>
-                    <div className="text-muted-foreground">L40</div>
-                    <div className="font-medium">
-                      {card.l40Average?.toFixed(1) ?? "-"}
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        ))}
-      </div>
-      {/* Refresh Button */}
-      <div className="flex justify-center pt-4">
-        <Button disabled={isRefreshing} onClick={onRefresh} variant="outline">
-          <RefreshCw
-            className={`mr-2 h-4 w-4 ${isRefreshing ? "animate-spin" : ""}`}
-          />
-          {isRefreshing ? "Aggiornamento..." : "Aggiorna carte"}
-        </Button>
-      </div>
-    </>
-  );
 }
 
 export function CardsDashboard() {
@@ -271,58 +81,35 @@ export function CardsDashboard() {
   const [loadingProgress, setLoadingProgress] = useState("");
   const [lastUpdate, setLastUpdate] = useState<Date | null>(null);
 
-  const fetchAllCards = useCallback(
-    async (isRefresh = false) => {
-      if (isRefresh) {
-        setIsRefreshing(true);
-      } else {
-        setIsLoading(true);
-      }
-      setError("");
-      setLoadingProgress("Fetching cards...");
-      const allCards: CardData[] = [];
-      let cursor: string | null = null;
-      let pageCount = 0;
+  const fetchCards = useCallback(async (isRefresh = false) => {
+    if (isRefresh) {
+      setIsRefreshing(true);
+    } else {
+      setIsLoading(true);
+    }
+    setError("");
+    setLoadingProgress("Fetching cards...");
 
-      const delay = (ms: number) =>
-        new Promise((resolve) => setTimeout(resolve, ms));
+    try {
+      const result = await fetchAllCards({
+        enablePagination: ENABLE_PAGINATION,
+        onProgress: (page, total) => {
+          setLoadingProgress(`Fetching page ${page}... (${total} cards)`);
+        },
+      });
 
-      try {
-        do {
-          pageCount++;
-          setLoadingProgress(
-            `Fetching page ${pageCount}... (${allCards.length} cards)`
-          );
-
-          const result = await fetchCardPage(cursor, pageCount);
-          allCards.push(...result.cards);
-          if (result.userSlug) {
-            setUserSlug(result.userSlug);
-          }
-          cursor = result.cursor;
-
-          if (cursor && !ENABLE_PAGINATION) {
-            break;
-          }
-
-          if (cursor) {
-            await delay(1100);
-          }
-        } while (cursor);
-
-        setCards(allCards);
-        setLastUpdate(new Date());
-        saveCardsToCache(allCards, userSlug);
-      } catch (err) {
-        setError(err instanceof Error ? err.message : "Failed to fetch cards");
-      } finally {
-        setIsLoading(false);
-        setIsRefreshing(false);
-        setLoadingProgress("");
-      }
-    },
-    [userSlug]
-  );
+      setCards(result.cards);
+      setUserSlug(result.userSlug);
+      setLastUpdate(new Date());
+      saveCardsToCache(result.cards, result.userSlug);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to fetch cards");
+    } finally {
+      setIsLoading(false);
+      setIsRefreshing(false);
+      setLoadingProgress("");
+    }
+  }, []);
 
   const loadCards = useCallback(async () => {
     const cached = localStorage.getItem(CACHE_KEY);
@@ -343,15 +130,15 @@ export function CardsDashboard() {
       }
     }
 
-    await fetchAllCards(false);
-  }, [fetchAllCards]);
+    await fetchCards(false);
+  }, [fetchCards]);
 
   useEffect(() => {
     loadCards();
   }, [loadCards]);
 
   const handleRefresh = () => {
-    fetchAllCards(true);
+    fetchCards(true);
   };
 
   const handleLogout = async () => {
@@ -410,6 +197,43 @@ export function CardsDashboard() {
         </div>
       </div>
 
+      {/* Stats Cards */}
+      <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="font-medium text-sm">Total Cards</CardTitle>
+            <User className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="font-bold text-2xl">{displayCards.length}</div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="font-medium text-sm">Limited</CardTitle>
+            <Trophy className="h-4 w-4 text-purple-600" />
+          </CardHeader>
+          <CardContent>
+            <div className="font-bold text-2xl">
+              {getRarityCount(cards, "limited")}
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="font-medium text-sm">Rare</CardTitle>
+            <Trophy className="h-4 w-4 text-blue-600" />
+          </CardHeader>
+          <CardContent>
+            <div className="font-bold text-2xl">
+              {getRarityCount(cards, "rare")}
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
       {/* Filter Buttons */}
       <div className="flex gap-2">
         <Button
@@ -446,9 +270,10 @@ export function CardsDashboard() {
         </h2>
         <CardsGrid
           cards={displayCards}
-          isRefreshing={isRefreshing}
-          onRefresh={handleRefresh}
-          rarityFilter={rarityFilter}
+          columns={{ lg: 5, md: 4, mobile: 1 }}
+          emptyMessage={`No ${rarityFilter === "all" ? "limited or rare" : rarityFilter} cards found in your collection`}
+          showCardAverages
+          showCardPositions
         />
       </div>
     </div>
