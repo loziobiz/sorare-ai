@@ -1,3 +1,4 @@
+import { cachedFetch, graphqlCache } from "./graphql-cache";
 import { GET_CARDS_QUERY } from "./queries";
 
 export interface CardData {
@@ -22,52 +23,73 @@ export interface FetchCardsOptions {
   cursor?: string | null;
   pageCount?: number;
   signal?: AbortSignal;
+  useCache?: boolean;
+  cacheTtl?: number;
 }
+
+const DEFAULT_CACHE_TTL = 30 * 60 * 1000; // 30 minuti
 
 export async function fetchCardsPage({
   cursor,
   signal,
+  useCache = true,
+  cacheTtl = DEFAULT_CACHE_TTL,
 }: FetchCardsOptions = {}): Promise<CardsResponse> {
-  const response = await fetch("/api/graphql", {
-    body: JSON.stringify({
-      query: GET_CARDS_QUERY,
-      variables: { after: cursor },
-    }),
-    headers: {
-      "Content-Type": "application/json",
-    },
-    method: "POST",
-    signal,
-  });
-
-  if (response.status === 429) {
-    const retryAfter = response.headers.get("Retry-After");
-    const waitTime = retryAfter ? Number.parseInt(retryAfter, 10) * 1000 : 2000;
-    await new Promise((resolve) => setTimeout(resolve, waitTime));
-    return fetchCardsPage({ cursor, signal });
-  }
-
-  const data = await response.json();
-
-  if (data.errors) {
-    throw new Error(
-      data.errors.map((e: { message: string }) => e.message).join(", ")
-    );
-  }
-
-  if (!data.data?.currentUser) {
-    return { cards: [], cursor: null };
-  }
-
-  const newCards = data.data.currentUser.cards?.nodes || [];
-  const pageInfo = data.data.currentUser.cards?.pageInfo;
-  const nextCursor = pageInfo?.hasNextPage ? pageInfo?.endCursor : null;
-
-  return {
-    cards: newCards,
-    cursor: nextCursor,
-    userSlug: data.data.currentUser.slug,
+  const request = {
+    query: GET_CARDS_QUERY,
+    variables: { after: cursor },
   };
+
+  const fetcher = async (): Promise<CardsResponse> => {
+    const response = await fetch("/api/graphql", {
+      body: JSON.stringify({
+        query: GET_CARDS_QUERY,
+        variables: { after: cursor },
+      }),
+      headers: {
+        "Content-Type": "application/json",
+      },
+      method: "POST",
+      signal,
+    });
+
+    if (response.status === 429) {
+      const retryAfter = response.headers.get("Retry-After");
+      const waitTime = retryAfter
+        ? Number.parseInt(retryAfter, 10) * 1000
+        : 2000;
+      await new Promise((resolve) => setTimeout(resolve, waitTime));
+      return fetchCardsPage({ cursor, signal, useCache: false });
+    }
+
+    const data = await response.json();
+
+    if (data.errors) {
+      throw new Error(
+        data.errors.map((e: { message: string }) => e.message).join(", ")
+      );
+    }
+
+    if (!data.data?.currentUser) {
+      return { cards: [], cursor: null };
+    }
+
+    const newCards = data.data.currentUser.cards?.nodes || [];
+    const pageInfo = data.data.currentUser.cards?.pageInfo;
+    const nextCursor = pageInfo?.hasNextPage ? pageInfo?.endCursor : null;
+
+    return {
+      cards: newCards,
+      cursor: nextCursor,
+      userSlug: data.data.currentUser.slug,
+    };
+  };
+
+  if (useCache) {
+    return await cachedFetch(request, fetcher, cacheTtl);
+  }
+
+  return await fetcher();
 }
 
 export async function fetchAllCards(
@@ -76,6 +98,7 @@ export async function fetchAllCards(
     enablePagination?: boolean;
     pageDelay?: number;
     signal?: AbortSignal;
+    cacheTtl?: number;
   } = {}
 ): Promise<{ cards: CardData[]; userSlug: string }> {
   const {
@@ -83,6 +106,7 @@ export async function fetchAllCards(
     enablePagination = true,
     pageDelay = 1100,
     signal,
+    cacheTtl = DEFAULT_CACHE_TTL,
   } = options;
 
   const allCards: CardData[] = [];
@@ -95,7 +119,12 @@ export async function fetchAllCards(
 
   do {
     pageCount++;
-    const result = await fetchCardsPage({ cursor, signal });
+    const result = await fetchCardsPage({
+      cacheTtl,
+      cursor,
+      signal,
+      useCache: pageCount === 1, // Usa cache solo per la prima pagina
+    });
     allCards.push(...result.cards);
 
     if (result.userSlug) {
@@ -115,4 +144,8 @@ export async function fetchAllCards(
   } while (cursor);
 
   return { cards: allCards, userSlug };
+}
+
+export async function invalidateCardsCache(): Promise<void> {
+  await graphqlCache.clear();
 }

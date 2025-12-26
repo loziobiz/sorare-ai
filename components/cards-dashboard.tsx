@@ -1,28 +1,19 @@
 "use client";
 
-import { LogOut, RefreshCw, Trophy, User } from "lucide-react";
+import { LogOut, RefreshCw } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
 import { CardsGrid } from "@/components/cards/card-grid";
 import { LoadingSpinner } from "@/components/loading-spinner";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { useCacheCleanup } from "@/hooks/use-indexed-db";
 import { logout } from "@/lib/auth";
+import { DEFAULT_TTL, db } from "@/lib/db";
 import type { CardData } from "@/lib/sorare-api";
 import { fetchAllCards } from "@/lib/sorare-api";
 
 type RarityFilter = "all" | "limited" | "rare";
-
-interface CachedData {
-  cards: CardData[];
-  userSlug: string;
-  timestamp: number;
-}
-
-const CACHE_KEY = "sorare_cards_cache";
-const CACHE_DURATION = 24 * 60 * 60 * 1000; // 24 ore
-const ENABLE_PAGINATION = true; // Imposta a true per abilitare il caricamento completo
 
 function formatLastUpdate(date: Date): string {
   const now = new Date();
@@ -44,31 +35,19 @@ function formatLastUpdate(date: Date): string {
 }
 
 function filterCardsByRarity(cards: CardData[], rarityFilter: RarityFilter) {
-  return cards
-    .filter((card) => {
-      const rarity = card.rarityTyped.toLowerCase();
-      return rarity === "limited" || rarity === "rare";
-    })
-    .filter((card) => {
-      if (rarityFilter === "all") {
-        return true;
-      }
-      return card.rarityTyped.toLowerCase() === rarityFilter;
-    });
+  return cards.filter((card) => {
+    if (rarityFilter === "all") {
+      return true;
+    }
+    return card.rarityTyped.toLowerCase() === rarityFilter;
+  });
 }
 
 function getRarityCount(cards: CardData[], rarity: string): number {
   return cards.filter((c) => c.rarityTyped.toLowerCase() === rarity).length;
 }
 
-function saveCardsToCache(cards: CardData[], currentUserSlug: string): void {
-  const cacheData: CachedData = {
-    cards,
-    userSlug: currentUserSlug || cards[0]?.slug || "",
-    timestamp: Date.now(),
-  };
-  localStorage.setItem(CACHE_KEY, JSON.stringify(cacheData));
-}
+const ENABLE_PAGINATION = true; // Imposta a true per abilitare il caricamento completo
 
 export function CardsDashboard() {
   const router = useRouter();
@@ -81,57 +60,87 @@ export function CardsDashboard() {
   const [loadingProgress, setLoadingProgress] = useState("");
   const [lastUpdate, setLastUpdate] = useState<Date | null>(null);
 
-  const fetchCards = useCallback(async (isRefresh = false) => {
-    if (isRefresh) {
-      setIsRefreshing(true);
-    } else {
-      setIsLoading(true);
-    }
-    setError("");
-    setLoadingProgress("Fetching cards...");
+  useCacheCleanup();
 
+  const loadCardsFromDb = useCallback(async (): Promise<boolean> => {
     try {
-      const result = await fetchAllCards({
-        enablePagination: ENABLE_PAGINATION,
-        onProgress: (page, total) => {
-          setLoadingProgress(`Fetching page ${page}... (${total} cards)`);
-        },
-      });
+      const cached = await db.cache.get("user_cards");
 
-      setCards(result.cards);
-      setUserSlug(result.userSlug);
-      setLastUpdate(new Date());
-      saveCardsToCache(result.cards, result.userSlug);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to fetch cards");
-    } finally {
+      if (!cached) {
+        return false;
+      }
+
+      const { timestamp, value, ttl } = cached;
+      const cacheAge = Date.now() - timestamp;
+
+      if (ttl && cacheAge > ttl) {
+        await db.cache.delete("user_cards");
+        return false;
+      }
+
+      const data = value as { cards: CardData[]; userSlug: string };
+      setCards(data.cards);
+      setUserSlug(data.userSlug);
+      setLastUpdate(new Date(timestamp));
       setIsLoading(false);
-      setIsRefreshing(false);
-      setLoadingProgress("");
+      return true;
+    } catch {
+      return false;
     }
   }, []);
 
-  const loadCards = useCallback(async () => {
-    const cached = localStorage.getItem(CACHE_KEY);
-    if (cached) {
-      try {
-        const data: CachedData = JSON.parse(cached);
-        const cacheAge = Date.now() - data.timestamp;
+  const saveCardsToDb = useCallback(
+    async (cardsData: CardData[], currentUserSlug: string) => {
+      await db.cache.put({
+        key: "user_cards",
+        value: { cards: cardsData, userSlug: currentUserSlug },
+        timestamp: Date.now(),
+        ttl: DEFAULT_TTL.LONG,
+      });
+    },
+    []
+  );
 
-        if (cacheAge < CACHE_DURATION) {
-          setCards(data.cards);
-          setUserSlug(data.userSlug);
-          setLastUpdate(new Date(data.timestamp));
-          setIsLoading(false);
-          return;
-        }
-      } catch {
-        // Fall through to fetch
+  const fetchCards = useCallback(
+    async (isRefresh = false) => {
+      if (isRefresh) {
+        setIsRefreshing(true);
+      } else {
+        setIsLoading(true);
       }
-    }
+      setError("");
+      setLoadingProgress("Fetching cards...");
 
-    await fetchCards(false);
-  }, [fetchCards]);
+      try {
+        const result = await fetchAllCards({
+          cacheTtl: isRefresh ? 0 : undefined, // Bypassa cache durante refresh
+          enablePagination: ENABLE_PAGINATION,
+          onProgress: (page, total) => {
+            setLoadingProgress(`Fetching page ${page}... (${total} cards)`);
+          },
+        });
+
+        setCards(result.cards);
+        setUserSlug(result.userSlug);
+        setLastUpdate(new Date());
+        await saveCardsToDb(result.cards, result.userSlug);
+      } catch (err) {
+        setError(err instanceof Error ? err.message : "Failed to fetch cards");
+      } finally {
+        setIsLoading(false);
+        setIsRefreshing(false);
+        setLoadingProgress("");
+      }
+    },
+    [saveCardsToDb]
+  );
+
+  const loadCards = useCallback(async () => {
+    const found = await loadCardsFromDb();
+    if (!found) {
+      await fetchCards(false);
+    }
+  }, [loadCardsFromDb, fetchCards]);
 
   useEffect(() => {
     loadCards();
@@ -195,43 +204,6 @@ export function CardsDashboard() {
             Logout
           </Button>
         </div>
-      </div>
-
-      {/* Stats Cards */}
-      <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="font-medium text-sm">Total Cards</CardTitle>
-            <User className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="font-bold text-2xl">{displayCards.length}</div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="font-medium text-sm">Limited</CardTitle>
-            <Trophy className="h-4 w-4 text-purple-600" />
-          </CardHeader>
-          <CardContent>
-            <div className="font-bold text-2xl">
-              {getRarityCount(cards, "limited")}
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="font-medium text-sm">Rare</CardTitle>
-            <Trophy className="h-4 w-4 text-blue-600" />
-          </CardHeader>
-          <CardContent>
-            <div className="font-bold text-2xl">
-              {getRarityCount(cards, "rare")}
-            </div>
-          </CardContent>
-        </Card>
       </div>
 
       {/* Filter Buttons */}

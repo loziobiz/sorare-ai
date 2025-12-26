@@ -14,6 +14,7 @@
     "bcryptjs": "^3.0.3",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
+    "dexie": "^4.2.1",
     "graphql-request": "^7.4.0",
     "lucide-react": "^0.562.0",
     "next": "16.1.1",
