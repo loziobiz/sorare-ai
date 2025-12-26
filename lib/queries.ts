@@ -9,6 +9,29 @@ export const GET_CARDS_QUERY = `
           rarityTyped
           anyPositions
           pictureUrl
+          inSeasonEligible
+          cardPrice
+          lowestPriceCard {
+            slug
+            cardPrice
+          }
+          latestPrimaryOffer {
+            price {
+              eurCents
+              usdCents
+              referenceCurrency
+            }
+            status
+          }
+          anyTeam {
+            name
+            pictureUrl
+            activeCompetitions {
+              name
+              displayName
+              format
+            }
+          }
           l5Average: averageScore(type: LAST_FIVE_SO5_AVERAGE_SCORE)
           l10Average: averageScore(type: LAST_TEN_PLAYED_SO5_AVERAGE_SCORE)
           l15Average: averageScore(type: LAST_FIFTEEN_SO5_AVERAGE_SCORE)

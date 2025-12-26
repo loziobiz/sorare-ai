@@ -1,3 +1,4 @@
+import { db } from "./db";
 import { cachedFetch, graphqlCache } from "./graphql-cache";
 import { GET_CARDS_QUERY } from "./queries";
 
@@ -7,6 +8,29 @@ export interface CardData {
   rarityTyped: string;
   anyPositions?: string[];
   pictureUrl?: string;
+  inSeasonEligible?: boolean;
+  cardPrice?: number | null;
+  lowestPriceCard?: {
+    slug: string;
+    cardPrice?: number | null;
+  } | null;
+  latestPrimaryOffer?: {
+    price?: {
+      eurCents?: number | null;
+      usdCents?: number | null;
+      referenceCurrency?: string | null;
+    } | null;
+    status: string;
+  } | null;
+  anyTeam?: {
+    name: string;
+    pictureUrl?: string;
+    activeCompetitions?: Array<{
+      name: string;
+      displayName: string;
+      format: string;
+    }>;
+  };
   l5Average?: number;
   l10Average?: number;
   l15Average?: number;
@@ -148,4 +172,19 @@ export async function fetchAllCards(
 
 export async function invalidateCardsCache(): Promise<void> {
   await graphqlCache.clear();
+}
+
+export async function clearAllCaches(): Promise<void> {
+  // Clear GraphQL Cache API
+  await graphqlCache.clear();
+
+  // Clear IndexedDB cache
+  await db.cache.clear();
+  await db.cachedCards.clear();
+
+  // Clear all Cache API caches (including service worker caches)
+  if (typeof caches !== "undefined") {
+    const cacheNames = await caches.keys();
+    await Promise.all(cacheNames.map((name) => caches.delete(name)));
+  }
 }

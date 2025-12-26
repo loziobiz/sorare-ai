@@ -1,6 +1,6 @@
 "use client";
 
-import { LogOut, RefreshCw } from "lucide-react";
+import { LogOut, RefreshCw, Trash2 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
 import { CardsGrid } from "@/components/cards/card-grid";
@@ -11,7 +11,7 @@ import { useCacheCleanup } from "@/hooks/use-indexed-db";
 import { logout } from "@/lib/auth";
 import { DEFAULT_TTL, db } from "@/lib/db";
 import type { CardData } from "@/lib/sorare-api";
-import { fetchAllCards } from "@/lib/sorare-api";
+import { clearAllCaches, fetchAllCards } from "@/lib/sorare-api";
 
 type RarityFilter = "all" | "limited" | "rare";
 
@@ -41,10 +41,6 @@ function filterCardsByRarity(cards: CardData[], rarityFilter: RarityFilter) {
     }
     return card.rarityTyped.toLowerCase() === rarityFilter;
   });
-}
-
-function getRarityCount(cards: CardData[], rarity: string): number {
-  return cards.filter((c) => c.rarityTyped.toLowerCase() === rarity).length;
 }
 
 const ENABLE_PAGINATION = true; // Imposta a true per abilitare il caricamento completo
@@ -155,6 +151,12 @@ export function CardsDashboard() {
     router.push("/");
   };
 
+  const handleClearCache = async () => {
+    await clearAllCaches();
+    // Reload cards after clearing cache
+    await fetchCards(false);
+  };
+
   const displayCards = filterCardsByRarity(cards, rarityFilter);
 
   if (isLoading) {
@@ -198,6 +200,14 @@ export function CardsDashboard() {
               className={`mr-2 h-4 w-4 ${isRefreshing ? "animate-spin" : ""}`}
             />
             Aggiorna carte
+          </Button>
+          <Button
+            disabled={isRefreshing || isLoading}
+            onClick={handleClearCache}
+            variant="outline"
+          >
+            <Trash2 className="mr-2 h-4 w-4" />
+            Pulisci cache
           </Button>
           <Button onClick={handleLogout} variant="outline">
             <LogOut className="mr-2 h-4 w-4" />
