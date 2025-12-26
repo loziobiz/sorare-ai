@@ -39,15 +39,37 @@ export function CardsGrid({
     );
   }
 
-  const gridClasses = [
-    "grid",
-    "grid-cols-1",
-    "gap-4",
-    columns.md > 1 && `md:grid-cols-${columns.md}`,
-    columns.lg > 1 && `lg:grid-cols-${columns.lg}`,
-  ]
-    .filter(Boolean)
-    .join(" ");
+  const getGridClasses = (): string => {
+    const classes = ["grid", "grid-cols-1", "gap-4"];
+
+    if (columns.md === 2) {
+      classes.push("md:grid-cols-2");
+    } else if (columns.md === 3) {
+      classes.push("md:grid-cols-3");
+    } else if (columns.md === 4) {
+      classes.push("md:grid-cols-4");
+    } else if (columns.md === 5) {
+      classes.push("md:grid-cols-5");
+    } else if (columns.md === 6) {
+      classes.push("md:grid-cols-6");
+    }
+
+    if (columns.lg === 2) {
+      classes.push("lg:grid-cols-2");
+    } else if (columns.lg === 3) {
+      classes.push("lg:grid-cols-3");
+    } else if (columns.lg === 4) {
+      classes.push("lg:grid-cols-4");
+    } else if (columns.lg === 5) {
+      classes.push("lg:grid-cols-5");
+    } else if (columns.lg === 6) {
+      classes.push("lg:grid-cols-6");
+    }
+
+    return classes.join(" ");
+  };
+
+  const gridClasses = getGridClasses();
 
   return (
     <div className={gridClasses}>
