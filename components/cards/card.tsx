@@ -71,7 +71,6 @@ export function SorareCard({
             </div>
           </div>
         )}
-        <div className="text-muted-foreground text-sm">{card.slug}</div>
       </CardContent>
     </Card>
   );

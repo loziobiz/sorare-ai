@@ -245,7 +245,7 @@ export function CardsDashboard() {
           columns={{ lg: 5, md: 4, mobile: 1 }}
           emptyMessage={`No ${rarityFilter === "all" ? "limited or rare" : rarityFilter} cards found in your collection`}
           showCardAverages
-          showCardPositions
+          showCardPositions={false}
         />
       </div>
     </div>
