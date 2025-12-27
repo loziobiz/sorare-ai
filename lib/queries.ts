@@ -23,13 +23,19 @@ export const GET_CARDS_QUERY = `
             }
             status
           }
-          anyTeam {
-            name
-            pictureUrl
-            activeCompetitions {
+          anyPlayer {
+            activeClub {
               name
-              displayName
-              format
+              pictureUrl
+              activeCompetitions {
+                name
+                displayName
+                format
+                country {
+                  code
+                  name
+                }
+              }
             }
           }
           l5Average: averageScore(type: LAST_FIVE_SO5_AVERAGE_SCORE)

@@ -12,8 +12,11 @@ export function CardImage({ src, alt }: CardImageProps) {
     <div className="flex justify-center">
       <Image
         alt={alt}
+        blurDataURL="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjIwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSIjZTBlMGUwIi8+PC9zdmc+"
         className="h-auto max-w-[200px] rounded-lg"
         height={200}
+        loading="lazy"
+        placeholder="blur"
         src={src}
         unoptimized
         width={200}
@@ -69,6 +72,26 @@ export function SorareCard({
                 {card.l40Average?.toFixed(1) ?? "-"}
               </div>
             </div>
+          </div>
+        )}
+        {card.anyPlayer?.activeClub && (
+          <div className="space-y-1 text-xs">
+            <div className="font-medium">{card.anyPlayer.activeClub.name}</div>
+            {card.anyPlayer.activeClub.activeCompetitions &&
+              card.anyPlayer.activeClub.activeCompetitions.length > 0 && (
+                <div className="text-muted-foreground">
+                  {(() => {
+                    const league =
+                      card.anyPlayer.activeClub.activeCompetitions.find(
+                        (c) => c.format === "DOMESTIC_LEAGUE"
+                      );
+                    return (
+                      league?.name ??
+                      card.anyPlayer.activeClub.activeCompetitions[0]?.name
+                    );
+                  })()}
+                </div>
+              )}
           </div>
         )}
       </CardContent>

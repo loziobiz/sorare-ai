@@ -22,14 +22,20 @@ export interface CardData {
     } | null;
     status: string;
   } | null;
-  anyTeam?: {
-    name: string;
-    pictureUrl?: string;
-    activeCompetitions?: Array<{
+  anyPlayer?: {
+    activeClub?: {
       name: string;
-      displayName: string;
-      format: string;
-    }>;
+      pictureUrl?: string;
+      activeCompetitions?: Array<{
+        name: string;
+        displayName: string;
+        format: string;
+        country?: {
+          code: string;
+          name: string;
+        };
+      }>;
+    };
   };
   l5Average?: number;
   l10Average?: number;

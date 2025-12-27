@@ -2,18 +2,35 @@
 
 import { LogOut, RefreshCw, Trash2 } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { CardsGrid } from "@/components/cards/card-grid";
 import { LoadingSpinner } from "@/components/loading-spinner";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { useCacheCleanup } from "@/hooks/use-indexed-db";
 import { logout } from "@/lib/auth";
+import {
+  ACTIVE_LEAGUES,
+  ENABLE_PAGINATION,
+  SHOW_ONLY_ACTIVE_LEAGUES,
+} from "@/lib/config";
 import { DEFAULT_TTL, db } from "@/lib/db";
 import type { CardData } from "@/lib/sorare-api";
 import { clearAllCaches, fetchAllCards } from "@/lib/sorare-api";
 
 type RarityFilter = "all" | "limited" | "rare";
+
+interface LeagueOption {
+  value: string;
+  label: string;
+}
+type PositionFilter =
+  | "all"
+  | "Goalkeeper"
+  | "Defender"
+  | "Midfielder"
+  | "Forward";
+type SortOption = "name" | "team" | "l5" | "l10" | "l15" | "l40";
 
 function formatLastUpdate(date: Date): string {
   const now = new Date();
@@ -34,16 +51,15 @@ function formatLastUpdate(date: Date): string {
   return `${days}d ago`;
 }
 
-function filterCardsByRarity(cards: CardData[], rarityFilter: RarityFilter) {
-  return cards.filter((card) => {
-    if (rarityFilter === "all") {
-      return true;
-    }
-    return card.rarityTyped.toLowerCase() === rarityFilter;
-  });
+function getPositionLabel(position: string): string {
+  const labels: Record<string, string> = {
+    Goalkeeper: "POR",
+    Defender: "DIF",
+    Midfielder: "CEN",
+    Forward: "ATT",
+  };
+  return labels[position] ?? position;
 }
-
-const ENABLE_PAGINATION = true; // Imposta a true per abilitare il caricamento completo
 
 export function CardsDashboard() {
   const router = useRouter();
@@ -53,10 +69,117 @@ export function CardsDashboard() {
   const [cards, setCards] = useState<CardData[]>([]);
   const [userSlug, setUserSlug] = useState("");
   const [rarityFilter, setRarityFilter] = useState<RarityFilter>("all");
+  const [positionFilter, setPositionFilter] = useState<PositionFilter>("all");
+  const [leagueFilter, setLeagueFilter] = useState<string>("all");
+  const [sortBy, setSortBy] = useState<SortOption>("name");
   const [loadingProgress, setLoadingProgress] = useState("");
   const [lastUpdate, setLastUpdate] = useState<Date | null>(null);
 
   useCacheCleanup();
+
+  // Get unique leagues from cards
+  const leagues = useMemo((): LeagueOption[] => {
+    const leagueMap = new Map<string, string>();
+    const allLeagues = new Set<string>(); // For debug when SHOW_ONLY_ACTIVE_LEAGUES is true
+
+    for (const card of cards) {
+      for (const competition of card.anyPlayer?.activeClub
+        ?.activeCompetitions ?? []) {
+        if (competition.format === "DOMESTIC_LEAGUE" && competition.country) {
+          const country = competition.country;
+          // Create unique key: "leagueName|countryCode"
+          const uniqueKey = `${competition.name}|${country.code}`;
+          allLeagues.add(uniqueKey);
+
+          // Check if unique key is in ACTIVE_LEAGUES
+          const isAllowed =
+            !SHOW_ONLY_ACTIVE_LEAGUES ||
+            Object.hasOwn(ACTIVE_LEAGUES, uniqueKey);
+
+          if (isAllowed) {
+            const customName = ACTIVE_LEAGUES[uniqueKey];
+            // Display: "Serie A" or custom name from config
+            const displayName = customName ?? uniqueKey;
+            leagueMap.set(uniqueKey, displayName);
+          }
+        }
+      }
+    }
+
+    // Debug: log leagues that are not in ACTIVE_LEAGUES
+    if (SHOW_ONLY_ACTIVE_LEAGUES && allLeagues.size > 0) {
+      const notInConfig = Array.from(allLeagues).filter(
+        (key) => !Object.hasOwn(ACTIVE_LEAGUES, key)
+      );
+      if (notInConfig.length > 0) {
+        console.log(
+          "Leagues found in cards but not in ACTIVE_LEAGUES config:",
+          notInConfig
+        );
+      }
+    }
+
+    return Array.from(leagueMap.entries())
+      .map(([value, label]) => ({ value, label }))
+      .sort((a, b) => a.label.localeCompare(b.label));
+  }, [cards]);
+
+  // Apply filters and sorting
+  const displayCards = useMemo(() => {
+    let filtered = [...cards];
+
+    // Filter by rarity
+    if (rarityFilter !== "all") {
+      filtered = filtered.filter(
+        (card) => card.rarityTyped.toLowerCase() === rarityFilter
+      );
+    }
+
+    // Filter by position
+    if (positionFilter !== "all") {
+      filtered = filtered.filter((card) =>
+        card.anyPositions?.includes(positionFilter)
+      );
+    }
+
+    // Filter by league
+    if (leagueFilter !== "all") {
+      // leagueFilter format is "leagueName|countryCode"
+      const [leagueName, countryCode] = leagueFilter.split("|");
+      filtered = filtered.filter((card) =>
+        card.anyPlayer?.activeClub?.activeCompetitions?.some(
+          (c) =>
+            c.format === "DOMESTIC_LEAGUE" &&
+            c.name === leagueName &&
+            c.country?.code === countryCode
+        )
+      );
+    }
+
+    // Sort
+    filtered.sort((a, b) => {
+      switch (sortBy) {
+        case "name":
+          return a.name.localeCompare(b.name);
+        case "team":
+          return (a.anyPlayer?.activeClub?.name ?? "").localeCompare(
+            b.anyPlayer?.activeClub?.name ?? ""
+          );
+        case "l5":
+          return (b.l5Average ?? 0) - (a.l5Average ?? 0);
+        case "l10":
+          return (b.l10Average ?? 0) - (a.l10Average ?? 0);
+        case "l15":
+          return (b.l15Average ?? 0) - (a.l15Average ?? 0);
+        case "l40":
+          return (b.l40Average ?? 0) - (a.l40Average ?? 0);
+        default:
+          return 0;
+      }
+    });
+
+    return filtered;
+  }, [cards, rarityFilter, positionFilter, leagueFilter, sortBy]);
 
   const loadCardsFromDb = useCallback(async (): Promise<boolean> => {
     try {
@@ -109,7 +232,7 @@ export function CardsDashboard() {
 
       try {
         const result = await fetchAllCards({
-          cacheTtl: isRefresh ? 0 : undefined, // Bypassa cache durante refresh
+          cacheTtl: isRefresh ? 0 : undefined,
           enablePagination: ENABLE_PAGINATION,
           onProgress: (page, total) => {
             setLoadingProgress(`Fetching page ${page}... (${total} cards)`);
@@ -153,11 +276,8 @@ export function CardsDashboard() {
 
   const handleClearCache = async () => {
     await clearAllCaches();
-    // Reload cards after clearing cache
     await fetchCards(false);
   };
-
-  const displayCards = filterCardsByRarity(cards, rarityFilter);
 
   if (isLoading) {
     return (
@@ -216,26 +336,84 @@ export function CardsDashboard() {
         </div>
       </div>
 
-      {/* Filter Buttons */}
-      <div className="flex gap-2">
-        <Button
-          onClick={() => setRarityFilter("all")}
-          variant={rarityFilter === "all" ? "default" : "outline"}
-        >
-          Tutte
-        </Button>
-        <Button
-          onClick={() => setRarityFilter("limited")}
-          variant={rarityFilter === "limited" ? "default" : "outline"}
-        >
-          Limited
-        </Button>
-        <Button
-          onClick={() => setRarityFilter("rare")}
-          variant={rarityFilter === "rare" ? "default" : "outline"}
-        >
-          Rare
-        </Button>
+      {/* Filters */}
+      <div className="flex flex-wrap items-center gap-4">
+        {/* Rarity Filter */}
+        <div className="flex items-center gap-2">
+          <label className="font-medium text-sm" htmlFor="rarity-filter">
+            Rarità:
+          </label>
+          <select
+            className="flex h-9 rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+            id="rarity-filter"
+            onChange={(e) => setRarityFilter(e.target.value as RarityFilter)}
+            value={rarityFilter}
+          >
+            <option value="all">Tutte</option>
+            <option value="limited">Limited</option>
+            <option value="rare">Rare</option>
+          </select>
+        </div>
+
+        {/* Position Filter */}
+        <div className="flex items-center gap-2">
+          <label className="font-medium text-sm" htmlFor="position-filter">
+            Ruolo:
+          </label>
+          <select
+            className="flex h-9 rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+            id="position-filter"
+            onChange={(e) =>
+              setPositionFilter(e.target.value as PositionFilter)
+            }
+            value={positionFilter}
+          >
+            <option value="all">Tutti</option>
+            <option value="Goalkeeper">{getPositionLabel("Goalkeeper")}</option>
+            <option value="Defender">{getPositionLabel("Defender")}</option>
+            <option value="Midfielder">{getPositionLabel("Midfielder")}</option>
+            <option value="Forward">{getPositionLabel("Forward")}</option>
+          </select>
+        </div>
+
+        {/* League Filter */}
+        <div className="flex items-center gap-2">
+          <label className="font-medium text-sm" htmlFor="league-filter">
+            Lega:
+          </label>
+          <select
+            className="flex h-9 rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+            id="league-filter"
+            onChange={(e) => setLeagueFilter(e.target.value)}
+            value={leagueFilter}
+          >
+            <option value="all">Tutte</option>
+            {leagues.map((league) => (
+              <option key={league.value} value={league.value}>
+                {league.label}
+              </option>
+            ))}
+          </select>
+        </div>
+
+        {/* Sort */}
+        <div className="flex items-center gap-2">
+          <label className="font-medium text-sm" htmlFor="sort-by">
+            Ordina per:
+          </label>
+          <select
+            className="flex h-9 rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+            id="sort-by"
+            onChange={(e) => setSortBy(e.target.value as SortOption)}
+            value={sortBy}
+          >
+            <option value="name">Nome</option>
+            <option value="team">Squadra</option>
+            <option value="l5">Media L5</option>
+            <option value="l15">Media L15</option>
+            <option value="l40">Media L40</option>
+          </select>
+        </div>
       </div>
 
       {/* Error Alert */}
@@ -253,7 +431,7 @@ export function CardsDashboard() {
         <CardsGrid
           cards={displayCards}
           columns={{ lg: 5, md: 4, mobile: 1 }}
-          emptyMessage={`No ${rarityFilter === "all" ? "limited or rare" : rarityFilter} cards found in your collection`}
+          emptyMessage="Nessuna carta trovata con i filtri selezionati"
           showCardAverages
           showCardPositions={false}
         />
