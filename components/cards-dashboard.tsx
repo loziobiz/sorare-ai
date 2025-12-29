@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { CardsGrid } from "@/components/cards/card-grid";
 import { LoadingSpinner } from "@/components/loading-spinner";
+import { SiteNav } from "@/components/site-nav";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { useCacheCleanup } from "@/hooks/use-indexed-db";
@@ -297,6 +298,7 @@ export function CardsDashboard() {
 
   return (
     <div className="space-y-6">
+      <SiteNav />
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>

@@ -16,17 +16,29 @@ export interface CacheEntry {
   ttl?: number;
 }
 
+export interface SavedFormation {
+  id?: number;
+  name: string;
+  league: string; // "leagueName|countryCode"
+  cards: CardData[];
+  slots: Array<{ position: string; cardSlug: string }>;
+  createdAt: number;
+}
+
 export class SorareDB extends Dexie {
   cachedCards!: Table<CachedCards>;
 
   cache!: Table<CacheEntry>;
 
+  savedFormations!: Table<SavedFormation>;
+
   constructor() {
     super("SorareDB");
 
-    this.version(1).stores({
+    this.version(2).stores({
       cachedCards: "slug, userSlug, timestamp, rarityFilter",
       cache: "key, timestamp",
+      savedFormations: "++id, league, createdAt",
     });
   }
 }
