@@ -9,11 +9,17 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useCacheCleanup } from "@/hooks/use-indexed-db";
+import { ACTIVE_LEAGUES, SHOW_ONLY_ACTIVE_LEAGUES } from "@/lib/config";
 import { DEFAULT_TTL, db } from "@/lib/db";
 import type { CardData } from "@/lib/sorare-api";
 import { fetchAllCards } from "@/lib/sorare-api";
 import { cn } from "@/lib/utils";
 import { PitchSlot } from "./pitch-slot";
+
+interface LeagueOption {
+  value: string;
+  label: string;
+}
 
 // Posizioni disponibili nel campo
 type SlotPosition = "ATT" | "EX" | "DIF" | "CEN" | "POR";
@@ -48,8 +54,34 @@ export function LineupBuilder() {
     useState<FormationSlot[]>(INITIAL_FORMATION);
   const [activeSlot, setActiveSlot] = useState<SlotPosition | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
+  const [leagueFilter, setLeagueFilter] = useState<string>("");
 
   useCacheCleanup();
+
+  // Get unique leagues from cards
+  const leagues = useMemo((): LeagueOption[] => {
+    const leagueMap = new Map<string, string>();
+    for (const card of cards) {
+      for (const competition of card.anyPlayer?.activeClub
+        ?.activeCompetitions ?? []) {
+        if (competition.format === "DOMESTIC_LEAGUE" && competition.country) {
+          const uniqueKey = `${competition.name}|${competition.country.code}`;
+          const isAllowed =
+            !SHOW_ONLY_ACTIVE_LEAGUES ||
+            Object.hasOwn(ACTIVE_LEAGUES, uniqueKey);
+
+          if (isAllowed) {
+            const customName = ACTIVE_LEAGUES[uniqueKey];
+            const displayName = customName ?? uniqueKey;
+            leagueMap.set(uniqueKey, displayName);
+          }
+        }
+      }
+    }
+    return Array.from(leagueMap.entries())
+      .map(([value, label]) => ({ value, label }))
+      .sort((a, b) => a.label.localeCompare(b.label));
+  }, [cards]);
 
   // Carte già usate nella formazione
   const usedCardSlugs = useMemo(
@@ -60,6 +92,19 @@ export function LineupBuilder() {
   // Carte filtrate per la selezione
   const filteredCards = useMemo(() => {
     let filtered = cards.filter((card) => !usedCardSlugs.has(card.slug));
+
+    // Filtra per lega se selezionata
+    if (leagueFilter) {
+      const [leagueName, countryCode] = leagueFilter.split("|");
+      filtered = filtered.filter((card) =>
+        card.anyPlayer?.activeClub?.activeCompetitions?.some(
+          (c) =>
+            c.format === "DOMESTIC_LEAGUE" &&
+            c.name === leagueName &&
+            c.country?.code === countryCode
+        )
+      );
+    }
 
     // Filtra per posizione se c'è uno slot attivo
     if (activeSlot) {
@@ -81,7 +126,7 @@ export function LineupBuilder() {
 
     // Ordina per media L5 (decrescente)
     return filtered.sort((a, b) => (b.l5Average ?? 0) - (a.l5Average ?? 0));
-  }, [cards, usedCardSlugs, activeSlot, searchQuery]);
+  }, [cards, usedCardSlugs, leagueFilter, activeSlot, searchQuery]);
 
   // Calcola bonus formazione (simulato)
   const formationBonus = useMemo(() => {
@@ -218,6 +263,29 @@ export function LineupBuilder() {
             </Button>
           </Link>
           <h1 className="font-bold text-2xl text-slate-800">Formazione</h1>
+          <div className="ml-auto flex items-center gap-2">
+            <label className="font-medium text-sm" htmlFor="league-filter">
+              Lega:
+            </label>
+            <select
+              className="flex h-9 rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+              id="league-filter"
+              onChange={(e) => {
+                setLeagueFilter(e.target.value);
+                // Reset formation when league changes
+                setFormation(INITIAL_FORMATION);
+                setActiveSlot(null);
+              }}
+              value={leagueFilter}
+            >
+              <option value="">Seleziona lega</option>
+              {leagues.map((league) => (
+                <option key={league.value} value={league.value}>
+                  {league.label}
+                </option>
+              ))}
+            </select>
+          </div>
         </div>
 
         {/* Campo di calcio */}
@@ -278,7 +346,7 @@ export function LineupBuilder() {
         {/* Bottone conferma */}
         <Button
           className="mt-4 h-14 gap-2 bg-violet-600 font-semibold text-lg hover:bg-violet-700"
-          disabled={formation.filter((s) => s.card).length < 5}
+          disabled={!leagueFilter || formation.filter((s) => s.card).length < 5}
           onClick={handleConfirmFormation}
         >
           <Check className="h-5 w-5" />
@@ -340,9 +408,11 @@ export function LineupBuilder() {
 
         {filteredCards.length === 0 && (
           <div className="py-12 text-center text-slate-500">
-            {activeSlot
-              ? "Nessuna carta disponibile per questa posizione"
-              : "Seleziona uno slot per vedere le carte disponibili"}
+            {leagueFilter
+              ? activeSlot
+                ? "Nessuna carta disponibile per questa posizione"
+                : "Seleziona uno slot per vedere le carte disponibili"
+              : "Seleziona una lega per vedere le carte disponibili"}
           </div>
         )}
       </div>
