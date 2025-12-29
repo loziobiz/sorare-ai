@@ -1,9 +1,9 @@
 "use client";
 
 import { Pencil, Trash2 } from "lucide-react";
+import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { SorareCard } from "@/components/cards/card";
 import { LoadingSpinner } from "@/components/loading-spinner";
 import { SiteNav } from "@/components/site-nav";
 import {
@@ -16,6 +16,52 @@ import { Button } from "@/components/ui/button";
 import { ACTIVE_LEAGUES } from "@/lib/config";
 import type { SavedFormation } from "@/lib/db";
 import { db } from "@/lib/db";
+
+interface CompactCardProps {
+  card: {
+    slug: string;
+    name: string;
+    pictureUrl?: string;
+    l5Average?: number;
+    l15Average?: number;
+    l40Average?: number;
+  };
+}
+
+function CompactCard({ card }: CompactCardProps) {
+  return (
+    <div className="flex flex-col items-center gap-1">
+      {card.pictureUrl && (
+        <Image
+          alt={card.name}
+          className="h-auto max-w-[100px] rounded-lg"
+          height={100}
+          src={card.pictureUrl}
+          unoptimized
+          width={100}
+        />
+      )}
+      <div className="grid grid-cols-3 gap-1 text-center text-[10px]">
+        <div>
+          <div className="text-muted-foreground">L5</div>
+          <div className="font-medium">{card.l5Average?.toFixed(1) ?? "-"}</div>
+        </div>
+        <div>
+          <div className="text-muted-foreground">L15</div>
+          <div className="font-medium">
+            {card.l15Average?.toFixed(1) ?? "-"}
+          </div>
+        </div>
+        <div>
+          <div className="text-muted-foreground">L40</div>
+          <div className="font-medium">
+            {card.l40Average?.toFixed(1) ?? "-"}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
 
 interface FormationCardProps {
   formation: SavedFormation;
@@ -45,29 +91,27 @@ function FormationCard({ formation, onEdit, onDelete }: FormationCardProps) {
       {/* Carte in orizzontale */}
       <div className="flex gap-3 overflow-x-auto pb-2">
         {formation.cards.map((card) => (
-          <div className="min-w-[140px]" key={card.slug}>
-            <SorareCard card={card} showAverages showPositions={false} />
-          </div>
+          <CompactCard card={card} key={card.slug} />
         ))}
       </div>
 
       {/* Pulsanti azione */}
-      <div className="flex gap-2">
+      <div className="flex gap-2" style={{ maxWidth: "548px" }}>
         <Button
-          className="flex-1"
+          className="h-8 flex-1 px-2 text-xs"
           onClick={() => onEdit(formation)}
           variant="outline"
         >
-          <Pencil className="mr-2 h-4 w-4" />
-          Modifica formazione
+          <Pencil className="mr-1 h-3 w-3" />
+          Modifica
         </Button>
         <Button
-          className="flex-1"
+          className="h-8 flex-1 px-2 text-xs"
           onClick={() => onDelete(formation.id!)}
           variant="destructive"
         >
-          <Trash2 className="mr-2 h-4 w-4" />
-          Cancella formazione
+          <Trash2 className="mr-1 h-3 w-3" />
+          Cancella
         </Button>
       </div>
     </div>
