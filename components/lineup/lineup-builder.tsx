@@ -1,6 +1,6 @@
 "use client";
 
-import { ArrowLeft, Check, Search, Settings2 } from "lucide-react";
+import { ArrowLeft, Check, Search } from "lucide-react";
 import Link from "next/link";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { SorareCard } from "@/components/cards/card";
@@ -207,9 +207,9 @@ export function LineupBuilder() {
   }
 
   return (
-    <div className="flex flex-col gap-4 lg:flex-row lg:gap-6">
+    <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:gap-6">
       {/* Sezione sinistra - Campo di calcio */}
-      <div className="flex flex-col lg:w-[520px]">
+      <div className="flex flex-col lg:sticky lg:top-4 lg:w-[520px]">
         {/* Header */}
         <div className="mb-4 flex items-center gap-3">
           <Link href="/cards">
@@ -218,22 +218,6 @@ export function LineupBuilder() {
             </Button>
           </Link>
           <h1 className="font-bold text-2xl text-slate-800">Formazione</h1>
-        </div>
-
-        {/* Info bonus */}
-        <div className="mb-4 space-y-1 text-sm">
-          <div className="flex items-center gap-2">
-            <span className="text-slate-600">BONUS/FORMAZIONE</span>
-            <span className="font-semibold text-emerald-600">
-              +{formationBonus}%
-            </span>
-          </div>
-          <div className="flex items-center gap-2">
-            <span className="text-slate-600">CAP 260</span>
-            <span className="font-semibold text-emerald-600">
-              {capInfo.current}/{capInfo.max} +{capInfo.bonus}%
-            </span>
-          </div>
         </div>
 
         {/* Campo di calcio */}
@@ -320,13 +304,6 @@ export function LineupBuilder() {
               "Giocatore"
             )}
           </h2>
-          <button
-            className="flex items-center gap-1.5 text-slate-500 text-sm hover:text-slate-700"
-            type="button"
-          >
-            <Settings2 className="h-4 w-4" />
-            Più filtri
-          </button>
         </div>
 
         {/* Barra di ricerca */}
