@@ -21,6 +21,9 @@ interface LeagueOption {
   label: string;
 }
 
+type RarityFilter = "all" | "limited" | "rare";
+type SortOption = "name" | "team" | "l5" | "l10" | "l15" | "l40";
+
 // Posizioni disponibili nel campo
 type SlotPosition = "ATT" | "EX" | "DIF" | "CEN" | "POR";
 
@@ -55,6 +58,8 @@ export function LineupBuilder() {
   const [activeSlot, setActiveSlot] = useState<SlotPosition | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [leagueFilter, setLeagueFilter] = useState<string>("");
+  const [rarityFilter, setRarityFilter] = useState<RarityFilter>("all");
+  const [sortBy, setSortBy] = useState<SortOption>("l5");
 
   useCacheCleanup();
 
@@ -106,6 +111,13 @@ export function LineupBuilder() {
       );
     }
 
+    // Filtra per rarità
+    if (rarityFilter !== "all") {
+      filtered = filtered.filter(
+        (card) => card.rarityTyped.toLowerCase() === rarityFilter
+      );
+    }
+
     // Filtra per posizione se c'è uno slot attivo
     if (activeSlot) {
       const allowedPositions = POSITION_MAPPING[activeSlot];
@@ -124,9 +136,38 @@ export function LineupBuilder() {
       );
     }
 
-    // Ordina per media L5 (decrescente)
-    return filtered.sort((a, b) => (b.l5Average ?? 0) - (a.l5Average ?? 0));
-  }, [cards, usedCardSlugs, leagueFilter, activeSlot, searchQuery]);
+    // Ordina secondo il criterio selezionato
+    filtered.sort((a, b) => {
+      switch (sortBy) {
+        case "name":
+          return a.name.localeCompare(b.name);
+        case "team":
+          return (a.anyPlayer?.activeClub?.name ?? "").localeCompare(
+            b.anyPlayer?.activeClub?.name ?? ""
+          );
+        case "l5":
+          return (b.l5Average ?? 0) - (a.l5Average ?? 0);
+        case "l10":
+          return (b.l10Average ?? 0) - (a.l10Average ?? 0);
+        case "l15":
+          return (b.l15Average ?? 0) - (a.l15Average ?? 0);
+        case "l40":
+          return (b.l40Average ?? 0) - (a.l40Average ?? 0);
+        default:
+          return 0;
+      }
+    });
+
+    return filtered;
+  }, [
+    cards,
+    usedCardSlugs,
+    leagueFilter,
+    rarityFilter,
+    activeSlot,
+    searchQuery,
+    sortBy,
+  ]);
 
   // Calcola bonus formazione (simulato)
   const formationBonus = useMemo(() => {
@@ -350,7 +391,7 @@ export function LineupBuilder() {
           onClick={handleConfirmFormation}
         >
           <Check className="h-5 w-5" />
-          Conferma formazione
+          Salva formazione
         </Button>
 
         {error && (
@@ -374,15 +415,51 @@ export function LineupBuilder() {
           </h2>
         </div>
 
-        {/* Barra di ricerca */}
-        <div className="relative mb-4">
-          <Search className="absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-slate-400" />
-          <Input
-            className="h-11 rounded-xl border-slate-200 bg-slate-50 pl-10 text-slate-700 placeholder:text-slate-400"
-            onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder="Cerca giocatore..."
-            value={searchQuery}
-          />
+        {/* Barra di ricerca e filtri */}
+        <div className="mb-4 flex flex-wrap gap-3">
+          <div className="relative min-w-[200px] flex-1">
+            <Search className="absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-slate-400" />
+            <Input
+              className="h-11 rounded-xl border-slate-200 bg-slate-50 pl-10 text-slate-700 placeholder:text-slate-400"
+              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder="Cerca giocatore..."
+              value={searchQuery}
+            />
+          </div>
+          {/* Rarità */}
+          <div className="flex items-center gap-2">
+            <label className="font-medium text-sm" htmlFor="rarity-filter">
+              Rarità:
+            </label>
+            <select
+              className="flex h-9 rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+              id="rarity-filter"
+              onChange={(e) => setRarityFilter(e.target.value as RarityFilter)}
+              value={rarityFilter}
+            >
+              <option value="all">Tutte</option>
+              <option value="limited">Limited</option>
+              <option value="rare">Rare</option>
+            </select>
+          </div>
+          {/* Ordina per */}
+          <div className="flex items-center gap-2">
+            <label className="font-medium text-sm" htmlFor="sort-by">
+              Ordina:
+            </label>
+            <select
+              className="flex h-9 rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+              id="sort-by"
+              onChange={(e) => setSortBy(e.target.value as SortOption)}
+              value={sortBy}
+            >
+              <option value="name">Nome</option>
+              <option value="team">Squadra</option>
+              <option value="l5">Media L5</option>
+              <option value="l15">Media L15</option>
+              <option value="l40">Media L40</option>
+            </select>
+          </div>
         </div>
 
         {/* Griglia carte */}
