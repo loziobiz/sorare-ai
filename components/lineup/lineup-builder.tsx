@@ -350,10 +350,36 @@ export function LineupBuilder() {
       return;
     }
 
-    setFormation((prev) =>
-      prev.map((s) => (s.position === activeSlot ? { ...s, card } : s))
-    );
-    setActiveSlot(null);
+    setFormation((prev) => {
+      const updated = prev.map((s) =>
+        s.position === activeSlot ? { ...s, card } : s
+      );
+
+      // Auto-select next empty slot in order: POR -> DIF -> CEN -> ATT -> EX
+      const slotOrder: SlotPosition[] = ["POR", "DIF", "CEN", "ATT", "EX"];
+      const currentIndex = slotOrder.indexOf(activeSlot);
+      let nextIndex = (currentIndex + 1) % slotOrder.length;
+      let foundNext = false;
+
+      // Find the next empty slot, cycling through the order
+      for (let i = 0; i < slotOrder.length; i++) {
+        const nextPosition = slotOrder[nextIndex];
+        const slot = updated.find((s) => s.position === nextPosition);
+        if (slot && !slot.card) {
+          setActiveSlot(nextPosition);
+          foundNext = true;
+          break;
+        }
+        nextIndex = (nextIndex + 1) % slotOrder.length;
+      }
+
+      // If no empty slot found, clear active slot
+      if (!foundNext) {
+        setActiveSlot(null);
+      }
+
+      return updated;
+    });
     setSearchQuery("");
   };
 
@@ -442,29 +468,6 @@ export function LineupBuilder() {
             <h1 className="font-bold text-2xl text-slate-800">
               {editingId ? "Modifica Formazione" : "Formazione"}
             </h1>
-            <div className="ml-auto flex items-center gap-2">
-              <label className="font-medium text-sm" htmlFor="league-filter">
-                Lega:
-              </label>
-              <select
-                className="flex h-9 rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-                id="league-filter"
-                onChange={(e) => {
-                  setLeagueFilter(e.target.value);
-                  // Reset formation when league changes
-                  setFormation(INITIAL_FORMATION);
-                  setActiveSlot(null);
-                }}
-                value={leagueFilter}
-              >
-                <option value="">Seleziona lega</option>
-                {leagues.map((league) => (
-                  <option key={league.value} value={league.value}>
-                    {league.label}
-                  </option>
-                ))}
-              </select>
-            </div>
           </div>
 
           {/* Nome formazione */}
@@ -585,14 +588,29 @@ export function LineupBuilder() {
 
           {/* Barra di ricerca e filtri */}
           <div className="mb-4 flex flex-wrap gap-3">
-            <div className="relative min-w-[200px] flex-1">
-              <Search className="absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-slate-400" />
-              <Input
-                className="h-11 rounded-xl border-slate-200 bg-slate-50 pl-10 text-slate-700 placeholder:text-slate-400"
-                onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="Cerca giocatore..."
-                value={searchQuery}
-              />
+            {/* Lega */}
+            <div className="flex items-center gap-2">
+              <label className="font-medium text-sm" htmlFor="league-filter">
+                Lega:
+              </label>
+              <select
+                className="flex h-9 rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                id="league-filter"
+                onChange={(e) => {
+                  setLeagueFilter(e.target.value);
+                  // Reset formation when league changes
+                  setFormation(INITIAL_FORMATION);
+                  setActiveSlot(null);
+                }}
+                value={leagueFilter}
+              >
+                <option value="">Seleziona lega</option>
+                {leagues.map((league) => (
+                  <option key={league.value} value={league.value}>
+                    {league.label}
+                  </option>
+                ))}
+              </select>
             </div>
             {/* Rarità */}
             <div className="flex items-center gap-2">
@@ -629,6 +647,16 @@ export function LineupBuilder() {
                 <option value="l15">Media L15</option>
                 <option value="l40">Media L40</option>
               </select>
+            </div>
+            {/* Nome */}
+            <div className="relative min-w-[200px] flex-1">
+              <Search className="absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-slate-400" />
+              <Input
+                className="h-11 rounded-xl border-slate-200 bg-slate-50 pl-10 text-slate-700 placeholder:text-slate-400"
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder="Cerca giocatore..."
+                value={searchQuery}
+              />
             </div>
           </div>
 

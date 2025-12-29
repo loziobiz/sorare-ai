@@ -34,11 +34,11 @@ function CompactCard({ card }: CompactCardProps) {
       {card.pictureUrl && (
         <Image
           alt={card.name}
-          className="h-auto max-w-[100px] rounded-lg"
+          className="h-auto max-w-[95px] rounded-lg"
           height={100}
           src={card.pictureUrl}
           unoptimized
-          width={100}
+          width={85}
         />
       )}
       <div className="grid grid-cols-3 gap-1 text-center text-[10px]">
@@ -81,25 +81,24 @@ function FormationCard({ formation, onEdit, onDelete }: FormationCardProps) {
   return (
     <div
       className="space-y-4 rounded-lg border border-slate-200 bg-white p-4 shadow-sm"
-      style={{ maxWidth: "580px" }}
+      style={{ maxWidth: "480px" }}
     >
       {/* Nome formazione e lega */}
       <div className="flex items-center justify-between">
         <div>
           <h3 className="font-bold text-slate-800 text-xl">{formation.name}</h3>
-          <p className="text-muted-foreground text-sm">{leagueLabel}</p>
         </div>
       </div>
 
       {/* Carte in orizzontale */}
-      <div className="flex gap-3 overflow-x-auto pb-2">
+      <div className="flex gap-1 overflow-x-auto pb-2">
         {formation.cards.map((card) => (
           <CompactCard card={card} key={card.slug} />
         ))}
       </div>
 
       {/* Pulsanti azione */}
-      <div className="flex gap-2" style={{ maxWidth: "548px" }}>
+      <div className="flex gap-2">
         <Button
           className="h-8 flex-1 px-2 text-xs"
           onClick={() => onEdit(formation)}
@@ -220,7 +219,7 @@ export function SavedLineups() {
               <h2 className="mb-4 font-bold text-slate-700 text-xl">
                 {league}
               </h2>
-              <div className="grid gap-4 lg:grid-cols-2">
+              <div className="grid gap-2 lg:grid-cols-3">
                 {items.map((formation) => (
                   <FormationCard
                     formation={formation}
