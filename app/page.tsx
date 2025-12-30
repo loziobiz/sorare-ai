@@ -71,9 +71,6 @@ export default function Home() {
         {/* Logo/Header */}
         <div className="space-y-2 text-center">
           <h1 className="font-bold text-4xl tracking-tight">Sorare AI</h1>
-          <p className="text-muted-foreground">
-            Gestisci la tua collezione di carte collezionabili
-          </p>
         </div>
 
         {/* Error Alert */}
@@ -96,15 +93,6 @@ export default function Home() {
             onSuccess={handleTwoFactorSuccess}
           />
         )}
-
-        {/* Footer Info */}
-        <div className="text-center text-muted-foreground text-sm">
-          <p>Applicazione MVP per interazione con l'API Sorare</p>
-          <p className="mt-2">
-            Le query GraphQL vengono eseguite server-to-server per maggiore
-            sicurezza
-          </p>
-        </div>
       </div>
     </main>
   );

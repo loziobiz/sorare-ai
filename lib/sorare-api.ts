@@ -104,7 +104,14 @@ export async function fetchCardsPage({
       return { cards: [], cursor: null };
     }
 
-    const newCards = data.data.currentUser.cards?.nodes || [];
+    const newCards = (data.data.currentUser.cards?.nodes || []).filter(
+      (card: CardData) => {
+        // Filtra solo carte di calcio (con competizioni DOMESTIC_LEAGUE)
+        const competitions =
+          card.anyPlayer?.activeClub?.activeCompetitions || [];
+        return competitions.some((c) => c.format === "DOMESTIC_LEAGUE");
+      }
+    );
     const pageInfo = data.data.currentUser.cards?.pageInfo;
     const nextCursor = pageInfo?.hasNextPage ? pageInfo?.endCursor : null;
 

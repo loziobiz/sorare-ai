@@ -482,7 +482,8 @@ export function LineupBuilder() {
               className="h-11"
               id="formation-name"
               onChange={(e) => setFormationName(e.target.value)}
-              placeholder="Es: Formazione Serie A giornata 15"
+              placeholder="Nome formazione (obbligatorio)"
+              required
               value={formationName}
             />
           </div>

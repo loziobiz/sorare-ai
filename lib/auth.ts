@@ -181,7 +181,7 @@ export async function login(
     }
 
     // Login completato senza 2FA
-    if (signInData.jwtToken?.token) {
+    if (signInData.jwtToken?.token && signInData.currentUser) {
       await setAuthToken(signInData.jwtToken.token);
       return {
         success: true,
@@ -245,7 +245,7 @@ export async function loginWithTwoFactor(otpCode: string): Promise<AuthResult> {
     }
 
     // Login completato
-    if (signInData.jwtToken?.token) {
+    if (signInData.jwtToken?.token && signInData.currentUser) {
       await setAuthToken(signInData.jwtToken.token);
       // Pulisci l'OTP challenge
       const cookieStore = await cookies();

@@ -51,7 +51,7 @@ export function LoginForm({ onSuccess, onTwoFactorRequired }: LoginFormProps) {
   return (
     <Card className="mx-auto w-full max-w-md">
       <CardHeader>
-        <CardTitle>Accedi a Sorare AI</CardTitle>
+        <CardTitle>Accedi</CardTitle>
         <CardDescription>
           Inserisci le tue credenziali Sorare per accedere
         </CardDescription>

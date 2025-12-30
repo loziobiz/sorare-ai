@@ -110,7 +110,7 @@ export class GraphQLCache {
       await this.cache?.delete(key);
     } else {
       const keys = await this.cache.keys();
-      await Promise.all(keys.map((key) => this.cache.delete(key)));
+      await Promise.all(keys.map((key) => this.cache?.delete(key)));
     }
   }
 
