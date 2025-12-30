@@ -9,6 +9,7 @@ import { LoadingSpinner } from "@/components/loading-spinner";
 import { SiteNav } from "@/components/site-nav";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { showToast, ToastContainer } from "@/components/ui/toast";
 import { useCacheCleanup } from "@/hooks/use-indexed-db";
@@ -80,6 +81,7 @@ export function LineupBuilder() {
   const [leagueFilter, setLeagueFilter] = useState<string>("");
   const [rarityFilter, setRarityFilter] = useState<RarityFilter>("all");
   const [sortBy, setSortBy] = useState<SortOption>("l5");
+  const [inSeasonOnly, setInSeasonOnly] = useState(false);
   const [formationName, setFormationName] = useState("");
   const [editingId, setEditingId] = useState<number | null>(null);
   const [toasts, setToasts] = useState<
@@ -161,6 +163,11 @@ export function LineupBuilder() {
       );
     }
 
+    // Filtra per in-season eligibility
+    if (inSeasonOnly) {
+      filtered = filtered.filter((card) => card.inSeasonEligible === true);
+    }
+
     // Ordina secondo il criterio selezionato
     filtered.sort((a, b) => {
       switch (sortBy) {
@@ -192,6 +199,7 @@ export function LineupBuilder() {
     activeSlot,
     searchQuery,
     sortBy,
+    inSeasonOnly,
   ]);
 
   // Calcola bonus formazione (simulato)
@@ -489,7 +497,7 @@ export function LineupBuilder() {
           </div>
 
           {/* Campo di calcio */}
-          <div className="relative flex aspect-[3/4] flex-col overflow-hidden rounded-2xl bg-gradient-to-b from-emerald-600 to-emerald-700 shadow-xl">
+          <div className="relative flex aspect-[7/8] flex-col overflow-hidden rounded-2xl bg-gradient-to-b from-emerald-600 to-emerald-700 shadow-xl">
             {/* Linee del campo */}
             <div className="absolute inset-5 rounded-lg border-2 border-white/30" />
             <div className="absolute top-1/2 right-5 left-5 h-0.5 -translate-y-1/2 bg-white/30" />
@@ -498,7 +506,7 @@ export function LineupBuilder() {
             <div className="absolute top-5 left-1/2 h-24 w-40 -translate-x-1/2 border-2 border-white/30 border-t-0" />
 
             {/* Slot posizioni */}
-            <div className="relative z-10 flex h-full flex-col justify-between p-8">
+            <div className="relative z-10 flex h-full flex-col justify-between gap-3 px-6 py-4">
               {/* Riga alta - ATT ed EX */}
               <div className="flex justify-around">
                 <PitchSlot
@@ -648,6 +656,20 @@ export function LineupBuilder() {
                 <option value="l15">Media L15</option>
                 <option value="l40">Media L40</option>
               </select>
+            </div>
+            {/* In-Season Filter */}
+            <div className="flex items-center gap-2">
+              <Checkbox
+                checked={inSeasonOnly}
+                id="in-season-filter"
+                onCheckedChange={(checked) => setInSeasonOnly(checked === true)}
+              />
+              <label
+                className="cursor-pointer font-medium text-sm"
+                htmlFor="in-season-filter"
+              >
+                In-Season
+              </label>
             </div>
             {/* Nome */}
             <div className="relative min-w-[200px] flex-1">

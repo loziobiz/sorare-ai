@@ -8,6 +8,7 @@ import { LoadingSpinner } from "@/components/loading-spinner";
 import { SiteNav } from "@/components/site-nav";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
 import { useCacheCleanup } from "@/hooks/use-indexed-db";
 import { logout } from "@/lib/auth";
 import {
@@ -75,6 +76,7 @@ export function CardsDashboard() {
   const [sortBy, setSortBy] = useState<SortOption>("name");
   const [loadingProgress, setLoadingProgress] = useState("");
   const [lastUpdate, setLastUpdate] = useState<Date | null>(null);
+  const [inSeasonOnly, setInSeasonOnly] = useState(false);
 
   useCacheCleanup();
 
@@ -157,6 +159,11 @@ export function CardsDashboard() {
       );
     }
 
+    // Filter by in-season eligibility
+    if (inSeasonOnly) {
+      filtered = filtered.filter((card) => card.inSeasonEligible === true);
+    }
+
     // Sort
     filtered.sort((a, b) => {
       switch (sortBy) {
@@ -180,7 +187,7 @@ export function CardsDashboard() {
     });
 
     return filtered;
-  }, [cards, rarityFilter, positionFilter, leagueFilter, sortBy]);
+  }, [cards, rarityFilter, positionFilter, leagueFilter, sortBy, inSeasonOnly]);
 
   const loadCardsFromDb = useCallback(async (): Promise<boolean> => {
     try {
@@ -415,6 +422,21 @@ export function CardsDashboard() {
             <option value="l15">Media L15</option>
             <option value="l40">Media L40</option>
           </select>
+        </div>
+
+        {/* In-Season Filter */}
+        <div className="flex items-center gap-2">
+          <Checkbox
+            checked={inSeasonOnly}
+            id="in-season-filter"
+            onCheckedChange={(checked) => setInSeasonOnly(checked === true)}
+          />
+          <label
+            className="cursor-pointer font-medium text-sm"
+            htmlFor="in-season-filter"
+          >
+            In-Season
+          </label>
         </div>
       </div>
 
