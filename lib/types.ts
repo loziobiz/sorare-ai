@@ -32,6 +32,7 @@ export interface Card {
   rarityTyped: string;
   anyPositions?: string[];
   pictureUrl?: string;
+  power?: string;
   l5Average?: number;
   l10Average?: number;
   l15Average?: number;

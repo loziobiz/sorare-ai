@@ -14,6 +14,7 @@ export const GET_CARDS_QUERY = `
           rarityTyped
           anyPositions
           pictureUrl
+          power
           l5Average: averageScore(type: LAST_FIVE_SO5_AVERAGE_SCORE)
           l10Average: averageScore(type: LAST_TEN_PLAYED_SO5_AVERAGE_SCORE)
           l15Average: averageScore(type: LAST_FIFTEEN_SO5_AVERAGE_SCORE)
@@ -41,6 +42,7 @@ export type GetCardsQueryResponse = {
         rarityTyped: string;
         anyPositions?: string[];
         pictureUrl?: string;
+        power?: string;
         l5Average?: number;
         l10Average?: number;
         l15Average?: number;
