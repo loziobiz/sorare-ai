@@ -16,6 +16,7 @@ interface CardData {
   rarityTyped: string;
   anyPositions?: string[];
   pictureUrl?: string;
+  power?: string;
   l5Average?: number;
   l10Average?: number;
   l15Average?: number;
@@ -122,6 +123,7 @@ export function CardsDashboard() {
                       rarityTyped
                       anyPositions
                       pictureUrl
+                      power
                       l5Average: averageScore(type: LAST_FIVE_SO5_AVERAGE_SCORE)
                       l10Average: averageScore(type: LAST_TEN_PLAYED_SO5_AVERAGE_SCORE)
                       l15Average: averageScore(type: LAST_FIFTEEN_SO5_AVERAGE_SCORE)
@@ -371,6 +373,12 @@ export function CardsDashboard() {
                       {card.anyPositions && card.anyPositions.length > 0 && (
                         <div className="text-sm">
                           <span className="font-medium">Position:</span> {card.anyPositions.join(', ')}
+                        </div>
+                      )}
+                      {/* Total Bonus (Power) */}
+                      {card.power && (
+                        <div className="text-sm bg-primary/10 p-2 rounded-md text-center">
+                          <span className="font-medium">Total Bonus:</span> <span className="font-bold">{card.power}</span>
                         </div>
                       )}
                       {/* Averages */}
