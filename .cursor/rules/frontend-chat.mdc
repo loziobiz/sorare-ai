@@ -1,0 +1,16 @@
+---
+description: Flusso della chat e componenti front-end
+globs: pages/**/*.tsx,components/**/*.tsx
+---
+
+# Componenti principali
+
+- Usa `@ai-sdk/react` con `Chat` e `useChat` per gestire stato e submit.
+- Il componente `MemoizedMarkdown` deve ricevere `id` stabile e `content` in markdown.
+- Mantieni `MessageInput` controllato con `useState`; invia body JSON con `model`.
+- Mantieni classi Tailwind esistenti per layout (container `max-w-xl`, padding). Modifiche CSS passano da `styles/globals.css`.
+
+# Buone pratiche
+
+- Evita re-render inutili: riusa `MemoizedMarkdownBlock` e chiavi coerenti.
+- Tieni sincronizzati i valori di `messages` con la struttura AI SDK (parts, type `text`).

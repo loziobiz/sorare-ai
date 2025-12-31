@@ -1,4 +1,4 @@
-import type { SignInInput, SignInResponse } from '../types';
+import type { SignInInput, SignInResponse } from "../types";
 
 /**
  * Mutation per il login su Sorare
@@ -35,4 +35,3 @@ export type SignInVariables = {
 export type SignInMutationResponse = {
   signIn: SignInResponse;
 };
-

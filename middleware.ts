@@ -1,5 +1,5 @@
-import { NextResponse } from 'next/server';
-import type { NextRequest } from 'next/server';
+import type { NextRequest } from "next/server";
+import { NextResponse } from "next/server";
 
 /**
  * Middleware per proteggere le rotte che richiedono autenticazione
@@ -9,24 +9,24 @@ export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
   // Rotte che richiedono autenticazione
-  const protectedRoutes = ['/cards'];
+  const protectedRoutes = ["/cards"];
 
   // Rotte pubbliche (login, home)
-  const publicRoutes = ['/', '/api/graphql'];
+  const publicRoutes = ["/", "/api/graphql"];
 
   // Se è una rotta pubblica, lascia passare
-  if (publicRoutes.some(route => pathname.startsWith(route))) {
+  if (publicRoutes.some((route) => pathname.startsWith(route))) {
     return NextResponse.next();
   }
 
   // Se è una rotta protetta, verifica l'autenticazione
-  if (protectedRoutes.some(route => pathname.startsWith(route))) {
-    const token = request.cookies.get('sorare_jwt_token');
+  if (protectedRoutes.some((route) => pathname.startsWith(route))) {
+    const token = request.cookies.get("sorare_jwt_token");
 
     // Se non c'è token, redirect al login
     if (!token) {
-      const loginUrl = new URL('/', request.url);
-      loginUrl.searchParams.set('redirect', pathname);
+      const loginUrl = new URL("/", request.url);
+      loginUrl.searchParams.set("redirect", pathname);
       return NextResponse.redirect(loginUrl);
     }
   }
@@ -48,7 +48,6 @@ export const config = {
      * - favicon.ico (favicon)
      * - file pubblici
      */
-    '/((?!api|_next/static|_next/image|favicon.ico|.*\\..*$).*)',
+    "/((?!api|_next/static|_next/image|favicon.ico|.*\\..*$).*)",
   ],
 };
-

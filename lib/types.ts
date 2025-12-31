@@ -56,4 +56,3 @@ export interface GraphQLError {
   path?: string[];
   extensions?: Record<string, unknown>;
 }
-
