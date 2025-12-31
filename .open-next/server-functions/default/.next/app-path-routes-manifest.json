@@ -1,0 +1,9 @@
+{
+  "/api/graphql/route": "/api/graphql",
+  "/favicon.ico/route": "/favicon.ico",
+  "/_not-found/page": "/_not-found",
+  "/cards/page": "/cards",
+  "/lineup/page": "/lineup",
+  "/page": "/",
+  "/saved-lineups/page": "/saved-lineups"
+}
