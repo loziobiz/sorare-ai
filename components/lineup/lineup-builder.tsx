@@ -53,6 +53,98 @@ const INITIAL_FORMATION: FormationSlot[] = [
   { position: "POR", card: null },
 ];
 
+function getEmptyMessage(
+  leagueFilter: string,
+  activeSlot: SlotPosition | null
+): string {
+  if (!leagueFilter) {
+    return "Seleziona una lega per vedere le carte disponibili";
+  }
+  if (!activeSlot) {
+    return "Seleziona uno slot per vedere le carte disponibili";
+  }
+  return "Nessuna carta disponibile per questa posizione";
+}
+
+function isLeagueAllowed(uniqueKey: string): boolean {
+  return !SHOW_ONLY_ACTIVE_LEAGUES || Object.hasOwn(ACTIVE_LEAGUES, uniqueKey);
+}
+
+function getLeagueDisplayName(uniqueKey: string): string {
+  const customName = ACTIVE_LEAGUES[uniqueKey];
+  return customName ?? uniqueKey;
+}
+
+function buildLeagueMap(cards: CardData[]): Map<string, string> {
+  const leagueMap = new Map<string, string>();
+  for (const card of cards) {
+    for (const competition of card.anyPlayer?.activeClub?.activeCompetitions ??
+      []) {
+      if (competition.format === "DOMESTIC_LEAGUE" && competition.country) {
+        const uniqueKey = `${competition.name}|${competition.country.code}`;
+        if (isLeagueAllowed(uniqueKey)) {
+          leagueMap.set(uniqueKey, getLeagueDisplayName(uniqueKey));
+        }
+      }
+    }
+  }
+  return leagueMap;
+}
+
+interface SavedFormationWithSlots {
+  name: string;
+  league: string;
+  cards: CardData[];
+  slots?: Array<{ position: string; cardSlug: string }>;
+}
+
+function restoreFormationFromSlots(
+  saved: SavedFormationWithSlots
+): FormationSlot[] {
+  const newFormation = [...INITIAL_FORMATION];
+  if (!saved.slots || saved.slots.length === 0) {
+    return newFormation;
+  }
+  for (const slot of saved.slots) {
+    const card = saved.cards.find((c) => c.slug === slot.cardSlug);
+    if (card) {
+      const slotIndex = newFormation.findIndex(
+        (s) => s.position === slot.position
+      );
+      if (slotIndex !== -1) {
+        newFormation[slotIndex] = {
+          position: slot.position as SlotPosition,
+          card,
+        };
+      }
+    }
+  }
+  return newFormation;
+}
+
+function restoreFormationLegacy(
+  saved: SavedFormationWithSlots
+): FormationSlot[] {
+  const newFormation = [...INITIAL_FORMATION];
+  for (const savedCard of saved.cards) {
+    const position = getPositionForCard(savedCard);
+    if (position) {
+      const slotIndex = newFormation.findIndex((s) => s.position === position);
+      if (slotIndex !== -1) {
+        newFormation[slotIndex] = { position, card: savedCard };
+      }
+    }
+  }
+  return newFormation;
+}
+
+function loadSavedFormation(saved: SavedFormationWithSlots): FormationSlot[] {
+  if (saved.slots && saved.slots.length > 0) {
+    return restoreFormationFromSlots(saved);
+  }
+  return restoreFormationLegacy(saved);
+}
+
 // Helper to determine slot position from card positions
 function getPositionForCard(card: CardData): SlotPosition | null {
   if (!card.anyPositions || card.anyPositions.length === 0) {
@@ -60,10 +152,18 @@ function getPositionForCard(card: CardData): SlotPosition | null {
   }
 
   const position = card.anyPositions[0];
-  if (position === "Goalkeeper") return "POR";
-  if (position === "Defender") return "DIF";
-  if (position === "Midfielder") return "CEN";
-  if (position === "Forward") return "ATT";
+  if (position === "Goalkeeper") {
+    return "POR";
+  }
+  if (position === "Defender") {
+    return "DIF";
+  }
+  if (position === "Midfielder") {
+    return "CEN";
+  }
+  if (position === "Forward") {
+    return "ATT";
+  }
 
   return null;
 }
@@ -92,24 +192,7 @@ export function LineupBuilder() {
 
   // Get unique leagues from cards
   const leagues = useMemo((): LeagueOption[] => {
-    const leagueMap = new Map<string, string>();
-    for (const card of cards) {
-      for (const competition of card.anyPlayer?.activeClub
-        ?.activeCompetitions ?? []) {
-        if (competition.format === "DOMESTIC_LEAGUE" && competition.country) {
-          const uniqueKey = `${competition.name}|${competition.country.code}`;
-          const isAllowed =
-            !SHOW_ONLY_ACTIVE_LEAGUES ||
-            Object.hasOwn(ACTIVE_LEAGUES, uniqueKey);
-
-          if (isAllowed) {
-            const customName = ACTIVE_LEAGUES[uniqueKey];
-            const displayName = customName ?? uniqueKey;
-            leagueMap.set(uniqueKey, displayName);
-          }
-        }
-      }
-    }
+    const leagueMap = buildLeagueMap(cards);
     return Array.from(leagueMap.entries())
       .map(([value, label]) => ({ value, label }))
       .sort((a, b) => a.label.localeCompare(b.label));
@@ -203,20 +286,10 @@ export function LineupBuilder() {
   ]);
 
   // Calcola bonus formazione (simulato)
-  const formationBonus = useMemo(() => {
+  const _formationBonus = useMemo(() => {
     const filledSlots = formation.filter((s) => s.card).length;
     return filledSlots >= 3 ? 2 : 0;
   }, [formation]);
-
-  // Calcola CAP
-  const capInfo = useMemo(() => {
-    const total = formation.reduce(
-      (sum, slot) => sum + (slot.card?.l5Average ?? 0),
-      0
-    );
-    const max = 260;
-    return { current: Math.round(total), max, bonus: formationBonus };
-  }, [formation, formationBonus]);
 
   const loadCardsFromDb = useCallback(async (): Promise<boolean> => {
     try {
@@ -296,40 +369,7 @@ export function LineupBuilder() {
           setEditingId(id);
           setFormationName(saved.name);
           setLeagueFilter(saved.league);
-
-          // Use saved slots to restore formation layout
-          const newFormation = [...INITIAL_FORMATION];
-          if (saved.slots && saved.slots.length > 0) {
-            // New format with slots
-            for (const slot of saved.slots) {
-              const card = saved.cards.find((c) => c.slug === slot.cardSlug);
-              if (card) {
-                const slotIndex = newFormation.findIndex(
-                  (s) => s.position === slot.position
-                );
-                if (slotIndex !== -1) {
-                  newFormation[slotIndex] = {
-                    position: slot.position as SlotPosition,
-                    card,
-                  };
-                }
-              }
-            }
-          } else {
-            // Legacy format without slots - try to guess positions
-            for (const savedCard of saved.cards) {
-              const position = getPositionForCard(savedCard);
-              if (position) {
-                const slotIndex = newFormation.findIndex(
-                  (s) => s.position === position
-                );
-                if (slotIndex !== -1) {
-                  newFormation[slotIndex] = { position, card: savedCard };
-                }
-              }
-            }
-          }
-          setFormation(newFormation);
+          setFormation(loadSavedFormation(saved));
         }
       } catch (err) {
         console.error("Error loading formation:", err);
@@ -370,7 +410,7 @@ export function LineupBuilder() {
       let foundNext = false;
 
       // Find the next empty slot, cycling through the order
-      for (let i = 0; i < slotOrder.length; i++) {
+      for (const _ of slotOrder) {
         const nextPosition = slotOrder[nextIndex];
         const slot = updated.find((s) => s.position === nextPosition);
         if (slot && !slot.card) {
@@ -414,7 +454,8 @@ export function LineupBuilder() {
       // Save slot positions to preserve formation layout
       const slots = formation
         .filter((s) => s.card !== null)
-        .map((s) => ({ position: s.position, cardSlug: s.card!.slug }));
+        .map((s) => ({ position: s.position, cardSlug: s.card?.slug ?? "" }))
+        .filter((s) => s.cardSlug !== "");
 
       if (editingId) {
         // Update existing formation
@@ -706,11 +747,7 @@ export function LineupBuilder() {
 
           {filteredCards.length === 0 && (
             <div className="py-12 text-center text-slate-500">
-              {leagueFilter
-                ? activeSlot
-                  ? "Nessuna carta disponibile per questa posizione"
-                  : "Seleziona uno slot per vedere le carte disponibili"
-                : "Seleziona una lega per vedere le carte disponibili"}
+              {getEmptyMessage(leagueFilter, activeSlot)}
             </div>
           )}
         </div>

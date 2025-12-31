@@ -25,6 +25,7 @@ interface CompactCardProps {
     l5Average?: number;
     l15Average?: number;
     l40Average?: number;
+    power?: string;
   };
 }
 
@@ -41,7 +42,7 @@ function CompactCard({ card }: CompactCardProps) {
           width={85}
         />
       )}
-      <div className="grid grid-cols-3 gap-1 text-center text-[10px]">
+      <div className="grid grid-cols-4 gap-1 text-center text-[10px]">
         <div>
           <div className="text-muted-foreground">L5</div>
           <div className="font-medium">{card.l5Average?.toFixed(1) ?? "-"}</div>
@@ -56,6 +57,14 @@ function CompactCard({ card }: CompactCardProps) {
           <div className="text-muted-foreground">L40</div>
           <div className="font-medium">
             {card.l40Average?.toFixed(1) ?? "-"}
+          </div>
+        </div>
+        <div>
+          <div className="text-muted-foreground">XP</div>
+          <div className="font-medium">
+            {card.power
+              ? Math.round((Number.parseFloat(card.power) - 1) * 100)
+              : "-"}
           </div>
         </div>
       </div>

@@ -2,8 +2,8 @@
 
 import { AlertCircle } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
-import { LoginForm } from "@/components/LoginForm";
+import { useCallback, useEffect, useState } from "react";
+import { LoginForm } from "@/components/login-form";
 import { TwoFactorAuthForm } from "@/components/TwoFactorAuthForm";
 import { Alert } from "@/components/ui/alert";
 import { isAuthenticated } from "@/lib/auth";
@@ -16,11 +16,7 @@ export default function Home() {
   const [isChecking, setIsChecking] = useState(true);
   const [error, setError] = useState("");
 
-  useEffect(() => {
-    checkAuth();
-  }, []);
-
-  const checkAuth = async () => {
+  const checkAuth = useCallback(async () => {
     try {
       const authenticated = await isAuthenticated();
 
@@ -30,11 +26,15 @@ export default function Home() {
       } else {
         setIsChecking(false);
       }
-    } catch (err) {
+    } catch {
       setError("Failed to check authentication status");
       setIsChecking(false);
     }
-  };
+  }, [router]);
+
+  useEffect(() => {
+    checkAuth();
+  }, [checkAuth]);
 
   const handleLoginSuccess = () => {
     router.push("/cards");

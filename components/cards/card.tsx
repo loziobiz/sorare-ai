@@ -55,12 +55,6 @@ export function SorareCard({
               </div>
             </div>
             <div>
-              <div className="text-muted-foreground">L10</div>
-              <div className="font-medium">
-                {card.l10Average?.toFixed(1) ?? "-"}
-              </div>
-            </div>
-            <div>
               <div className="text-muted-foreground">L15</div>
               <div className="font-medium">
                 {card.l15Average?.toFixed(1) ?? "-"}
@@ -70,6 +64,14 @@ export function SorareCard({
               <div className="text-muted-foreground">L40</div>
               <div className="font-medium">
                 {card.l40Average?.toFixed(1) ?? "-"}
+              </div>
+            </div>
+            <div>
+              <div className="text-muted-foreground">XP</div>
+              <div className="font-medium">
+                {card.power
+                  ? Math.round((Number.parseFloat(card.power) - 1) * 100)
+                  : "-"}
               </div>
             </div>
           </div>

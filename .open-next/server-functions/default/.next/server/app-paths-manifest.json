@@ -1,9 +1,9 @@
 {
+  "/_not-found/page": "app/_not-found/page.js",
   "/api/graphql/route": "app/api/graphql/route.js",
   "/favicon.ico/route": "app/favicon.ico/route.js",
-  "/_not-found/page": "app/_not-found/page.js",
+  "/page": "app/page.js",
   "/cards/page": "app/cards/page.js",
   "/lineup/page": "app/lineup/page.js",
-  "/page": "app/page.js",
   "/saved-lineups/page": "app/saved-lineups/page.js"
 }

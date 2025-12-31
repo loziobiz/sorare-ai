@@ -41,7 +41,7 @@ export function LoginForm({ onSuccess, onTwoFactorRequired }: LoginFormProps) {
       } else {
         setError(result.error || "Login failed");
       }
-    } catch (err) {
+    } catch {
       setError("An unexpected error occurred");
     } finally {
       setIsLoading(false);

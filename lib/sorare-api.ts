@@ -41,6 +41,11 @@ export interface CardData {
   l10Average?: number;
   l15Average?: number;
   l40Average?: number;
+  power?: string;
+  powerBreakdown?: {
+    xp?: number;
+    season?: number;
+  };
 }
 
 export interface CardsResponse {
