@@ -22,7 +22,7 @@ export const COLUMN_WIDTHS = {
 
 // Larghezze fisse delle colonne per cards-dashboard (standalone)
 export const COLUMN_WIDTHS_STANDALONE = {
-  name: 35,
+  name: 290,
   team: 430,
   league: 220,
   l5: 60,
