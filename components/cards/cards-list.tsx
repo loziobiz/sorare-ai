@@ -3,18 +3,25 @@
 import { ArrowDown, ArrowUp, ArrowUpDown } from "lucide-react";
 import { useMemo, useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
+import { Table, TableBody, TableCell, TableRow } from "@/components/ui/table";
 import { getPositionLabel } from "@/lib/cards-utils";
 import type { CardData } from "@/lib/sorare-api";
 import { cn } from "@/lib/utils";
 import { CardThumbnail } from "./card-thumbnail";
+
+// Larghezze fisse delle colonne
+export const COLUMN_WIDTHS = {
+  name: 300,
+  team: 300,
+  league: 190,
+  l5: 60,
+  l15: 60,
+  l40: 60,
+  xp: 60,
+} as const;
+
+export type SortKey = "name" | "team" | "league" | "l5" | "l15" | "l40" | "xp";
+export type SortDirection = "asc" | "desc";
 
 export interface CardsListProps {
   cards: CardData[];
@@ -22,10 +29,11 @@ export interface CardsListProps {
   emptyMessage?: string;
   onCardClick?: (card: CardData) => void;
   disabled?: boolean;
+  showHeader?: boolean;
+  sortKey?: SortKey;
+  sortDirection?: SortDirection;
+  onSort?: (key: SortKey, direction: SortDirection) => void;
 }
-
-type SortKey = "name" | "team" | "league" | "l5" | "l15" | "l40" | "xp";
-type SortDirection = "asc" | "desc";
 
 // Regex per estrarre solo il nome del giocatore (rimuove anno e info carta)
 const PLAYER_NAME_REGEX = /^(.+?)\s+\d{4}-\d{2}/;
@@ -88,15 +96,39 @@ function compareValues(
   return direction === "asc" ? comparison : -comparison;
 }
 
+export function getSortIcon(
+  columnKey: SortKey,
+  currentSortKey: SortKey,
+  currentSortDirection: SortDirection
+) {
+  if (currentSortKey !== columnKey) {
+    return <ArrowUpDown className="ml-1 inline-block h-4 w-4" />;
+  }
+  return currentSortDirection === "asc" ? (
+    <ArrowUp className="ml-1 inline-block h-4 w-4" />
+  ) : (
+    <ArrowDown className="ml-1 inline-block h-4 w-4" />
+  );
+}
+
 export function CardsList({
   cards,
   showEmptyMessage = true,
   emptyMessage,
   onCardClick,
   disabled = false,
+  showHeader = true,
+  sortKey: externalSortKey,
+  sortDirection: externalSortDirection,
+  onSort,
 }: CardsListProps) {
-  const [sortKey, setSortKey] = useState<SortKey>("name");
-  const [sortDirection, setSortDirection] = useState<SortDirection>("asc");
+  const [internalSortKey, setInternalSortKey] = useState<SortKey>("name");
+  const [internalSortDirection, setInternalSortDirection] =
+    useState<SortDirection>("asc");
+
+  // Usa props esterne se fornite, altrimenti stato interno
+  const sortKey = externalSortKey ?? internalSortKey;
+  const sortDirection = externalSortDirection ?? internalSortDirection;
 
   const sortedCards = useMemo(() => {
     return [...cards].sort((a, b) => {
@@ -142,23 +174,21 @@ export function CardsList({
   }, [cards, sortKey, sortDirection]);
 
   const handleSort = (key: SortKey) => {
+    let newDirection: SortDirection = "asc";
     if (sortKey === key) {
-      setSortDirection(sortDirection === "asc" ? "desc" : "asc");
+      newDirection = sortDirection === "asc" ? "desc" : "asc";
+    }
+
+    if (onSort) {
+      onSort(key, newDirection);
     } else {
-      setSortKey(key);
-      setSortDirection("asc");
+      setInternalSortKey(key);
+      setInternalSortDirection(newDirection);
     }
   };
 
-  const getSortIcon = (columnKey: SortKey) => {
-    if (sortKey !== columnKey) {
-      return <ArrowUpDown className="ml-1 inline-block h-4 w-4" />;
-    }
-    return sortDirection === "asc" ? (
-      <ArrowUp className="ml-1 inline-block h-4 w-4" />
-    ) : (
-      <ArrowDown className="ml-1 inline-block h-4 w-4" />
-    );
+  const renderSortIcon = (columnKey: SortKey) => {
+    return getSortIcon(columnKey, sortKey, sortDirection);
   };
 
   if (cards.length === 0 && showEmptyMessage) {
@@ -174,73 +204,82 @@ export function CardsList({
   return (
     <div className="rounded-md border">
       <Table>
-        <TableHeader className="sticky top-0 z-10 bg-muted">
-          <TableRow>
-            <TableHead
-              className="cursor-pointer select-none hover:bg-muted/80"
-              onClick={() => handleSort("name")}
-            >
-              <div className="flex items-center">
-                Giocatore
-                {getSortIcon("name")}
-              </div>
-            </TableHead>
-            <TableHead
-              className="max-w-[300px] cursor-pointer select-none hover:bg-muted/80"
-              onClick={() => handleSort("team")}
-            >
-              <div className="flex items-center">
-                Squadra
-                {getSortIcon("team")}
-              </div>
-            </TableHead>
-            <TableHead
-              className="cursor-pointer select-none hover:bg-muted/80"
-              onClick={() => handleSort("league")}
-            >
-              <div className="flex items-center">
-                Lega
-                {getSortIcon("league")}
-              </div>
-            </TableHead>
-            <TableHead
-              className="cursor-pointer select-none hover:bg-muted/80"
-              onClick={() => handleSort("l5")}
-            >
-              <div className="flex items-center">
-                L5
-                {getSortIcon("l5")}
-              </div>
-            </TableHead>
-            <TableHead
-              className="cursor-pointer select-none hover:bg-muted/80"
-              onClick={() => handleSort("l15")}
-            >
-              <div className="flex items-center">
-                L15
-                {getSortIcon("l15")}
-              </div>
-            </TableHead>
-            <TableHead
-              className="cursor-pointer select-none hover:bg-muted/80"
-              onClick={() => handleSort("l40")}
-            >
-              <div className="flex items-center">
-                L40
-                {getSortIcon("l40")}
-              </div>
-            </TableHead>
-            <TableHead
-              className="cursor-pointer select-none hover:bg-muted/80"
-              onClick={() => handleSort("xp")}
-            >
-              <div className="flex items-center">
-                XP
-                {getSortIcon("xp")}
-              </div>
-            </TableHead>
-          </TableRow>
-        </TableHeader>
+        {showHeader && (
+          <thead className="sticky top-0 z-10 bg-white shadow-sm [&_tr]:border-b">
+            <tr className="border-b transition-colors hover:bg-muted/50">
+              <th
+                className="h-10 cursor-pointer select-none whitespace-nowrap px-2 text-left align-middle font-medium text-foreground hover:bg-muted/80"
+                onClick={() => handleSort("name")}
+                style={{ width: COLUMN_WIDTHS.name }}
+              >
+                <div className="flex items-center">
+                  Giocatore
+                  {renderSortIcon("name")}
+                </div>
+              </th>
+              <th
+                className="h-10 cursor-pointer select-none whitespace-nowrap px-2 text-left align-middle font-medium text-foreground hover:bg-muted/80"
+                onClick={() => handleSort("team")}
+                style={{ width: COLUMN_WIDTHS.team }}
+              >
+                <div className="flex items-center">
+                  Squadra
+                  {renderSortIcon("team")}
+                </div>
+              </th>
+              <th
+                className="h-10 cursor-pointer select-none whitespace-nowrap px-2 text-left align-middle font-medium text-foreground hover:bg-muted/80"
+                onClick={() => handleSort("league")}
+                style={{ width: COLUMN_WIDTHS.league }}
+              >
+                <div className="flex items-center">
+                  Lega
+                  {renderSortIcon("league")}
+                </div>
+              </th>
+              <th
+                className="h-10 cursor-pointer select-none whitespace-nowrap px-2 text-left align-middle font-medium text-foreground hover:bg-muted/80"
+                onClick={() => handleSort("l5")}
+                style={{ width: COLUMN_WIDTHS.l5 }}
+              >
+                <div className="flex items-center">
+                  L5
+                  {renderSortIcon("l5")}
+                </div>
+              </th>
+              <th
+                className="h-10 cursor-pointer select-none whitespace-nowrap px-2 text-left align-middle font-medium text-foreground hover:bg-muted/80"
+                onClick={() => handleSort("l15")}
+                style={{ width: COLUMN_WIDTHS.l15 }}
+              >
+                <div className="flex items-center">
+                  L15
+                  {renderSortIcon("l15")}
+                </div>
+              </th>
+              <th
+                className="h-10 cursor-pointer select-none whitespace-nowrap px-2 text-left align-middle font-medium text-foreground hover:bg-muted/80"
+                onClick={() => handleSort("l40")}
+                style={{ width: COLUMN_WIDTHS.l40 }}
+              >
+                <div className="flex items-center">
+                  L40
+                  {renderSortIcon("l40")}
+                </div>
+              </th>
+              <th
+                className="h-10 cursor-pointer select-none whitespace-nowrap px-2 text-left align-middle font-medium text-foreground hover:bg-muted/80"
+                onClick={() => handleSort("xp")}
+                style={{ width: COLUMN_WIDTHS.xp }}
+              >
+                <div className="flex items-center">
+                  XP
+                  {renderSortIcon("xp")}
+                </div>
+              </th>
+            </tr>
+          </thead>
+        )}
         <TableBody>
           {sortedCards.map((card) => (
             <TableRow
@@ -255,7 +294,7 @@ export function CardsList({
                 }
               }}
             >
-              <TableCell>
+              <TableCell style={{ width: COLUMN_WIDTHS.name }}>
                 <div className="flex items-center gap-3">
                   {card.pictureUrl && (
                     <CardThumbnail
@@ -276,27 +315,34 @@ export function CardsList({
                   </div>
                 </div>
               </TableCell>
-              <TableCell className="max-w-[300px] truncate">
+              <TableCell
+                className="truncate"
+                style={{ width: COLUMN_WIDTHS.team }}
+              >
                 {getTeamName(card)}
               </TableCell>
-              <TableCell>{getLeagueName(card)}</TableCell>
-              <TableCell>
+              <TableCell style={{ width: COLUMN_WIDTHS.league }}>
+                {getLeagueName(card)}
+              </TableCell>
+              <TableCell style={{ width: COLUMN_WIDTHS.l5 }}>
                 <div className="font-medium">
                   {card.l5Average?.toFixed(1) ?? "-"}
                 </div>
               </TableCell>
-              <TableCell>
+              <TableCell style={{ width: COLUMN_WIDTHS.l15 }}>
                 <div className="font-medium">
                   {card.l15Average?.toFixed(1) ?? "-"}
                 </div>
               </TableCell>
-              <TableCell>
+              <TableCell style={{ width: COLUMN_WIDTHS.l40 }}>
                 <div className="font-medium">
                   {card.l40Average?.toFixed(1) ?? "-"}
                 </div>
               </TableCell>
-              <TableCell>
-                <div className="font-medium">{getXP(card) || "-"}</div>
+              <TableCell style={{ width: COLUMN_WIDTHS.xp }}>
+                <div className="pr-3 text-right font-medium">
+                  {getXP(card) || "-"} %
+                </div>
               </TableCell>
             </TableRow>
           ))}

@@ -4,7 +4,13 @@ import { Check, Search } from "lucide-react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { SorareCard } from "@/components/cards/card";
-import { CardsList } from "@/components/cards/cards-list";
+import {
+  CardsList,
+  COLUMN_WIDTHS,
+  getSortIcon,
+  type SortDirection,
+  type SortKey,
+} from "@/components/cards/cards-list";
 import { type ViewMode, ViewToggle } from "@/components/cards/view-toggle";
 import { LoadingSpinner } from "@/components/loading-spinner";
 import { SiteNav } from "@/components/site-nav";
@@ -191,9 +197,17 @@ export function LineupBuilder() {
   const [formationName, setFormationName] = useState("");
   const [editingId, setEditingId] = useState<number | null>(null);
   const [viewMode, setViewMode] = useState<ViewMode>("grid");
+  const [tableSortKey, setTableSortKey] = useState<SortKey>("name");
+  const [tableSortDirection, setTableSortDirection] =
+    useState<SortDirection>("asc");
   const [toasts, setToasts] = useState<
     Array<{ id: string; message: string; type?: "success" | "error" | "info" }>
   >([]);
+
+  const handleTableSort = (key: SortKey, direction: SortDirection) => {
+    setTableSortKey(key);
+    setTableSortDirection(direction);
+  };
 
   useCacheCleanup();
 
@@ -611,149 +625,310 @@ export function LineupBuilder() {
         </div>
 
         {/* Sezione destra - Collezione carte */}
-        <div className="flex max-h-[calc(100vh-6rem)] flex-1 flex-col overflow-y-auto">
-          {/* Header selezione */}
-          <div className="mb-4 flex items-center justify-between">
-            <h2 className="font-bold text-slate-800 text-xl">
-              Seleziona{" "}
-              {activeSlot ? (
-                <span className="text-violet-600">{activeSlot}</span>
-              ) : (
-                "Giocatore"
-              )}
-            </h2>
-            <ViewToggle onViewModeChange={setViewMode} viewMode={viewMode} />
-          </div>
+        <div className="flex max-h-[calc(100vh-6rem)] flex-1 flex-col">
+          {/* Header e filtri sticky */}
+          <div className="sticky top-0 z-20 bg-white pb-4">
+            {/* Header selezione */}
+            <div className="mb-4 flex items-center justify-between">
+              <h2 className="font-bold text-slate-800 text-xl">
+                Seleziona{" "}
+                {activeSlot ? (
+                  <span className="text-violet-600">{activeSlot}</span>
+                ) : (
+                  "Giocatore"
+                )}
+              </h2>
+              <ViewToggle onViewModeChange={setViewMode} viewMode={viewMode} />
+            </div>
 
-          {/* Barra di ricerca e filtri */}
-          <div className="mb-4 flex flex-wrap gap-3">
-            {/* Lega */}
-            <div className="flex items-center gap-2">
-              <label className="font-medium text-sm" htmlFor="league-filter">
-                Lega:
-              </label>
-              <select
-                className="flex h-9 rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-                id="league-filter"
-                onChange={(e) => {
-                  setLeagueFilter(e.target.value);
-                  // Reset formation when league changes
-                  setFormation(INITIAL_FORMATION);
-                  setActiveSlot(null);
-                }}
-                value={leagueFilter}
-              >
-                <option value="">Seleziona lega</option>
-                {leagues.map((league) => (
-                  <option key={league.value} value={league.value}>
-                    {league.label}
-                  </option>
-                ))}
-              </select>
-            </div>
-            {/* Rarità */}
-            <div className="flex items-center gap-2">
-              <label className="font-medium text-sm" htmlFor="rarity-filter">
-                Rarità:
-              </label>
-              <select
-                className="flex h-9 rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-                id="rarity-filter"
-                onChange={(e) =>
-                  setRarityFilter(e.target.value as RarityFilter)
-                }
-                value={rarityFilter}
-              >
-                <option value="all">Tutte</option>
-                <option value="limited">Limited</option>
-                <option value="rare">Rare</option>
-              </select>
-            </div>
-            {/* Ordina per */}
-            <div className="flex items-center gap-2">
-              <label className="font-medium text-sm" htmlFor="sort-by">
-                Ordina:
-              </label>
-              <select
-                className="flex h-9 rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-                id="sort-by"
-                onChange={(e) => setSortBy(e.target.value as SortOption)}
-                value={sortBy}
-              >
-                <option value="name">Nome</option>
-                <option value="team">Squadra</option>
-                <option value="l5">Media L5</option>
-                <option value="l15">Media L15</option>
-                <option value="l40">Media L40</option>
-              </select>
-            </div>
-            {/* In-Season Filter */}
-            <div className="flex items-center gap-2">
-              <Checkbox
-                checked={inSeasonOnly}
-                id="in-season-filter"
-                onCheckedChange={(checked) => setInSeasonOnly(checked === true)}
-              />
-              <label
-                className="cursor-pointer font-medium text-sm"
-                htmlFor="in-season-filter"
-              >
-                In-Season
-              </label>
-            </div>
-            {/* Nome */}
-            <div className="relative min-w-[200px] flex-1">
-              <Search className="absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-slate-400" />
-              <Input
-                className="h-11 rounded-xl border-slate-200 bg-slate-50 pl-10 text-slate-700 placeholder:text-slate-400"
-                onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="Cerca giocatore..."
-                value={searchQuery}
-              />
-            </div>
-          </div>
-
-          {/* Griglia o Tabella carte */}
-          {viewMode === "grid" ? (
-            <>
-              <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-3 xl:grid-cols-4">
-                {filteredCards.map((card) => (
-                  <button
-                    aria-label={`Seleziona ${card.name}`}
-                    className={cn(
-                      "text-left transition-all",
-                      activeSlot
-                        ? "cursor-pointer hover:scale-[1.02] hover:shadow-lg"
-                        : "cursor-not-allowed opacity-50"
-                    )}
-                    disabled={!activeSlot}
-                    key={card.slug}
-                    onClick={() => handleCardSelect(card)}
-                    type="button"
-                  >
-                    <SorareCard
-                      card={card}
-                      showAverages
-                      showPositions={false}
-                    />
-                  </button>
-                ))}
+            {/* Barra di ricerca e filtri */}
+            <div className="mb-4 flex flex-wrap gap-3">
+              {/* Lega */}
+              <div className="flex items-center gap-2">
+                <label className="font-medium text-sm" htmlFor="league-filter">
+                  Lega:
+                </label>
+                <select
+                  className="flex h-9 rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                  id="league-filter"
+                  onChange={(e) => {
+                    setLeagueFilter(e.target.value);
+                    // Reset formation when league changes
+                    setFormation(INITIAL_FORMATION);
+                    setActiveSlot(null);
+                  }}
+                  value={leagueFilter}
+                >
+                  <option value="">Seleziona lega</option>
+                  {leagues.map((league) => (
+                    <option key={league.value} value={league.value}>
+                      {league.label}
+                    </option>
+                  ))}
+                </select>
               </div>
+              {/* Rarità */}
+              <div className="flex items-center gap-2">
+                <label className="font-medium text-sm" htmlFor="rarity-filter">
+                  Rarità:
+                </label>
+                <select
+                  className="flex h-9 rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                  id="rarity-filter"
+                  onChange={(e) =>
+                    setRarityFilter(e.target.value as RarityFilter)
+                  }
+                  value={rarityFilter}
+                >
+                  <option value="all">Tutte</option>
+                  <option value="limited">Limited</option>
+                  <option value="rare">Rare</option>
+                </select>
+              </div>
+              {/* Ordina per */}
+              <div className="flex items-center gap-2">
+                <label className="font-medium text-sm" htmlFor="sort-by">
+                  Ordina:
+                </label>
+                <select
+                  className="flex h-9 rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                  id="sort-by"
+                  onChange={(e) => setSortBy(e.target.value as SortOption)}
+                  value={sortBy}
+                >
+                  <option value="name">Nome</option>
+                  <option value="team">Squadra</option>
+                  <option value="l5">Media L5</option>
+                  <option value="l15">Media L15</option>
+                  <option value="l40">Media L40</option>
+                </select>
+              </div>
+              {/* In-Season Filter */}
+              <div className="flex items-center gap-2">
+                <Checkbox
+                  checked={inSeasonOnly}
+                  id="in-season-filter"
+                  onCheckedChange={(checked) =>
+                    setInSeasonOnly(checked === true)
+                  }
+                />
+                <label
+                  className="cursor-pointer font-medium text-sm"
+                  htmlFor="in-season-filter"
+                >
+                  In-Season
+                </label>
+              </div>
+              {/* Nome */}
+              <div className="relative min-w-[200px] flex-1">
+                <Search className="absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-slate-400" />
+                <Input
+                  className="h-11 rounded-xl border-slate-200 bg-slate-50 pl-10 text-slate-700 placeholder:text-slate-400"
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  placeholder="Cerca giocatore..."
+                  value={searchQuery}
+                />
+              </div>
+            </div>
 
-              {filteredCards.length === 0 && (
-                <div className="py-12 text-center text-slate-500">
-                  {getEmptyMessage(leagueFilter, activeSlot)}
+            {/* Header tabella sticky - solo in vista lista */}
+            {viewMode === "list" && (
+              <div className="mt-2 rounded-t-md border border-b-0 bg-white">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="border-b">
+                      <th
+                        className="h-10 cursor-pointer select-none whitespace-nowrap px-2 text-left align-middle font-medium text-foreground hover:bg-muted/80"
+                        onClick={() =>
+                          handleTableSort(
+                            "name",
+                            tableSortKey === "name" &&
+                              tableSortDirection === "asc"
+                              ? "desc"
+                              : "asc"
+                          )
+                        }
+                        style={{ width: COLUMN_WIDTHS.name }}
+                      >
+                        <div className="flex items-center">
+                          Giocatore
+                          {getSortIcon(
+                            "name",
+                            tableSortKey,
+                            tableSortDirection
+                          )}
+                        </div>
+                      </th>
+                      <th
+                        className="h-10 cursor-pointer select-none whitespace-nowrap px-2 text-left align-middle font-medium text-foreground hover:bg-muted/80"
+                        onClick={() =>
+                          handleTableSort(
+                            "team",
+                            tableSortKey === "team" &&
+                              tableSortDirection === "asc"
+                              ? "desc"
+                              : "asc"
+                          )
+                        }
+                        style={{ width: COLUMN_WIDTHS.team }}
+                      >
+                        <div className="flex items-center">
+                          Squadra
+                          {getSortIcon(
+                            "team",
+                            tableSortKey,
+                            tableSortDirection
+                          )}
+                        </div>
+                      </th>
+                      <th
+                        className="h-10 cursor-pointer select-none whitespace-nowrap px-2 text-left align-middle font-medium text-foreground hover:bg-muted/80"
+                        onClick={() =>
+                          handleTableSort(
+                            "league",
+                            tableSortKey === "league" &&
+                              tableSortDirection === "asc"
+                              ? "desc"
+                              : "asc"
+                          )
+                        }
+                        style={{ width: COLUMN_WIDTHS.league }}
+                      >
+                        <div className="flex items-center">
+                          Lega
+                          {getSortIcon(
+                            "league",
+                            tableSortKey,
+                            tableSortDirection
+                          )}
+                        </div>
+                      </th>
+                      <th
+                        className="h-10 cursor-pointer select-none whitespace-nowrap px-2 text-left align-middle font-medium text-foreground hover:bg-muted/80"
+                        onClick={() =>
+                          handleTableSort(
+                            "l5",
+                            tableSortKey === "l5" &&
+                              tableSortDirection === "asc"
+                              ? "desc"
+                              : "asc"
+                          )
+                        }
+                        style={{ width: COLUMN_WIDTHS.l5 }}
+                      >
+                        <div className="flex items-center">
+                          L5
+                          {getSortIcon("l5", tableSortKey, tableSortDirection)}
+                        </div>
+                      </th>
+                      <th
+                        className="h-10 cursor-pointer select-none whitespace-nowrap px-2 text-left align-middle font-medium text-foreground hover:bg-muted/80"
+                        onClick={() =>
+                          handleTableSort(
+                            "l15",
+                            tableSortKey === "l15" &&
+                              tableSortDirection === "asc"
+                              ? "desc"
+                              : "asc"
+                          )
+                        }
+                        style={{ width: COLUMN_WIDTHS.l15 }}
+                      >
+                        <div className="flex items-center">
+                          L15
+                          {getSortIcon("l15", tableSortKey, tableSortDirection)}
+                        </div>
+                      </th>
+                      <th
+                        className="h-10 cursor-pointer select-none whitespace-nowrap px-2 text-left align-middle font-medium text-foreground hover:bg-muted/80"
+                        onClick={() =>
+                          handleTableSort(
+                            "l40",
+                            tableSortKey === "l40" &&
+                              tableSortDirection === "asc"
+                              ? "desc"
+                              : "asc"
+                          )
+                        }
+                        style={{ width: COLUMN_WIDTHS.l40 }}
+                      >
+                        <div className="flex items-center">
+                          L40
+                          {getSortIcon("l40", tableSortKey, tableSortDirection)}
+                        </div>
+                      </th>
+                      <th
+                        className="h-10 cursor-pointer select-none whitespace-nowrap px-2 text-left align-middle font-medium text-foreground hover:bg-muted/80"
+                        onClick={() =>
+                          handleTableSort(
+                            "xp",
+                            tableSortKey === "xp" &&
+                              tableSortDirection === "asc"
+                              ? "desc"
+                              : "asc"
+                          )
+                        }
+                        style={{ width: COLUMN_WIDTHS.xp }}
+                      >
+                        <div className="flex items-center">
+                          XP
+                          {getSortIcon("xp", tableSortKey, tableSortDirection)}
+                        </div>
+                      </th>
+                    </tr>
+                  </thead>
+                </table>
+              </div>
+            )}
+          </div>
+
+          {/* Griglia o Tabella carte - scrollabile */}
+          <div className="flex-1 overflow-y-auto">
+            {viewMode === "grid" ? (
+              <>
+                <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-3 xl:grid-cols-4">
+                  {filteredCards.map((card) => (
+                    <button
+                      aria-label={`Seleziona ${card.name}`}
+                      className={cn(
+                        "text-left transition-all",
+                        activeSlot
+                          ? "cursor-pointer hover:scale-[1.02] hover:shadow-lg"
+                          : "cursor-not-allowed opacity-50"
+                      )}
+                      disabled={!activeSlot}
+                      key={card.slug}
+                      onClick={() => handleCardSelect(card)}
+                      type="button"
+                    >
+                      <SorareCard
+                        card={card}
+                        showAverages
+                        showPositions={false}
+                      />
+                    </button>
+                  ))}
                 </div>
-              )}
-            </>
-          ) : (
-            <CardsList
-              cards={filteredCards}
-              disabled={!activeSlot}
-              emptyMessage={getEmptyMessage(leagueFilter, activeSlot)}
-              onCardClick={handleCardSelect}
-            />
-          )}
+
+                {filteredCards.length === 0 && (
+                  <div className="py-12 text-center text-slate-500">
+                    {getEmptyMessage(leagueFilter, activeSlot)}
+                  </div>
+                )}
+              </>
+            ) : (
+              <CardsList
+                cards={filteredCards}
+                disabled={!activeSlot}
+                emptyMessage={getEmptyMessage(leagueFilter, activeSlot)}
+                onCardClick={handleCardSelect}
+                onSort={handleTableSort}
+                showHeader={false}
+                sortDirection={tableSortDirection}
+                sortKey={tableSortKey}
+              />
+            )}
+          </div>
         </div>
       </div>
     </div>
