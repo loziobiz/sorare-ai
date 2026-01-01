@@ -46,6 +46,8 @@ export interface CardData {
     xp?: number;
     season?: number;
   };
+  sealed?: boolean;
+  sealedAt?: string | null;
 }
 
 export interface CardsResponse {

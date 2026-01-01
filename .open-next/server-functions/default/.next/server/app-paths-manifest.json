@@ -4,6 +4,6 @@
   "/favicon.ico/route": "app/favicon.ico/route.js",
   "/page": "app/page.js",
   "/cards/page": "app/cards/page.js",
-  "/lineup/page": "app/lineup/page.js",
-  "/saved-lineups/page": "app/saved-lineups/page.js"
+  "/saved-lineups/page": "app/saved-lineups/page.js",
+  "/lineup/page": "app/lineup/page.js"
 }

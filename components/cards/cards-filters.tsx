@@ -6,6 +6,7 @@ import {
   type LeagueOption,
   type PositionFilter,
   type RarityFilter,
+  type SealedFilter,
   type SortOption,
 } from "@/lib/cards-utils";
 
@@ -15,12 +16,14 @@ interface CardsFiltersProps {
   league: string;
   sortBy: SortOption;
   inSeasonOnly: boolean;
+  sealed: SealedFilter;
   leagues: LeagueOption[];
   onRarityChange: (rarity: RarityFilter) => void;
   onPositionChange: (position: PositionFilter) => void;
   onLeagueChange: (league: string) => void;
   onSortChange: (sortBy: SortOption) => void;
   onInSeasonChange: (inSeasonOnly: boolean) => void;
+  onSealedChange: (sealed: SealedFilter) => void;
 }
 
 const SELECT_CLASS =
@@ -32,12 +35,14 @@ export function CardsFilters({
   league,
   sortBy,
   inSeasonOnly,
+  sealed,
   leagues,
   onRarityChange,
   onPositionChange,
   onLeagueChange,
   onSortChange,
   onInSeasonChange,
+  onSealedChange,
 }: CardsFiltersProps) {
   return (
     <div className="flex flex-wrap items-center gap-4">
@@ -49,6 +54,7 @@ export function CardsFilters({
         value={league}
       />
       <SortSelect onChange={onSortChange} value={sortBy} />
+      <SealedSelect onChange={onSealedChange} value={sealed} />
       <InSeasonCheckbox checked={inSeasonOnly} onChange={onInSeasonChange} />
     </div>
   );
@@ -181,6 +187,31 @@ function InSeasonCheckbox({ checked, onChange }: InSeasonCheckboxProps) {
       >
         In-Season
       </label>
+    </div>
+  );
+}
+
+interface SealedSelectProps {
+  value: SealedFilter;
+  onChange: (value: SealedFilter) => void;
+}
+
+function SealedSelect({ value, onChange }: SealedSelectProps) {
+  return (
+    <div className="flex items-center gap-2">
+      <label className="font-medium text-sm" htmlFor="sealed-filter">
+        Stato:
+      </label>
+      <select
+        className={SELECT_CLASS}
+        id="sealed-filter"
+        onChange={(e) => onChange(e.target.value as SealedFilter)}
+        value={value}
+      >
+        <option value="unsealed">Libere</option>
+        <option value="sealed">Cassaforte</option>
+        <option value="all">Tutte</option>
+      </select>
     </div>
   );
 }

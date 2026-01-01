@@ -29,6 +29,7 @@ export function CardsDashboard() {
     setLeague,
     setSortBy,
     setInSeasonOnly,
+    setSealed,
     leagues,
     filteredCards,
   } = useCardFilters(cards);
@@ -70,9 +71,11 @@ export function CardsDashboard() {
         onLeagueChange={setLeague}
         onPositionChange={setPosition}
         onRarityChange={setRarity}
+        onSealedChange={setSealed}
         onSortChange={setSortBy}
         position={filters.position}
         rarity={filters.rarity}
+        sealed={filters.sealed}
         sortBy={filters.sortBy}
       />
 

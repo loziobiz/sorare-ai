@@ -79,7 +79,12 @@ function buildLeagueMap(cards: CardData[]): Map<string, string> {
   for (const card of cards) {
     for (const competition of card.anyPlayer?.activeClub?.activeCompetitions ??
       []) {
-      if (competition.format === "DOMESTIC_LEAGUE" && competition.country) {
+      if (competition.name === "NBA") {
+        leagueMap.set("NBA", "NBA");
+      } else if (
+        competition.format === "DOMESTIC_LEAGUE" &&
+        competition.country
+      ) {
         const uniqueKey = `${competition.name}|${competition.country.code}`;
         if (isLeagueAllowed(uniqueKey)) {
           leagueMap.set(uniqueKey, getLeagueDisplayName(uniqueKey));
@@ -206,6 +211,9 @@ export function LineupBuilder() {
   // Carte filtrate per la selezione
   const filteredCards = useMemo(() => {
     let filtered = cards.filter((card) => !usedCardSlugs.has(card.slug));
+
+    // Filtra le carte in cassaforte (mostra solo carte libere)
+    filtered = filtered.filter((card) => card.sealed !== true);
 
     // Filtra per lega se selezionata
     if (leagueFilter) {
@@ -440,10 +448,6 @@ export function LineupBuilder() {
       setError("Inserisci un nome per la formazione");
       return;
     }
-    if (!leagueFilter) {
-      setError("Seleziona una lega");
-      return;
-    }
 
     try {
       const formationCards = formation
@@ -593,7 +597,7 @@ export function LineupBuilder() {
           <Button
             className="mt-4 h-14 gap-2 bg-violet-600 font-semibold text-lg hover:bg-violet-700"
             disabled={
-              !(leagueFilter && formationName.trim()) ||
+              !formationName.trim() ||
               formation.filter((s) => s.card).length < 5
             }
             onClick={handleConfirmFormation}

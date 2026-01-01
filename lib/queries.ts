@@ -47,6 +47,8 @@ export const GET_CARDS_QUERY = `
             xp
             season
           }
+          sealed
+          sealedAt
         }
         pageInfo {
           hasNextPage

@@ -8,6 +8,7 @@ import {
   type LeagueOption,
   type PositionFilter,
   type RarityFilter,
+  type SealedFilter,
   type SortOption,
 } from "@/lib/cards-utils";
 import type { CardData } from "@/lib/sorare-api";
@@ -19,6 +20,7 @@ interface UseCardFiltersReturn {
   setLeague: (league: string) => void;
   setSortBy: (sortBy: SortOption) => void;
   setInSeasonOnly: (inSeasonOnly: boolean) => void;
+  setSealed: (sealed: SealedFilter) => void;
   leagues: LeagueOption[];
   filteredCards: CardData[];
 }
@@ -29,6 +31,7 @@ export function useCardFilters(cards: CardData[]): UseCardFiltersReturn {
   const [league, setLeague] = useState<string>("all");
   const [sortBy, setSortBy] = useState<SortOption>("name");
   const [inSeasonOnly, setInSeasonOnly] = useState(false);
+  const [sealed, setSealed] = useState<SealedFilter>("unsealed");
 
   const filters: CardFilters = useMemo(
     () => ({
@@ -37,8 +40,9 @@ export function useCardFilters(cards: CardData[]): UseCardFiltersReturn {
       league,
       sortBy,
       inSeasonOnly,
+      sealed,
     }),
-    [rarity, position, league, sortBy, inSeasonOnly]
+    [rarity, position, league, sortBy, inSeasonOnly, sealed]
   );
 
   const leagues = useMemo(() => extractLeagues(cards), [cards]);
@@ -55,6 +59,7 @@ export function useCardFilters(cards: CardData[]): UseCardFiltersReturn {
     setLeague,
     setSortBy,
     setInSeasonOnly,
+    setSealed,
     leagues,
     filteredCards,
   };

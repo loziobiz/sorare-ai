@@ -11,6 +11,7 @@ export type PositionFilter =
   | "Defender"
   | "Midfielder"
   | "Forward";
+export type SealedFilter = "unsealed" | "sealed" | "all";
 export type SortOption = "name" | "team" | "l5" | "l10" | "l15" | "l40";
 
 export interface LeagueOption {
@@ -138,6 +139,16 @@ function filterByInSeason(
 }
 
 /**
+ * Filter cards by sealed status
+ */
+function filterBySealed(cards: CardData[], sealed: SealedFilter): CardData[] {
+  if (sealed === "all") {
+    return cards;
+  }
+  return cards.filter((card) => card.sealed === (sealed === "sealed"));
+}
+
+/**
  * Sort cards by the specified option
  */
 function sortCards(cards: CardData[], sortBy: SortOption): CardData[] {
@@ -169,6 +180,7 @@ export interface CardFilters {
   league: string;
   sortBy: SortOption;
   inSeasonOnly: boolean;
+  sealed: SealedFilter;
 }
 
 /**
@@ -182,5 +194,6 @@ export function filterAndSortCards(
   result = filterByPosition(result, filters.position);
   result = filterByLeague(result, filters.league);
   result = filterByInSeason(result, filters.inSeasonOnly);
+  result = filterBySealed(result, filters.sealed);
   return sortCards(result, filters.sortBy);
 }

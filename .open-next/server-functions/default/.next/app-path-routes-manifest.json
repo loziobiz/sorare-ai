@@ -4,6 +4,6 @@
   "/favicon.ico/route": "/favicon.ico",
   "/page": "/",
   "/cards/page": "/cards",
-  "/lineup/page": "/lineup",
-  "/saved-lineups/page": "/saved-lineups"
+  "/saved-lineups/page": "/saved-lineups",
+  "/lineup/page": "/lineup"
 }
