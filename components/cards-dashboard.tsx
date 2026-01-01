@@ -3,7 +3,13 @@
 import { useState } from "react";
 import { CardsGrid } from "@/components/cards/card-grid";
 import { CardsFilters } from "@/components/cards/cards-filters";
-import { CardsList } from "@/components/cards/cards-list";
+import {
+  CardsList,
+  COLUMN_WIDTHS_STANDALONE,
+  getSortIcon,
+  type SortDirection,
+  type SortKey,
+} from "@/components/cards/cards-list";
 import { DashboardHeader } from "@/components/cards/dashboard-header";
 import { type ViewMode, ViewToggle } from "@/components/cards/view-toggle";
 import { LoadingSpinner } from "@/components/loading-spinner";
@@ -14,6 +20,9 @@ import { useCards } from "@/hooks/use-cards";
 
 export function CardsDashboard() {
   const [viewMode, setViewMode] = useState<ViewMode>("grid");
+  const [tableSortKey, setTableSortKey] = useState<SortKey>("name");
+  const [tableSortDirection, setTableSortDirection] =
+    useState<SortDirection>("asc");
   const {
     cards,
     userSlug,
@@ -39,6 +48,11 @@ export function CardsDashboard() {
     filteredCards,
   } = useCardFilters(cards);
 
+  const handleTableSort = (key: SortKey, direction: SortDirection) => {
+    setTableSortKey(key);
+    setTableSortDirection(direction);
+  };
+
   if (isLoading) {
     return (
       <div className="space-y-6">
@@ -56,50 +70,190 @@ export function CardsDashboard() {
   }
 
   return (
-    <div className="space-y-6">
-      <SiteNav />
+    <div className="flex h-[calc(100vh-2rem)] flex-col">
+      {/* Header e filtri sticky */}
+      <div className="sticky top-0 z-20 bg-white pb-2">
+        <SiteNav />
 
-      <DashboardHeader
-        isLoading={isLoading}
-        isRefreshing={isRefreshing}
-        lastUpdate={lastUpdate}
-        onClearCache={clearCache}
-        onRefresh={refresh}
-        userSlug={userSlug}
-      />
+        <div className="mt-6">
+          <DashboardHeader
+            isLoading={isLoading}
+            isRefreshing={isRefreshing}
+            lastUpdate={lastUpdate}
+            onClearCache={clearCache}
+            onRefresh={refresh}
+            userSlug={userSlug}
+          />
+        </div>
 
-      <CardsFilters
-        inSeasonOnly={filters.inSeasonOnly}
-        league={filters.league}
-        leagues={leagues}
-        onInSeasonChange={setInSeasonOnly}
-        onLeagueChange={setLeague}
-        onPositionChange={setPosition}
-        onRarityChange={setRarity}
-        onSealedChange={setSealed}
-        onSearchQueryChange={setSearchQuery}
-        onSortChange={setSortBy}
-        position={filters.position}
-        rarity={filters.rarity}
-        sealed={filters.sealed}
-        searchQuery={filters.searchQuery}
-        sortBy={filters.sortBy}
-      />
+        <div className="mt-6">
+          <CardsFilters
+            inSeasonOnly={filters.inSeasonOnly}
+            league={filters.league}
+            leagues={leagues}
+            onInSeasonChange={setInSeasonOnly}
+            onLeagueChange={setLeague}
+            onPositionChange={setPosition}
+            onRarityChange={setRarity}
+            onSealedChange={setSealed}
+            onSearchQueryChange={setSearchQuery}
+            onSortChange={setSortBy}
+            position={filters.position}
+            rarity={filters.rarity}
+            sealed={filters.sealed}
+            searchQuery={filters.searchQuery}
+            sortBy={filters.sortBy}
+          />
+        </div>
 
-      {error && (
-        <Alert variant="destructive">
-          <AlertDescription>{error}</AlertDescription>
-        </Alert>
-      )}
+        {error && (
+          <Alert className="mt-4" variant="destructive">
+            <AlertDescription>{error}</AlertDescription>
+          </Alert>
+        )}
 
-      <div className="space-y-4">
-        <div className="flex items-center justify-between">
+        <div className="mt-6 flex items-center justify-between">
           <h2 className="font-bold text-2xl">
             Your Cards ({filteredCards.length})
           </h2>
           <ViewToggle onViewModeChange={setViewMode} viewMode={viewMode} />
         </div>
 
+        {/* Header tabella sticky - solo in vista lista */}
+        {viewMode === "list" && (
+          <div className="mt-4 rounded-t-md border border-b-0 bg-white">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b">
+                  <th
+                    className="h-10 cursor-pointer select-none whitespace-nowrap px-2 text-left align-middle font-medium text-foreground hover:bg-muted/80"
+                    onClick={() =>
+                      handleTableSort(
+                        "name",
+                        tableSortKey === "name" && tableSortDirection === "asc"
+                          ? "desc"
+                          : "asc"
+                      )
+                    }
+                    style={{ width: COLUMN_WIDTHS_STANDALONE.name }}
+                  >
+                    <div className="flex items-center">
+                      Giocatore
+                      {getSortIcon("name", tableSortKey, tableSortDirection)}
+                    </div>
+                  </th>
+                  <th
+                    className="h-10 cursor-pointer select-none whitespace-nowrap px-2 text-left align-middle font-medium text-foreground hover:bg-muted/80"
+                    onClick={() =>
+                      handleTableSort(
+                        "team",
+                        tableSortKey === "team" && tableSortDirection === "asc"
+                          ? "desc"
+                          : "asc"
+                      )
+                    }
+                    style={{ width: COLUMN_WIDTHS_STANDALONE.team }}
+                  >
+                    <div className="flex items-center">
+                      Squadra
+                      {getSortIcon("team", tableSortKey, tableSortDirection)}
+                    </div>
+                  </th>
+                  <th
+                    className="h-10 cursor-pointer select-none whitespace-nowrap px-2 text-left align-middle font-medium text-foreground hover:bg-muted/80"
+                    onClick={() =>
+                      handleTableSort(
+                        "league",
+                        tableSortKey === "league" &&
+                          tableSortDirection === "asc"
+                          ? "desc"
+                          : "asc"
+                      )
+                    }
+                    style={{ width: COLUMN_WIDTHS_STANDALONE.league }}
+                  >
+                    <div className="flex items-center">
+                      Lega
+                      {getSortIcon("league", tableSortKey, tableSortDirection)}
+                    </div>
+                  </th>
+                  <th
+                    className="h-10 cursor-pointer select-none whitespace-nowrap px-2 text-left align-middle font-medium text-foreground hover:bg-muted/80"
+                    onClick={() =>
+                      handleTableSort(
+                        "l5",
+                        tableSortKey === "l5" && tableSortDirection === "asc"
+                          ? "desc"
+                          : "asc"
+                      )
+                    }
+                    style={{ width: COLUMN_WIDTHS_STANDALONE.l5 }}
+                  >
+                    <div className="flex items-center">
+                      L5
+                      {getSortIcon("l5", tableSortKey, tableSortDirection)}
+                    </div>
+                  </th>
+                  <th
+                    className="h-10 cursor-pointer select-none whitespace-nowrap px-2 text-left align-middle font-medium text-foreground hover:bg-muted/80"
+                    onClick={() =>
+                      handleTableSort(
+                        "l15",
+                        tableSortKey === "l15" && tableSortDirection === "asc"
+                          ? "desc"
+                          : "asc"
+                      )
+                    }
+                    style={{ width: COLUMN_WIDTHS_STANDALONE.l15 }}
+                  >
+                    <div className="flex items-center">
+                      L15
+                      {getSortIcon("l15", tableSortKey, tableSortDirection)}
+                    </div>
+                  </th>
+                  <th
+                    className="h-10 cursor-pointer select-none whitespace-nowrap px-2 text-left align-middle font-medium text-foreground hover:bg-muted/80"
+                    onClick={() =>
+                      handleTableSort(
+                        "l40",
+                        tableSortKey === "l40" && tableSortDirection === "asc"
+                          ? "desc"
+                          : "asc"
+                      )
+                    }
+                    style={{ width: COLUMN_WIDTHS_STANDALONE.l40 }}
+                  >
+                    <div className="flex items-center">
+                      L40
+                      {getSortIcon("l40", tableSortKey, tableSortDirection)}
+                    </div>
+                  </th>
+                  <th
+                    className="h-10 cursor-pointer select-none whitespace-nowrap px-2 text-left align-middle font-medium text-foreground hover:bg-muted/80"
+                    onClick={() =>
+                      handleTableSort(
+                        "xp",
+                        tableSortKey === "xp" && tableSortDirection === "asc"
+                          ? "desc"
+                          : "asc"
+                      )
+                    }
+                    style={{ width: COLUMN_WIDTHS_STANDALONE.xp }}
+                  >
+                    <div className="flex items-center">
+                      XP
+                      {getSortIcon("xp", tableSortKey, tableSortDirection)}
+                    </div>
+                  </th>
+                </tr>
+              </thead>
+            </table>
+          </div>
+        )}
+      </div>
+
+      {/* Contenuto scrollabile */}
+      <div className="flex-1 overflow-y-auto">
         {viewMode === "grid" ? (
           <CardsGrid
             cards={filteredCards}
@@ -111,7 +265,12 @@ export function CardsDashboard() {
         ) : (
           <CardsList
             cards={filteredCards}
+            columnWidths={COLUMN_WIDTHS_STANDALONE}
             emptyMessage="Nessuna carta trovata con i filtri selezionati"
+            onSort={handleTableSort}
+            showHeader={false}
+            sortDirection={tableSortDirection}
+            sortKey={tableSortKey}
           />
         )}
       </div>

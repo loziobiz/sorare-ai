@@ -9,7 +9,7 @@ import type { CardData } from "@/lib/sorare-api";
 import { cn } from "@/lib/utils";
 import { CardThumbnail } from "./card-thumbnail";
 
-// Larghezze fisse delle colonne
+// Larghezze fisse delle colonne per lineup-builder
 export const COLUMN_WIDTHS = {
   name: 300,
   team: 300,
@@ -20,6 +20,26 @@ export const COLUMN_WIDTHS = {
   xp: 60,
 } as const;
 
+// Larghezze fisse delle colonne per cards-dashboard (standalone)
+export const COLUMN_WIDTHS_STANDALONE = {
+  name: 35,
+  team: 430,
+  league: 220,
+  l5: 60,
+  l15: 60,
+  l40: 60,
+  xp: 60,
+} as const;
+
+export interface ColumnWidths {
+  name: number;
+  team: number;
+  league: number;
+  l5: number;
+  l15: number;
+  l40: number;
+  xp: number;
+}
 export type SortKey = "name" | "team" | "league" | "l5" | "l15" | "l40" | "xp";
 export type SortDirection = "asc" | "desc";
 
@@ -33,6 +53,7 @@ export interface CardsListProps {
   sortKey?: SortKey;
   sortDirection?: SortDirection;
   onSort?: (key: SortKey, direction: SortDirection) => void;
+  columnWidths?: ColumnWidths;
 }
 
 // Regex per estrarre solo il nome del giocatore (rimuove anno e info carta)
@@ -121,6 +142,7 @@ export function CardsList({
   sortKey: externalSortKey,
   sortDirection: externalSortDirection,
   onSort,
+  columnWidths = COLUMN_WIDTHS,
 }: CardsListProps) {
   const [internalSortKey, setInternalSortKey] = useState<SortKey>("name");
   const [internalSortDirection, setInternalSortDirection] =
@@ -129,6 +151,9 @@ export function CardsList({
   // Usa props esterne se fornite, altrimenti stato interno
   const sortKey = externalSortKey ?? internalSortKey;
   const sortDirection = externalSortDirection ?? internalSortDirection;
+
+  // Usa le larghezze delle colonne passate come prop
+  const widths = columnWidths;
 
   const sortedCards = useMemo(() => {
     return [...cards].sort((a, b) => {
@@ -210,7 +235,7 @@ export function CardsList({
               <th
                 className="h-10 cursor-pointer select-none whitespace-nowrap px-2 text-left align-middle font-medium text-foreground hover:bg-muted/80"
                 onClick={() => handleSort("name")}
-                style={{ width: COLUMN_WIDTHS.name }}
+                style={{ width: widths.name }}
               >
                 <div className="flex items-center">
                   Giocatore
@@ -220,7 +245,7 @@ export function CardsList({
               <th
                 className="h-10 cursor-pointer select-none whitespace-nowrap px-2 text-left align-middle font-medium text-foreground hover:bg-muted/80"
                 onClick={() => handleSort("team")}
-                style={{ width: COLUMN_WIDTHS.team }}
+                style={{ width: widths.team }}
               >
                 <div className="flex items-center">
                   Squadra
@@ -230,7 +255,7 @@ export function CardsList({
               <th
                 className="h-10 cursor-pointer select-none whitespace-nowrap px-2 text-left align-middle font-medium text-foreground hover:bg-muted/80"
                 onClick={() => handleSort("league")}
-                style={{ width: COLUMN_WIDTHS.league }}
+                style={{ width: widths.league }}
               >
                 <div className="flex items-center">
                   Lega
@@ -240,7 +265,7 @@ export function CardsList({
               <th
                 className="h-10 cursor-pointer select-none whitespace-nowrap px-2 text-left align-middle font-medium text-foreground hover:bg-muted/80"
                 onClick={() => handleSort("l5")}
-                style={{ width: COLUMN_WIDTHS.l5 }}
+                style={{ width: widths.l5 }}
               >
                 <div className="flex items-center">
                   L5
@@ -250,7 +275,7 @@ export function CardsList({
               <th
                 className="h-10 cursor-pointer select-none whitespace-nowrap px-2 text-left align-middle font-medium text-foreground hover:bg-muted/80"
                 onClick={() => handleSort("l15")}
-                style={{ width: COLUMN_WIDTHS.l15 }}
+                style={{ width: widths.l15 }}
               >
                 <div className="flex items-center">
                   L15
@@ -260,7 +285,7 @@ export function CardsList({
               <th
                 className="h-10 cursor-pointer select-none whitespace-nowrap px-2 text-left align-middle font-medium text-foreground hover:bg-muted/80"
                 onClick={() => handleSort("l40")}
-                style={{ width: COLUMN_WIDTHS.l40 }}
+                style={{ width: widths.l40 }}
               >
                 <div className="flex items-center">
                   L40
@@ -270,7 +295,7 @@ export function CardsList({
               <th
                 className="h-10 cursor-pointer select-none whitespace-nowrap px-2 text-left align-middle font-medium text-foreground hover:bg-muted/80"
                 onClick={() => handleSort("xp")}
-                style={{ width: COLUMN_WIDTHS.xp }}
+                style={{ width: widths.xp }}
               >
                 <div className="flex items-center">
                   XP
@@ -294,7 +319,7 @@ export function CardsList({
                 }
               }}
             >
-              <TableCell style={{ width: COLUMN_WIDTHS.name }}>
+              <TableCell style={{ width: widths.name }}>
                 <div className="flex items-center gap-3">
                   {card.pictureUrl && (
                     <CardThumbnail
@@ -315,31 +340,28 @@ export function CardsList({
                   </div>
                 </div>
               </TableCell>
-              <TableCell
-                className="truncate"
-                style={{ width: COLUMN_WIDTHS.team }}
-              >
+              <TableCell className="truncate" style={{ width: widths.team }}>
                 {getTeamName(card)}
               </TableCell>
-              <TableCell style={{ width: COLUMN_WIDTHS.league }}>
+              <TableCell style={{ width: widths.league }}>
                 {getLeagueName(card)}
               </TableCell>
-              <TableCell style={{ width: COLUMN_WIDTHS.l5 }}>
+              <TableCell style={{ width: widths.l5 }}>
                 <div className="font-medium">
                   {card.l5Average?.toFixed(1) ?? "-"}
                 </div>
               </TableCell>
-              <TableCell style={{ width: COLUMN_WIDTHS.l15 }}>
+              <TableCell style={{ width: widths.l15 }}>
                 <div className="font-medium">
                   {card.l15Average?.toFixed(1) ?? "-"}
                 </div>
               </TableCell>
-              <TableCell style={{ width: COLUMN_WIDTHS.l40 }}>
+              <TableCell style={{ width: widths.l40 }}>
                 <div className="font-medium">
                   {card.l40Average?.toFixed(1) ?? "-"}
                 </div>
               </TableCell>
-              <TableCell style={{ width: COLUMN_WIDTHS.xp }}>
+              <TableCell style={{ width: widths.xp }}>
                 <div className="pr-3 text-right font-medium">
                   {getXP(card) || "-"} %
                 </div>

@@ -627,7 +627,7 @@ export function LineupBuilder() {
         {/* Sezione destra - Collezione carte */}
         <div className="flex max-h-[calc(100vh-6rem)] flex-1 flex-col">
           {/* Header e filtri sticky */}
-          <div className="sticky top-0 z-20 bg-white pb-4">
+          <div className="sticky top-0 z-20 bg-white pb-2">
             {/* Header selezione */}
             <div className="mb-4 flex items-center justify-between">
               <h2 className="font-bold text-slate-800 text-xl">
