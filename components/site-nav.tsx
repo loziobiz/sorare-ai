@@ -20,7 +20,7 @@ export function SiteNav() {
   const pathname = usePathname();
 
   return (
-    <nav className="mb-6 flex items-center gap-2 border-slate-200 border-b pb-0">
+    <nav className="mb-4 flex items-center gap-2 border-slate-200 border-b pb-0">
       {navItems.map((item) => {
         const isActive = pathname === item.href;
         const Icon = item.icon;
