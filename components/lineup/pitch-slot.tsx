@@ -31,14 +31,14 @@ export function PitchSlot({ label, card, isActive, onClick }: PitchSlotProps) {
         {card.pictureUrl ? (
           <Image
             alt={card.name}
-            className="h-36 w-24 rounded-lg object-cover shadow-lg"
-            height={144}
+            className="h-50 w-32 rounded-lg object-cover shadow-lg"
+            height={176}
             src={card.pictureUrl}
             unoptimized
-            width={96}
+            width={128}
           />
         ) : (
-          <div className="flex h-36 w-24 items-center justify-center rounded-lg bg-slate-700 font-bold text-white text-xl shadow-lg">
+          <div className="flex h-44 w-32 items-center justify-center rounded-lg bg-slate-700 font-bold text-white text-xl shadow-lg">
             {card.name.charAt(0)}
           </div>
         )}
@@ -59,7 +59,7 @@ export function PitchSlot({ label, card, isActive, onClick }: PitchSlotProps) {
     >
       <div
         className={cn(
-          "flex h-36 w-24 flex-col items-center justify-center rounded-xl border-2 border-dashed transition-all",
+          "flex h-44 w-32 flex-col items-center justify-center rounded-xl border-2 border-dashed transition-all",
           isActive
             ? "border-violet-400 bg-violet-500/20"
             : "border-white/40 bg-white/10 hover:border-white/60 hover:bg-white/20"

@@ -27,18 +27,18 @@ export function CardThumbnail({ src, alt, size = 60 }: CardThumbnailProps) {
     <div className="relative shrink-0" style={{ width: size, height: size }}>
       <Image
         alt={alt}
-        src={src}
-        width={200}
-        height={280}
         className="absolute inset-0 rounded-full object-cover"
+        height={280}
+        loading="lazy"
+        onError={() => setImageError(true)}
+        src={src}
         style={{
           objectPosition: "50% 16.67%",
           width: size,
           height: size,
         }}
         unoptimized
-        loading="lazy"
-        onError={() => setImageError(true)}
+        width={200}
       />
     </div>
   );

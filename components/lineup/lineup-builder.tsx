@@ -4,6 +4,8 @@ import { Check, Search } from "lucide-react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { SorareCard } from "@/components/cards/card";
+import { CardsList } from "@/components/cards/cards-list";
+import { type ViewMode, ViewToggle } from "@/components/cards/view-toggle";
 import { LoadingSpinner } from "@/components/loading-spinner";
 import { SiteNav } from "@/components/site-nav";
 import { Alert, AlertDescription } from "@/components/ui/alert";
@@ -188,6 +190,7 @@ export function LineupBuilder() {
   const [inSeasonOnly, setInSeasonOnly] = useState(false);
   const [formationName, setFormationName] = useState("");
   const [editingId, setEditingId] = useState<number | null>(null);
+  const [viewMode, setViewMode] = useState<ViewMode>("grid");
   const [toasts, setToasts] = useState<
     Array<{ id: string; message: string; type?: "success" | "error" | "info" }>
   >([]);
@@ -548,7 +551,7 @@ export function LineupBuilder() {
           )}
 
           {/* Campo di calcio */}
-          <div className="relative flex aspect-[7/8] flex-col overflow-hidden rounded-xl bg-gradient-to-b from-emerald-600 to-emerald-700 shadow-lg">
+          <div className="relative flex aspect-[21/31] flex-col overflow-hidden rounded-xl bg-gradient-to-b from-emerald-600 to-emerald-700 shadow-lg">
             {/* Linee del campo */}
             <div className="absolute inset-5 rounded-lg border-2 border-white/30" />
             <div className="absolute top-1/2 right-5 left-5 h-0.5 -translate-y-1/2 bg-white/30" />
@@ -625,6 +628,7 @@ export function LineupBuilder() {
                 "Giocatore"
               )}
             </h2>
+            <ViewToggle onViewModeChange={setViewMode} viewMode={viewMode} />
           </div>
 
           {/* Barra di ricerca e filtri */}
@@ -715,31 +719,46 @@ export function LineupBuilder() {
             </div>
           </div>
 
-          {/* Griglia carte */}
-          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-3 xl:grid-cols-4">
-            {filteredCards.map((card) => (
-              <button
-                aria-label={`Seleziona ${card.name}`}
-                className={cn(
-                  "text-left transition-all",
-                  activeSlot
-                    ? "cursor-pointer hover:scale-[1.02] hover:shadow-lg"
-                    : "cursor-not-allowed opacity-50"
-                )}
-                disabled={!activeSlot}
-                key={card.slug}
-                onClick={() => handleCardSelect(card)}
-                type="button"
-              >
-                <SorareCard card={card} showAverages showPositions={false} />
-              </button>
-            ))}
-          </div>
+          {/* Griglia o Tabella carte */}
+          {viewMode === "grid" ? (
+            <>
+              <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-3 xl:grid-cols-4">
+                {filteredCards.map((card) => (
+                  <button
+                    aria-label={`Seleziona ${card.name}`}
+                    className={cn(
+                      "text-left transition-all",
+                      activeSlot
+                        ? "cursor-pointer hover:scale-[1.02] hover:shadow-lg"
+                        : "cursor-not-allowed opacity-50"
+                    )}
+                    disabled={!activeSlot}
+                    key={card.slug}
+                    onClick={() => handleCardSelect(card)}
+                    type="button"
+                  >
+                    <SorareCard
+                      card={card}
+                      showAverages
+                      showPositions={false}
+                    />
+                  </button>
+                ))}
+              </div>
 
-          {filteredCards.length === 0 && (
-            <div className="py-12 text-center text-slate-500">
-              {getEmptyMessage(leagueFilter, activeSlot)}
-            </div>
+              {filteredCards.length === 0 && (
+                <div className="py-12 text-center text-slate-500">
+                  {getEmptyMessage(leagueFilter, activeSlot)}
+                </div>
+              )}
+            </>
+          ) : (
+            <CardsList
+              cards={filteredCards}
+              disabled={!activeSlot}
+              emptyMessage={getEmptyMessage(leagueFilter, activeSlot)}
+              onCardClick={handleCardSelect}
+            />
           )}
         </div>
       </div>

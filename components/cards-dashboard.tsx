@@ -2,10 +2,10 @@
 
 import { useState } from "react";
 import { CardsGrid } from "@/components/cards/card-grid";
-import { CardsList } from "@/components/cards/cards-list";
 import { CardsFilters } from "@/components/cards/cards-filters";
+import { CardsList } from "@/components/cards/cards-list";
 import { DashboardHeader } from "@/components/cards/dashboard-header";
-import { ViewToggle, type ViewMode } from "@/components/cards/view-toggle";
+import { type ViewMode, ViewToggle } from "@/components/cards/view-toggle";
 import { LoadingSpinner } from "@/components/loading-spinner";
 import { SiteNav } from "@/components/site-nav";
 import { Alert, AlertDescription } from "@/components/ui/alert";
@@ -97,7 +97,7 @@ export function CardsDashboard() {
           <h2 className="font-bold text-2xl">
             Your Cards ({filteredCards.length})
           </h2>
-          <ViewToggle viewMode={viewMode} onViewModeChange={setViewMode} />
+          <ViewToggle onViewModeChange={setViewMode} viewMode={viewMode} />
         </div>
 
         {viewMode === "grid" ? (

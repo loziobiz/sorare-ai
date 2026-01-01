@@ -1,7 +1,7 @@
 "use client";
 
-import { Button } from "@/components/ui/button";
 import { Grid, List } from "lucide-react";
+import { Button } from "@/components/ui/button";
 
 export type ViewMode = "grid" | "list";
 
@@ -14,20 +14,20 @@ export function ViewToggle({ viewMode, onViewModeChange }: ViewToggleProps) {
   return (
     <div className="flex gap-2">
       <Button
-        variant={viewMode === "grid" ? "default" : "outline"}
-        size="icon-sm"
-        onClick={() => onViewModeChange("grid")}
         aria-label="Vista griglia"
+        onClick={() => onViewModeChange("grid")}
+        size="icon-sm"
         title="Vista griglia"
+        variant={viewMode === "grid" ? "default" : "outline"}
       >
         <Grid />
       </Button>
       <Button
-        variant={viewMode === "list" ? "default" : "outline"}
-        size="icon-sm"
-        onClick={() => onViewModeChange("list")}
         aria-label="Vista lista"
+        onClick={() => onViewModeChange("list")}
+        size="icon-sm"
         title="Vista lista"
+        variant={viewMode === "list" ? "default" : "outline"}
       >
         <List />
       </Button>
