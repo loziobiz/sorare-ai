@@ -1,9 +1,9 @@
 {
   "/_not-found/page": "/_not-found",
-  "/api/graphql/route": "/api/graphql",
   "/favicon.ico/route": "/favicon.ico",
-  "/lineup/page": "/lineup",
+  "/api/graphql/route": "/api/graphql",
   "/cards/page": "/cards",
-  "/saved-lineups/page": "/saved-lineups",
-  "/page": "/"
+  "/page": "/",
+  "/lineup/page": "/lineup",
+  "/saved-lineups/page": "/saved-lineups"
 }
