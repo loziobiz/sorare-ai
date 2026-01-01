@@ -48,6 +48,20 @@ export interface CardData {
   };
   sealed?: boolean;
   sealedAt?: string | null;
+  so5Scores?: Array<{
+    score: number;
+    projectedScore: number;
+    scoreStatus: string;
+    game?: {
+      date?: string | null;
+      homeTeam?: {
+        name?: string;
+      } | null;
+      awayTeam?: {
+        name?: string;
+      } | null;
+    } | null;
+  }>;
 }
 
 export interface CardsResponse {

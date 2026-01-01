@@ -11,9 +11,9 @@ import { CardThumbnail } from "./card-thumbnail";
 
 // Larghezze fisse delle colonne per lineup-builder
 export const COLUMN_WIDTHS = {
-  name: 300,
-  team: 300,
-  league: 190,
+  name: 250,
+  team: 270,
+  league: 170,
   l5: 60,
   l15: 60,
   l40: 60,
@@ -22,9 +22,9 @@ export const COLUMN_WIDTHS = {
 
 // Larghezze fisse delle colonne per cards-dashboard (standalone)
 export const COLUMN_WIDTHS_STANDALONE = {
-  name: 290,
-  team: 430,
-  league: 220,
+  name: 250,
+  team: 350,
+  league: 200,
   l5: 60,
   l15: 60,
   l40: 60,

@@ -49,6 +49,22 @@ export const GET_CARDS_QUERY = `
           }
           sealed
           sealedAt
+          ... on Card {
+            so5Scores(last: 10) {
+              score
+              projectedScore
+              scoreStatus
+              game {
+                date
+                homeTeam {
+                  name
+                }
+                awayTeam {
+                  name
+                }
+              }
+            }
+          }
         }
         pageInfo {
           hasNextPage
