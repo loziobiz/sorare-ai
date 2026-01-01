@@ -186,7 +186,7 @@ export function CardsList({
               </div>
             </TableHead>
             <TableHead
-              className="cursor-pointer select-none hover:bg-muted/80"
+              className="max-w-[300px] cursor-pointer select-none hover:bg-muted/80"
               onClick={() => handleSort("team")}
             >
               <div className="flex items-center">
@@ -276,7 +276,9 @@ export function CardsList({
                   </div>
                 </div>
               </TableCell>
-              <TableCell>{getTeamName(card)}</TableCell>
+              <TableCell className="max-w-[300px] truncate">
+                {getTeamName(card)}
+              </TableCell>
               <TableCell>{getLeagueName(card)}</TableCell>
               <TableCell>
                 <div className="font-medium">
