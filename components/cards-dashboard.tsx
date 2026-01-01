@@ -19,7 +19,7 @@ import { useCardFilters } from "@/hooks/use-card-filters";
 import { useCards } from "@/hooks/use-cards";
 
 export function CardsDashboard() {
-  const [viewMode, setViewMode] = useState<ViewMode>("grid");
+  const [viewMode, setViewMode] = useState<ViewMode>("list");
   const [tableSortKey, setTableSortKey] = useState<SortKey>("name");
   const [tableSortDirection, setTableSortDirection] =
     useState<SortDirection>("asc");

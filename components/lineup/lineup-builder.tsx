@@ -196,7 +196,7 @@ export function LineupBuilder() {
   const [inSeasonOnly, setInSeasonOnly] = useState(false);
   const [formationName, setFormationName] = useState("");
   const [editingId, setEditingId] = useState<number | null>(null);
-  const [viewMode, setViewMode] = useState<ViewMode>("grid");
+  const [viewMode, setViewMode] = useState<ViewMode>("list");
   const [tableSortKey, setTableSortKey] = useState<SortKey>("name");
   const [tableSortDirection, setTableSortDirection] =
     useState<SortDirection>("asc");
