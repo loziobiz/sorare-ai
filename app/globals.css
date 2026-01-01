@@ -122,4 +122,8 @@
   body {
     @apply bg-background text-foreground;
   }
+  .font-oswald-medium {
+    font-family: var(--font-oswald);
+    font-weight: 500;
+  }
 }

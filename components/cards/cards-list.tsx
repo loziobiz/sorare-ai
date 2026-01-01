@@ -329,7 +329,9 @@ export function CardsList({
                     />
                   )}
                   <div className="flex flex-col">
-                    <div className="font-medium">{getPlayerName(card)}</div>
+                    <div className="font-oswald-medium text-[14px] uppercase">
+                      {getPlayerName(card)}
+                    </div>
                     {card.anyPositions && card.anyPositions.length > 0 && (
                       <div className="text-muted-foreground text-xs">
                         {card.anyPositions
