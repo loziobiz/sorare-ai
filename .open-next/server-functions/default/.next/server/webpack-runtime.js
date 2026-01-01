@@ -6,12 +6,12 @@
        case 4: b(require("./chunks/4.js")); break;
        case 586: b(require("./chunks/586.js")); break;
        case 611: b(require("./chunks/611.js")); break;
+       case 666: b(require("./chunks/666.js")); break;
        case 692: b(require("./chunks/692.js")); break;
-       case 713: b(require("./chunks/713.js")); break;
        case 802: b(require("./chunks/802.js")); break;
+       case 805: b(require("./chunks/805.js")); break;
        case 807: b(require("./chunks/807.js")); break;
        case 862: b(require("./chunks/862.js")); break;
-       case 956: b(require("./chunks/956.js")); break;
        case 311: a[d] = 1; break;
        default: throw new Error(`Unknown chunk ${d}`);
     }

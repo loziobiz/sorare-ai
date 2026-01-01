@@ -13,6 +13,7 @@ import {
   AlertTitle,
 } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
+import { useCards } from "@/hooks/use-cards";
 import { ACTIVE_LEAGUES } from "@/lib/config";
 import type { SavedFormation } from "@/lib/db";
 import { db } from "@/lib/db";
@@ -24,7 +25,6 @@ interface CompactCardProps {
     pictureUrl?: string;
     l5Average?: number;
     l15Average?: number;
-    l40Average?: number;
     power?: string;
   };
 }
@@ -42,7 +42,7 @@ function CompactCard({ card }: CompactCardProps) {
           width={85}
         />
       )}
-      <div className="grid grid-cols-4 gap-1 text-center text-[10px]">
+      <div className="grid grid-cols-3 gap-1 text-center text-[10px]">
         <div>
           <div className="text-muted-foreground">L5</div>
           <div className="font-medium">{card.l5Average?.toFixed(1) ?? "-"}</div>
@@ -51,12 +51,6 @@ function CompactCard({ card }: CompactCardProps) {
           <div className="text-muted-foreground">L15</div>
           <div className="font-medium">
             {card.l15Average?.toFixed(1) ?? "-"}
-          </div>
-        </div>
-        <div>
-          <div className="text-muted-foreground">L40</div>
-          <div className="font-medium">
-            {card.l40Average?.toFixed(1) ?? "-"}
           </div>
         </div>
         <div>
@@ -76,9 +70,15 @@ interface FormationCardProps {
   formation: SavedFormation;
   onEdit: (formation: SavedFormation) => void;
   onDelete: (id: number) => void;
+  currentCardsMap: Map<string, Record<string, unknown>>;
 }
 
-function FormationCard({ formation, onEdit, onDelete }: FormationCardProps) {
+function FormationCard({
+  formation,
+  onEdit,
+  onDelete,
+  currentCardsMap,
+}: FormationCardProps) {
   // Define position order: POR → DIF → CEN → ATT → EXTRA (EX)
   const positionOrder: Record<string, number> = {
     POR: 0,
@@ -89,18 +89,29 @@ function FormationCard({ formation, onEdit, onDelete }: FormationCardProps) {
     EXTRA: 4, // Handle both EX and EXTRA
   };
 
-  // Sort cards based on their position in slots array
-  const sortedCards = [...formation.cards].sort((a, b) => {
-    const slotA = formation.slots.find((s) => s.cardSlug === a.slug);
-    const slotB = formation.slots.find((s) => s.cardSlug === b.slug);
+  // Sort cards based on their position in slots array and merge with fresh data
+  const sortedCards = [...formation.cards]
+    .sort((a, b) => {
+      const slotA = formation.slots.find((s) => s.cardSlug === a.slug);
+      const slotB = formation.slots.find((s) => s.cardSlug === b.slug);
 
-    if (!slotA || !slotB) return 0;
+      if (!(slotA && slotB)) {
+        return 0;
+      }
 
-    const orderA = positionOrder[slotA.position] ?? 999;
-    const orderB = positionOrder[slotB.position] ?? 999;
+      const orderA = positionOrder[slotA.position] ?? 999;
+      const orderB = positionOrder[slotB.position] ?? 999;
 
-    return orderA - orderB;
-  });
+      return orderA - orderB;
+    })
+    .map((card) => {
+      // Merge saved card with fresh data to get power and other new fields
+      const freshData = currentCardsMap.get(card.slug);
+      if (freshData) {
+        return { ...card, power: freshData.power as string | undefined };
+      }
+      return card;
+    });
 
   return (
     <div
@@ -146,9 +157,22 @@ function FormationCard({ formation, onEdit, onDelete }: FormationCardProps) {
 
 export function SavedLineups() {
   const router = useRouter();
+  const { cards } = useCards();
   const [isLoading, setIsLoading] = useState(true);
   const [formations, setFormations] = useState<SavedFormation[]>([]);
   const [deleteConfirm, setDeleteConfirm] = useState<number | null>(null);
+
+  // Create a map of current cards for quick lookup
+  const currentCardsMap = useMemo(
+    () =>
+      new Map(
+        cards.map((card) => [
+          card.slug,
+          { power: card.power } as Record<string, unknown>,
+        ])
+      ),
+    [cards]
+  );
 
   const loadFormations = useCallback(async () => {
     try {
@@ -246,6 +270,7 @@ export function SavedLineups() {
               <div className="grid gap-2 lg:grid-cols-3">
                 {items.map((formation) => (
                   <FormationCard
+                    currentCardsMap={currentCardsMap}
                     formation={formation}
                     key={formation.id}
                     onDelete={handleDeleteClick}

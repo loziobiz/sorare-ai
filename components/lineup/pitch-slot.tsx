@@ -38,7 +38,7 @@ export function PitchSlot({ label, card, isActive, onClick }: PitchSlotProps) {
             width={96}
           />
         ) : (
-          <div className="flex h-36 w-24 items-center justify-center rounded-lg bg-slate-700 font-bold text-xl text-white shadow-lg">
+          <div className="flex h-36 w-24 items-center justify-center rounded-lg bg-slate-700 font-bold text-white text-xl shadow-lg">
             {card.name.charAt(0)}
           </div>
         )}

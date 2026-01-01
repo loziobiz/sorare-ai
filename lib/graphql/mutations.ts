@@ -25,13 +25,13 @@ export const SIGN_IN_MUTATION = `
 /**
  * Tipi per le variabili della mutation
  */
-export type SignInVariables = {
+export interface SignInVariables {
   input: SignInInput;
-};
+}
 
 /**
  * Interfaccia per la risposta della mutation signIn
  */
-export type SignInMutationResponse = {
+export interface SignInMutationResponse {
   signIn: SignInResponse;
-};
+}
