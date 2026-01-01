@@ -122,7 +122,7 @@ export function CardsDashboard() {
         {/* Header tabella sticky - solo in vista lista */}
         {viewMode === "list" && (
           <div className="mt-4 rounded-t-md border border-b-0 bg-white">
-            <table className="w-full text-sm">
+            <table className="w-full table-fixed text-sm">
               <thead>
                 <tr className="border-b">
                   <th
@@ -176,6 +176,12 @@ export function CardsDashboard() {
                       Lega
                       {getSortIcon("league", tableSortKey, tableSortDirection)}
                     </div>
+                  </th>
+                  <th
+                    className="h-10 whitespace-nowrap px-2 text-left align-middle font-medium text-foreground"
+                    style={{ width: COLUMN_WIDTHS_STANDALONE.forma }}
+                  >
+                    <div className="flex items-center">Forma</div>
                   </th>
                   <th
                     className="h-10 cursor-pointer select-none whitespace-nowrap px-2 text-left align-middle font-medium text-foreground hover:bg-muted/80"

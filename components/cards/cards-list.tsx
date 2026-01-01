@@ -11,19 +11,21 @@ import { CardThumbnail } from "./card-thumbnail";
 
 // Larghezze fisse delle colonne per lineup-builder
 export const COLUMN_WIDTHS = {
-  name: 250,
-  team: 270,
-  league: 170,
-  l5: 60,
-  l15: 60,
-  l40: 60,
-  xp: 60,
+  name: 230,
+  team: 250,
+  forma: 100,
+  league: 120,
+  l5: 50,
+  l15: 50,
+  l40: 50,
+  xp: 50,
 } as const;
 
 // Larghezze fisse delle colonne per cards-dashboard (standalone)
 export const COLUMN_WIDTHS_STANDALONE = {
   name: 250,
-  team: 350,
+  team: 300,
+  forma: 90,
   league: 200,
   l5: 60,
   l15: 60,
@@ -34,6 +36,7 @@ export const COLUMN_WIDTHS_STANDALONE = {
 export interface ColumnWidths {
   name: number;
   team: number;
+  forma: number;
   league: number;
   l5: number;
   l15: number;
@@ -88,6 +91,65 @@ function getXP(card: CardData): number {
     return 0;
   }
   return Math.round((Number.parseFloat(card.power) - 1) * 100);
+}
+
+function getScoreColor(score: number): string {
+  if (score === 0) {
+    return "#9ca3af"; // grigio
+  }
+  if (score <= 30) {
+    return "#ef4444"; // rosso
+  }
+  if (score <= 40) {
+    return "#f97316"; // arancione
+  }
+  if (score <= 59) {
+    return "#84cc16"; // verde chiaro (lime)
+  }
+  if (score <= 79) {
+    return "#22c55e"; // verde scuro
+  }
+  return "#22d3ee"; // azzurro chiaro (cyan)
+}
+
+function ScoreHistogram({ scores }: { scores: Array<{ score: number }> }) {
+  // Prende ultimi 10 punteggi, riempie con 0 se meno di 10
+  const lastScores = [...scores].slice(-10);
+  const displayScores: Array<{ score: number; position: number }> = [];
+
+  // Riempie con 0 all'inizio se necessario
+  const missingCount = 10 - lastScores.length;
+  for (let i = 0; i < missingCount; i++) {
+    displayScores.push({ score: 0, position: i });
+  }
+
+  // Aggiunge i punteggi reali con la loro posizione nella sequenza
+  lastScores.forEach((s, idx) => {
+    displayScores.push({ score: s.score, position: missingCount + idx });
+  });
+
+  const maxScore = 100; // Punteggio massimo
+
+  return (
+    <div className="flex h-[45px] w-[80px] items-end rounded bg-gray-100 p-1">
+      {displayScores.map((item) => {
+        const heightPercent = (item.score / maxScore) * 100;
+        // Per punteggio 0: altezza fissa di 3px, altrimenti altezza proporzionale con minimo 4%
+        const height =
+          item.score === 0 ? "3px" : `${Math.max(heightPercent, 4)}%`;
+        return (
+          <div
+            key={`bar-${item.position}`}
+            style={{
+              width: "7px",
+              height,
+              backgroundColor: getScoreColor(item.score),
+            }}
+          />
+        );
+      })}
+    </div>
+  );
 }
 
 function compareValues(
@@ -227,8 +289,8 @@ export function CardsList({
   }
 
   return (
-    <div className="rounded-md border">
-      <Table>
+    <div className="overflow-x-auto rounded-md border">
+      <Table className="table-fixed">
         {showHeader && (
           <thead className="sticky top-0 z-10 bg-white shadow-sm [&_tr]:border-b">
             <tr className="border-b transition-colors hover:bg-muted/50">
@@ -261,6 +323,12 @@ export function CardsList({
                   Lega
                   {renderSortIcon("league")}
                 </div>
+              </th>
+              <th
+                className="h-10 whitespace-nowrap px-2 text-left align-middle font-medium text-foreground"
+                style={{ width: widths.forma }}
+              >
+                <div className="flex items-center">Forma</div>
               </th>
               <th
                 className="h-10 cursor-pointer select-none whitespace-nowrap px-2 text-left align-middle font-medium text-foreground hover:bg-muted/80"
@@ -347,6 +415,9 @@ export function CardsList({
               </TableCell>
               <TableCell style={{ width: widths.league }}>
                 {getLeagueName(card)}
+              </TableCell>
+              <TableCell style={{ width: widths.forma }}>
+                <ScoreHistogram scores={card.so5Scores ?? []} />
               </TableCell>
               <TableCell style={{ width: widths.l5 }}>
                 <div className="font-medium">

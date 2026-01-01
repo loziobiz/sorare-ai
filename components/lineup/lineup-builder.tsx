@@ -526,7 +526,7 @@ export function LineupBuilder() {
       />
       <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:gap-6">
         {/* Sezione sinistra - Campo di calcio */}
-        <div className="flex max-h-[calc(100vh-6rem)] flex-col overflow-y-auto lg:w-[420px]">
+        <div className="flex max-h-[calc(100vh-6rem)] shrink-0 flex-col overflow-y-auto lg:w-[420px]">
           {/* Nome formazione */}
           <div className="mb-3">
             <Input
@@ -625,7 +625,7 @@ export function LineupBuilder() {
         </div>
 
         {/* Sezione destra - Collezione carte */}
-        <div className="flex max-h-[calc(100vh-6rem)] flex-1 flex-col">
+        <div className="flex max-h-[calc(100vh-6rem)] max-w-[1000px] flex-1 flex-col">
           {/* Header e filtri sticky */}
           <div className="sticky top-0 z-20 bg-white pb-2">
             {/* Header selezione */}
@@ -733,8 +733,8 @@ export function LineupBuilder() {
 
             {/* Header tabella sticky - solo in vista lista */}
             {viewMode === "list" && (
-              <div className="mt-2 rounded-t-md border border-b-0 bg-white">
-                <table className="w-full text-sm">
+              <div className="mt-2 overflow-x-auto rounded-t-md border border-b-0 bg-white">
+                <table className="w-full max-w-[1000px] table-fixed text-sm">
                   <thead>
                     <tr className="border-b">
                       <th
@@ -802,6 +802,12 @@ export function LineupBuilder() {
                             tableSortDirection
                           )}
                         </div>
+                      </th>
+                      <th
+                        className="h-10 whitespace-nowrap px-2 text-left align-middle font-medium text-foreground"
+                        style={{ width: COLUMN_WIDTHS.forma }}
+                      >
+                        <div className="flex items-center">Forma</div>
                       </th>
                       <th
                         className="h-10 cursor-pointer select-none whitespace-nowrap px-2 text-left align-middle font-medium text-foreground hover:bg-muted/80"
