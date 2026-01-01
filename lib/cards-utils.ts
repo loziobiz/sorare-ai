@@ -149,6 +149,22 @@ function filterBySealed(cards: CardData[], sealed: SealedFilter): CardData[] {
 }
 
 /**
+ * Filter cards by search query (name and team)
+ */
+function filterBySearch(cards: CardData[], searchQuery: string): CardData[] {
+  if (!searchQuery.trim()) {
+    return cards;
+  }
+
+  const query = searchQuery.toLowerCase().trim();
+  return cards.filter(
+    (card) =>
+      card.name.toLowerCase().includes(query) ||
+      card.anyPlayer?.activeClub?.name?.toLowerCase().includes(query)
+  );
+}
+
+/**
  * Sort cards by the specified option
  */
 function sortCards(cards: CardData[], sortBy: SortOption): CardData[] {
@@ -181,6 +197,7 @@ export interface CardFilters {
   sortBy: SortOption;
   inSeasonOnly: boolean;
   sealed: SealedFilter;
+  searchQuery: string;
 }
 
 /**
@@ -195,5 +212,6 @@ export function filterAndSortCards(
   result = filterByLeague(result, filters.league);
   result = filterByInSeason(result, filters.inSeasonOnly);
   result = filterBySealed(result, filters.sealed);
+  result = filterBySearch(result, filters.searchQuery);
   return sortCards(result, filters.sortBy);
 }
