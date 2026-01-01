@@ -1,8 +1,11 @@
 "use client";
 
+import { useState } from "react";
 import { CardsGrid } from "@/components/cards/card-grid";
+import { CardsList } from "@/components/cards/cards-list";
 import { CardsFilters } from "@/components/cards/cards-filters";
 import { DashboardHeader } from "@/components/cards/dashboard-header";
+import { ViewToggle, type ViewMode } from "@/components/cards/view-toggle";
 import { LoadingSpinner } from "@/components/loading-spinner";
 import { SiteNav } from "@/components/site-nav";
 import { Alert, AlertDescription } from "@/components/ui/alert";
@@ -10,6 +13,7 @@ import { useCardFilters } from "@/hooks/use-card-filters";
 import { useCards } from "@/hooks/use-cards";
 
 export function CardsDashboard() {
+  const [viewMode, setViewMode] = useState<ViewMode>("grid");
   const {
     cards,
     userSlug,
@@ -89,16 +93,27 @@ export function CardsDashboard() {
       )}
 
       <div className="space-y-4">
-        <h2 className="font-bold text-2xl">
-          Your Cards ({filteredCards.length})
-        </h2>
-        <CardsGrid
-          cards={filteredCards}
-          columns={{ lg: 5, md: 4, mobile: 1 }}
-          emptyMessage="Nessuna carta trovata con i filtri selezionati"
-          showCardAverages
-          showCardPositions={false}
-        />
+        <div className="flex items-center justify-between">
+          <h2 className="font-bold text-2xl">
+            Your Cards ({filteredCards.length})
+          </h2>
+          <ViewToggle viewMode={viewMode} onViewModeChange={setViewMode} />
+        </div>
+
+        {viewMode === "grid" ? (
+          <CardsGrid
+            cards={filteredCards}
+            columns={{ lg: 5, md: 4, mobile: 1 }}
+            emptyMessage="Nessuna carta trovata con i filtri selezionati"
+            showCardAverages
+            showCardPositions={false}
+          />
+        ) : (
+          <CardsList
+            cards={filteredCards}
+            emptyMessage="Nessuna carta trovata con i filtri selezionati"
+          />
+        )}
       </div>
     </div>
   );
