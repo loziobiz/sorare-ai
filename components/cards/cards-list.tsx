@@ -130,9 +130,12 @@ function ScoreHistogram({ scores }: { scores: Array<{ score: number }> }) {
 
   const maxScore = 100; // Punteggio massimo
 
+  // Inverte l'ordine per mostrare i punteggi più recenti a destra
+  const reversedScores = [...displayScores].reverse();
+
   return (
     <div className="flex h-[45px] w-[80px] items-end rounded bg-gray-100 p-1">
-      {displayScores.map((item) => {
+      {reversedScores.map((item) => {
         const heightPercent = (item.score / maxScore) * 100;
         // Per punteggio 0: altezza fissa di 3px, altrimenti altezza proporzionale con minimo 4%
         const height =
