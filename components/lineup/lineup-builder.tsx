@@ -509,9 +509,9 @@ export function LineupBuilder() {
       />
       <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:gap-6">
         {/* Sezione sinistra - Campo di calcio */}
-        <div className="flex flex-col lg:sticky lg:top-4 lg:w-[520px]">
+        <div className="flex max-h-[calc(100vh-8rem)] flex-col overflow-y-auto lg:w-[420px]">
           {/* Nome formazione */}
-          <div className="mb-4">
+          <div className="mb-3">
             <label
               className="mb-2 block font-medium text-sm"
               htmlFor="formation-name"
@@ -519,7 +519,7 @@ export function LineupBuilder() {
               Nome formazione
             </label>
             <Input
-              className="h-11"
+              className="h-9"
               id="formation-name"
               onChange={(e) => setFormationName(e.target.value)}
               placeholder="Nome formazione (obbligatorio)"
@@ -528,8 +528,27 @@ export function LineupBuilder() {
             />
           </div>
 
+          {/* Bottone conferma */}
+          <Button
+            className="mb-3 h-12 gap-2 bg-violet-600 font-semibold text-base hover:bg-violet-700"
+            disabled={
+              !formationName.trim() ||
+              formation.filter((s) => s.card).length < 5
+            }
+            onClick={handleConfirmFormation}
+          >
+            <Check className="h-5 w-5" />
+            {editingId ? "Aggiorna formazione" : "Salva formazione"}
+          </Button>
+
+          {error && (
+            <Alert className="mb-3" variant="destructive">
+              <AlertDescription>{error}</AlertDescription>
+            </Alert>
+          )}
+
           {/* Campo di calcio */}
-          <div className="relative flex aspect-[7/8] flex-col overflow-hidden rounded-2xl bg-gradient-to-b from-emerald-600 to-emerald-700 shadow-xl">
+          <div className="relative flex aspect-[7/8] flex-col overflow-hidden rounded-xl bg-gradient-to-b from-emerald-600 to-emerald-700 shadow-lg">
             {/* Linee del campo */}
             <div className="absolute inset-5 rounded-lg border-2 border-white/30" />
             <div className="absolute top-1/2 right-5 left-5 h-0.5 -translate-y-1/2 bg-white/30" />
@@ -538,7 +557,7 @@ export function LineupBuilder() {
             <div className="absolute top-5 left-1/2 h-24 w-40 -translate-x-1/2 border-2 border-white/30 border-t-0" />
 
             {/* Slot posizioni */}
-            <div className="relative z-10 flex h-full flex-col justify-between gap-3 px-6 py-4">
+            <div className="relative z-10 flex h-full flex-col justify-between gap-2 px-4 py-3">
               {/* Riga alta - ATT ed EX */}
               <div className="flex justify-around">
                 <PitchSlot
@@ -592,29 +611,10 @@ export function LineupBuilder() {
               </div>
             </div>
           </div>
-
-          {/* Bottone conferma */}
-          <Button
-            className="mt-4 h-14 gap-2 bg-violet-600 font-semibold text-lg hover:bg-violet-700"
-            disabled={
-              !formationName.trim() ||
-              formation.filter((s) => s.card).length < 5
-            }
-            onClick={handleConfirmFormation}
-          >
-            <Check className="h-5 w-5" />
-            {editingId ? "Aggiorna formazione" : "Salva formazione"}
-          </Button>
-
-          {error && (
-            <Alert className="mt-4" variant="destructive">
-              <AlertDescription>{error}</AlertDescription>
-            </Alert>
-          )}
         </div>
 
         {/* Sezione destra - Collezione carte */}
-        <div className="flex-1">
+        <div className="flex max-h-[calc(100vh-8rem)] flex-1 flex-col overflow-y-auto">
           {/* Header selezione */}
           <div className="mb-4 flex items-center justify-between">
             <h2 className="font-bold text-slate-800 text-xl">
