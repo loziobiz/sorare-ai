@@ -21,6 +21,7 @@ interface UseCardFiltersReturn {
   setSortBy: (sortBy: SortOption) => void;
   setInSeasonOnly: (inSeasonOnly: boolean) => void;
   setSealed: (sealed: SealedFilter) => void;
+  setSearchQuery: (searchQuery: string) => void;
   leagues: LeagueOption[];
   filteredCards: CardData[];
 }
@@ -32,6 +33,7 @@ export function useCardFilters(cards: CardData[]): UseCardFiltersReturn {
   const [sortBy, setSortBy] = useState<SortOption>("name");
   const [inSeasonOnly, setInSeasonOnly] = useState(false);
   const [sealed, setSealed] = useState<SealedFilter>("unsealed");
+  const [searchQuery, setSearchQuery] = useState<string>("");
 
   const filters: CardFilters = useMemo(
     () => ({
@@ -41,8 +43,9 @@ export function useCardFilters(cards: CardData[]): UseCardFiltersReturn {
       sortBy,
       inSeasonOnly,
       sealed,
+      searchQuery,
     }),
-    [rarity, position, league, sortBy, inSeasonOnly, sealed]
+    [rarity, position, league, sortBy, inSeasonOnly, sealed, searchQuery]
   );
 
   const leagues = useMemo(() => extractLeagues(cards), [cards]);
@@ -60,6 +63,7 @@ export function useCardFilters(cards: CardData[]): UseCardFiltersReturn {
     setSortBy,
     setInSeasonOnly,
     setSealed,
+    setSearchQuery,
     leagues,
     filteredCards,
   };

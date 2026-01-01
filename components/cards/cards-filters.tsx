@@ -1,6 +1,8 @@
 "use client";
 
+import { Search } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Input } from "@/components/ui/input";
 import {
   getPositionLabel,
   type LeagueOption,
@@ -17,6 +19,7 @@ interface CardsFiltersProps {
   sortBy: SortOption;
   inSeasonOnly: boolean;
   sealed: SealedFilter;
+  searchQuery: string;
   leagues: LeagueOption[];
   onRarityChange: (rarity: RarityFilter) => void;
   onPositionChange: (position: PositionFilter) => void;
@@ -24,6 +27,7 @@ interface CardsFiltersProps {
   onSortChange: (sortBy: SortOption) => void;
   onInSeasonChange: (inSeasonOnly: boolean) => void;
   onSealedChange: (sealed: SealedFilter) => void;
+  onSearchQueryChange: (searchQuery: string) => void;
 }
 
 const SELECT_CLASS =
@@ -36,6 +40,7 @@ export function CardsFilters({
   sortBy,
   inSeasonOnly,
   sealed,
+  searchQuery,
   leagues,
   onRarityChange,
   onPositionChange,
@@ -43,6 +48,7 @@ export function CardsFilters({
   onSortChange,
   onInSeasonChange,
   onSealedChange,
+  onSearchQueryChange,
 }: CardsFiltersProps) {
   return (
     <div className="flex flex-wrap items-center gap-4">
@@ -56,6 +62,7 @@ export function CardsFilters({
       <SortSelect onChange={onSortChange} value={sortBy} />
       <SealedSelect onChange={onSealedChange} value={sealed} />
       <InSeasonCheckbox checked={inSeasonOnly} onChange={onInSeasonChange} />
+      <SearchInput onChange={onSearchQueryChange} value={searchQuery} />
     </div>
   );
 }
@@ -212,6 +219,25 @@ function SealedSelect({ value, onChange }: SealedSelectProps) {
         <option value="sealed">Cassaforte</option>
         <option value="all">Tutte</option>
       </select>
+    </div>
+  );
+}
+
+interface SearchInputProps {
+  value: string;
+  onChange: (value: string) => void;
+}
+
+function SearchInput({ value, onChange }: SearchInputProps) {
+  return (
+    <div className="relative min-w-[200px] flex-1">
+      <Search className="absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-slate-400" />
+      <Input
+        className="h-9 pl-10"
+        onChange={(e) => onChange(e.target.value)}
+        placeholder="Cerca giocatore o squadra..."
+        value={value}
+      />
     </div>
   );
 }
