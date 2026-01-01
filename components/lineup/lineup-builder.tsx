@@ -1,7 +1,6 @@
 "use client";
 
-import { ArrowLeft, Check, Search } from "lucide-react";
-import Link from "next/link";
+import { Check, Search } from "lucide-react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { SorareCard } from "@/components/cards/card";
@@ -507,18 +506,6 @@ export function LineupBuilder() {
       <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:gap-6">
         {/* Sezione sinistra - Campo di calcio */}
         <div className="flex flex-col lg:sticky lg:top-4 lg:w-[520px]">
-          {/* Header */}
-          <div className="mb-4 flex items-center gap-3">
-            <Link href="/cards">
-              <Button size="icon" variant="ghost">
-                <ArrowLeft className="h-5 w-5" />
-              </Button>
-            </Link>
-            <h1 className="font-bold text-2xl text-slate-800">
-              {editingId ? "Modifica Formazione" : "Formazione"}
-            </h1>
-          </div>
-
           {/* Nome formazione */}
           <div className="mb-4">
             <label

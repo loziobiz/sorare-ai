@@ -111,10 +111,10 @@ export async function fetchCardsPage({
 
     const newCards = (data.data.currentUser.cards?.nodes || []).filter(
       (card: CardData) => {
-        // Filtra solo carte di calcio (con competizioni DOMESTIC_LEAGUE)
+        // Escludi carte NBA (hanno "NBA" tra le competizioni)
         const competitions =
           card.anyPlayer?.activeClub?.activeCompetitions || [];
-        return competitions.some((c) => c.format === "DOMESTIC_LEAGUE");
+        return !competitions.some((c) => c.name === "NBA");
       }
     );
     const pageInfo = data.data.currentUser.cards?.pageInfo;
