@@ -31,14 +31,14 @@ export function PitchSlot({ label, card, isActive, onClick }: PitchSlotProps) {
         {card.pictureUrl ? (
           <Image
             alt={card.name}
-            className="h-49 w-30 rounded-lg object-cover shadow-lg"
-            height={176}
+            className="h-36 w-24 rounded-lg object-cover shadow-lg"
+            height={144}
             src={card.pictureUrl}
             unoptimized
-            width={128}
+            width={96}
           />
         ) : (
-          <div className="flex h-44 w-32 items-center justify-center rounded-lg bg-slate-700 font-bold text-2xl text-white shadow-lg">
+          <div className="flex h-36 w-24 items-center justify-center rounded-lg bg-slate-700 font-bold text-xl text-white shadow-lg">
             {card.name.charAt(0)}
           </div>
         )}
@@ -59,7 +59,7 @@ export function PitchSlot({ label, card, isActive, onClick }: PitchSlotProps) {
     >
       <div
         className={cn(
-          "flex h-44 w-32 flex-col items-center justify-center rounded-xl border-2 border-dashed transition-all",
+          "flex h-36 w-24 flex-col items-center justify-center rounded-xl border-2 border-dashed transition-all",
           isActive
             ? "border-violet-400 bg-violet-500/20"
             : "border-white/40 bg-white/10 hover:border-white/60 hover:bg-white/20"
@@ -67,7 +67,7 @@ export function PitchSlot({ label, card, isActive, onClick }: PitchSlotProps) {
       >
         <span
           className={cn(
-            "mb-3 font-semibold text-base",
+            "mb-2 font-semibold text-sm",
             isActive ? "text-violet-200" : "text-white/70"
           )}
         >
@@ -75,13 +75,13 @@ export function PitchSlot({ label, card, isActive, onClick }: PitchSlotProps) {
         </span>
         <div
           className={cn(
-            "flex h-12 w-12 items-center justify-center rounded-full border-2 border-dashed transition-colors",
+            "flex h-10 w-10 items-center justify-center rounded-full border-2 border-dashed transition-colors",
             isActive
               ? "border-violet-300 text-violet-200"
               : "border-white/40 text-white/50 group-hover:border-white/60"
           )}
         >
-          <Plus className="h-6 w-6" />
+          <Plus className="h-5 w-5" />
         </div>
       </div>
     </button>
