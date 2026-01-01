@@ -79,14 +79,6 @@ interface FormationCardProps {
 }
 
 function FormationCard({ formation, onEdit, onDelete }: FormationCardProps) {
-  const [leagueLabel, setLeagueLabel] = useState<string>("");
-
-  useEffect(() => {
-    const [leagueName, countryCode] = formation.league.split("|");
-    const customName = ACTIVE_LEAGUES[formation.league];
-    setLeagueLabel(customName ?? `${leagueName} (${countryCode})`);
-  }, [formation.league]);
-
   return (
     <div
       className="space-y-4 rounded-lg border border-slate-200 bg-white p-4 shadow-sm"
@@ -118,7 +110,7 @@ function FormationCard({ formation, onEdit, onDelete }: FormationCardProps) {
         </Button>
         <Button
           className="h-8 flex-1 px-2 text-xs"
-          onClick={() => onDelete(formation.id!)}
+          onClick={() => formation.id && onDelete(formation.id)}
           variant="destructive"
         >
           <Trash2 className="mr-1 h-3 w-3" />
