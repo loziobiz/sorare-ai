@@ -79,6 +79,29 @@ interface FormationCardProps {
 }
 
 function FormationCard({ formation, onEdit, onDelete }: FormationCardProps) {
+  // Define position order: POR → DIF → CEN → ATT → EXTRA (EX)
+  const positionOrder: Record<string, number> = {
+    POR: 0,
+    DIF: 1,
+    CEN: 2,
+    ATT: 3,
+    EX: 4,
+    EXTRA: 4, // Handle both EX and EXTRA
+  };
+
+  // Sort cards based on their position in slots array
+  const sortedCards = [...formation.cards].sort((a, b) => {
+    const slotA = formation.slots.find((s) => s.cardSlug === a.slug);
+    const slotB = formation.slots.find((s) => s.cardSlug === b.slug);
+
+    if (!slotA || !slotB) return 0;
+
+    const orderA = positionOrder[slotA.position] ?? 999;
+    const orderB = positionOrder[slotB.position] ?? 999;
+
+    return orderA - orderB;
+  });
+
   return (
     <div
       className="space-y-4 rounded-lg border border-slate-200 bg-white p-4 shadow-sm"
@@ -93,7 +116,7 @@ function FormationCard({ formation, onEdit, onDelete }: FormationCardProps) {
 
       {/* Carte in orizzontale */}
       <div className="flex gap-1 overflow-x-auto pb-2">
-        {formation.cards.map((card) => (
+        {sortedCards.map((card) => (
           <CompactCard card={card} key={card.slug} />
         ))}
       </div>
