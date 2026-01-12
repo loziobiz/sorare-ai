@@ -160,24 +160,6 @@ export function CardsDashboard() {
                     </div>
                   </th>
                   <th
-                    className="h-10 cursor-pointer select-none whitespace-nowrap px-2 text-left align-middle font-medium text-foreground hover:bg-muted/80"
-                    onClick={() =>
-                      handleTableSort(
-                        "league",
-                        tableSortKey === "league" &&
-                          tableSortDirection === "asc"
-                          ? "desc"
-                          : "asc"
-                      )
-                    }
-                    style={{ width: COLUMN_WIDTHS_STANDALONE.league }}
-                  >
-                    <div className="flex items-center">
-                      Lega
-                      {getSortIcon("league", tableSortKey, tableSortDirection)}
-                    </div>
-                  </th>
-                  <th
                     className="h-10 whitespace-nowrap px-2 text-left align-middle font-medium text-foreground"
                     style={{ width: COLUMN_WIDTHS_STANDALONE.forma }}
                   >
@@ -232,23 +214,6 @@ export function CardsDashboard() {
                     <div className="flex items-center">
                       L40
                       {getSortIcon("l40", tableSortKey, tableSortDirection)}
-                    </div>
-                  </th>
-                  <th
-                    className="h-10 cursor-pointer select-none whitespace-nowrap px-2 text-left align-middle font-medium text-foreground hover:bg-muted/80"
-                    onClick={() =>
-                      handleTableSort(
-                        "xp",
-                        tableSortKey === "xp" && tableSortDirection === "asc"
-                          ? "desc"
-                          : "asc"
-                      )
-                    }
-                    style={{ width: COLUMN_WIDTHS_STANDALONE.xp }}
-                  >
-                    <div className="flex items-center">
-                      XP
-                      {getSortIcon("xp", tableSortKey, tableSortDirection)}
                     </div>
                   </th>
                 </tr>

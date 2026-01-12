@@ -23,6 +23,10 @@ export const GET_CARDS_QUERY = `
             }
             status
           }
+          priceRange {
+            min
+            max
+          }
           anyPlayer {
             activeClub {
               name
@@ -49,6 +53,30 @@ export const GET_CARDS_QUERY = `
           }
           sealed
           sealedAt
+          ownershipHistory {
+            amounts {
+              eurCents
+              referenceCurrency
+            }
+            from
+            transferType
+          }
+          liveSingleSaleOffer {
+            owners {
+              amounts {
+                eurCents
+                referenceCurrency
+              }
+            }
+          }
+          privateMinPrices {
+            eurCents
+            referenceCurrency
+          }
+          publicMinPrices {
+            eurCents
+            referenceCurrency
+          }
           ... on Card {
             so5Scores(last: 10) {
               score

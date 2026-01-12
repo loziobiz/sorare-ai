@@ -5,6 +5,7 @@ import { useMemo, useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableRow } from "@/components/ui/table";
 import { getPositionLabel } from "@/lib/cards-utils";
+import { ETH_TO_EUR_RATE } from "@/lib/config";
 import type { CardData } from "@/lib/sorare-api";
 import { cn } from "@/lib/utils";
 import { CardThumbnail } from "./card-thumbnail";
@@ -14,36 +15,32 @@ export const COLUMN_WIDTHS = {
   name: 230,
   team: 250,
   forma: 100,
-  league: 120,
   l5: 50,
   l15: 50,
   l40: 50,
-  xp: 50,
 } as const;
 
 // Larghezze fisse delle colonne per cards-dashboard (standalone)
 export const COLUMN_WIDTHS_STANDALONE = {
-  name: 250,
+  name: 200,
   team: 300,
   forma: 90,
-  league: 200,
-  l5: 60,
-  l15: 60,
-  l40: 60,
-  xp: 60,
+  price: 400,
+  l5: 50,
+  l15: 50,
+  l40: 50,
 } as const;
 
 export interface ColumnWidths {
   name: number;
   team: number;
   forma: number;
-  league: number;
+  price?: number;
   l5: number;
   l15: number;
   l40: number;
-  xp: number;
 }
-export type SortKey = "name" | "team" | "league" | "l5" | "l15" | "l40" | "xp";
+export type SortKey = "name" | "team" | "l5" | "l15" | "l40";
 export type SortDirection = "asc" | "desc";
 
 export interface CardsListProps {
@@ -91,6 +88,62 @@ function getXP(card: CardData): number {
     return 0;
   }
   return Math.round((Number.parseFloat(card.power) - 1) * 100);
+}
+
+function formatPriceValue(valueInCents: number | null | undefined): string {
+  if (valueInCents === null || valueInCents === undefined) {
+    return "-";
+  }
+  return `€${(valueInCents / 100).toFixed(2)}`;
+}
+
+function convertWeiToEur(weiString: string | null | undefined): number | null {
+  if (!weiString) {
+    return null;
+  }
+  // Wei è 10^18, quindi per ottenere ETH: wei / 10^18
+  // Poi moltiplichiamo per il tasso di cambio EUR e per 100 per avere centesimi
+  const weiValue = Number.parseFloat(weiString);
+  if (Number.isNaN(weiValue) || weiValue === 0) {
+    return null;
+  }
+  const ethValue = weiValue / 1e18;
+  const eurCents = Math.round(ethValue * ETH_TO_EUR_RATE * 100);
+  return eurCents;
+}
+
+function getPriceDisplay(card: CardData): string {
+  const parts: string[] = [];
+
+  // 1. Prezzo di mercato (priceRange.min in Wei -> EUR)
+  const marketPriceCents = convertWeiToEur(card.priceRange?.min);
+  parts.push(formatPriceValue(marketPriceCents));
+
+  // 2. Prezzo di acquisto (ownershipHistory)
+  const purchaseTypes = [
+    "INSTANT_BUY",
+    "ENGLISH_AUCTION",
+    "SINGLE_BUY_OFFER",
+    "SINGLE_SALE_OFFER",
+    "DIRECT_OFFER",
+  ];
+  let purchasePrice: number | null | undefined = null;
+  if (card.ownershipHistory && card.ownershipHistory.length > 0) {
+    for (let i = card.ownershipHistory.length - 1; i >= 0; i--) {
+      const entry = card.ownershipHistory[i];
+      if (
+        entry &&
+        purchaseTypes.includes(entry.transferType) &&
+        entry.amounts?.eurCents
+      ) {
+        purchasePrice = entry.amounts.eurCents;
+        break;
+      }
+    }
+  }
+  parts.push(formatPriceValue(purchasePrice));
+
+  return parts.join(" | ");
 }
 
 function getScoreColor(score: number): string {
@@ -231,12 +284,6 @@ export function CardsList({
           );
         case "team":
           return compareValues(getTeamName(a), getTeamName(b), sortDirection);
-        case "league":
-          return compareValues(
-            getLeagueName(a),
-            getLeagueName(b),
-            sortDirection
-          );
         case "l5":
           return compareValues(
             a.l5Average ?? 0,
@@ -255,8 +302,6 @@ export function CardsList({
             b.l40Average ?? 0,
             sortDirection
           );
-        case "xp":
-          return compareValues(getXP(a), getXP(b), sortDirection);
         default:
           return 0;
       }
@@ -317,16 +362,12 @@ export function CardsList({
                   {renderSortIcon("team")}
                 </div>
               </th>
-              <th
-                className="h-10 cursor-pointer select-none whitespace-nowrap px-2 text-left align-middle font-medium text-foreground hover:bg-muted/80"
-                onClick={() => handleSort("league")}
-                style={{ width: widths.league }}
-              >
-                <div className="flex items-center">
-                  Lega
-                  {renderSortIcon("league")}
-                </div>
-              </th>
+              {widths.price && (
+                <th
+                  className="h-10 whitespace-nowrap px-2 text-left align-middle font-medium text-foreground"
+                  style={{ width: widths.price }}
+                />
+              )}
               <th
                 className="h-10 whitespace-nowrap px-2 text-left align-middle font-medium text-foreground"
                 style={{ width: widths.forma }}
@@ -361,16 +402,6 @@ export function CardsList({
                 <div className="flex items-center">
                   L40
                   {renderSortIcon("l40")}
-                </div>
-              </th>
-              <th
-                className="h-10 cursor-pointer select-none whitespace-nowrap px-2 text-left align-middle font-medium text-foreground hover:bg-muted/80"
-                onClick={() => handleSort("xp")}
-                style={{ width: widths.xp }}
-              >
-                <div className="flex items-center">
-                  XP
-                  {renderSortIcon("xp")}
                 </div>
               </th>
             </tr>
@@ -408,38 +439,42 @@ export function CardsList({
                         {card.anyPositions
                           .map((pos) => getPositionLabel(pos))
                           .join(", ")}
+                        {" • XP "}
+                        {getXP(card) || "-"}%
                       </div>
                     )}
                   </div>
                 </div>
               </TableCell>
               <TableCell className="truncate" style={{ width: widths.team }}>
-                {getTeamName(card)}
+                <div className="flex flex-col">
+                  <div>{getTeamName(card)}</div>
+                  <div className="text-muted-foreground text-xs">
+                    {getLeagueName(card)}
+                  </div>
+                </div>
               </TableCell>
-              <TableCell style={{ width: widths.league }}>
-                {getLeagueName(card)}
-              </TableCell>
+              {widths.price && (
+                <TableCell style={{ width: widths.price }}>
+                  <div className="text-xs">{getPriceDisplay(card)}</div>
+                </TableCell>
+              )}
               <TableCell style={{ width: widths.forma }}>
                 <ScoreHistogram scores={card.so5Scores ?? []} />
               </TableCell>
               <TableCell style={{ width: widths.l5 }}>
                 <div className="font-medium">
-                  {card.l5Average?.toFixed(1) ?? "-"}
+                  {card.l5Average?.toFixed(0) ?? "-"}
                 </div>
               </TableCell>
               <TableCell style={{ width: widths.l15 }}>
                 <div className="font-medium">
-                  {card.l15Average?.toFixed(1) ?? "-"}
+                  {card.l15Average?.toFixed(0) ?? "-"}
                 </div>
               </TableCell>
               <TableCell style={{ width: widths.l40 }}>
                 <div className="font-medium">
-                  {card.l40Average?.toFixed(1) ?? "-"}
-                </div>
-              </TableCell>
-              <TableCell style={{ width: widths.xp }}>
-                <div className="pr-3 text-right font-medium">
-                  {getXP(card) || "-"} %
+                  {card.l40Average?.toFixed(0) ?? "-"}
                 </div>
               </TableCell>
             </TableRow>

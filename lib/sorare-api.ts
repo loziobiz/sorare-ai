@@ -22,6 +22,10 @@ export interface CardData {
     } | null;
     status: string;
   } | null;
+  priceRange?: {
+    min?: string | null;
+    max?: string | null;
+  } | null;
   anyPlayer?: {
     activeClub?: {
       name: string;
@@ -48,6 +52,14 @@ export interface CardData {
   };
   sealed?: boolean;
   sealedAt?: string | null;
+  ownershipHistory?: Array<{
+    amounts?: {
+      eurCents?: number | null;
+      referenceCurrency?: string;
+    } | null;
+    from: string;
+    transferType: string;
+  }>;
   so5Scores?: Array<{
     score: number;
     projectedScore: number;
@@ -62,6 +74,22 @@ export interface CardData {
       } | null;
     } | null;
   }>;
+  liveSingleSaleOffer?: {
+    owners?: Array<{
+      amounts?: {
+        eurCents?: number | null;
+        referenceCurrency?: string;
+      } | null;
+    } | null>;
+  } | null;
+  privateMinPrices?: {
+    eurCents?: number | null;
+    referenceCurrency?: string;
+  } | null;
+  publicMinPrices?: {
+    eurCents?: number | null;
+    referenceCurrency?: string;
+  } | null;
 }
 
 export interface CardsResponse {
@@ -133,6 +161,18 @@ export async function fetchCardsPage({
         return !competitions.some((c) => c.name === "NBA");
       }
     );
+
+    // DEBUG: log prima carta per vedere i dati monetari
+    if (newCards.length > 0) {
+      console.log("DEBUG - First card price data:", {
+        slug: newCards[0].slug,
+        ownershipHistory: newCards[0].ownershipHistory,
+        liveSingleSaleOffer: newCards[0].liveSingleSaleOffer,
+        privateMinPrices: newCards[0].privateMinPrices,
+        publicMinPrices: newCards[0].publicMinPrices,
+        lowestPriceCard: newCards[0].lowestPriceCard,
+      });
+    }
     const pageInfo = data.data.currentUser.cards?.pageInfo;
     const nextCursor = pageInfo?.hasNextPage ? pageInfo?.endCursor : null;
 

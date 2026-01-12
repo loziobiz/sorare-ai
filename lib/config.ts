@@ -42,3 +42,9 @@ export const ACTIVE_LEAGUES: Record<string, string> = {
   "Eredivisie|nl": "Eredivisie",
   "Liga Portugal|pt": "Liga Portugal",
 };
+
+/**
+ * Exchange rate from ETH to EUR for converting wei-based prices.
+ * Update this value periodically to reflect current market rates.
+ */
+export const ETH_TO_EUR_RATE = 2653;
