@@ -53,7 +53,7 @@ export function LoginForm({ onSuccess, onTwoFactorRequired }: LoginFormProps) {
       <CardHeader>
         <CardTitle>Accedi</CardTitle>
         <CardDescription>
-          Inserisci le tue credenziali Sorare per accedere
+          Inserisci la tua email Sorare e la password per accedere
         </CardDescription>
       </CardHeader>
       <CardContent>
@@ -61,6 +61,7 @@ export function LoginForm({ onSuccess, onTwoFactorRequired }: LoginFormProps) {
           <div className="space-y-2">
             <Label htmlFor="email">Email</Label>
             <Input
+              autoComplete="email"
               disabled={isLoading}
               id="email"
               onChange={(e) => setEmail(e.target.value)}

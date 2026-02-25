@@ -12,6 +12,9 @@ import type { SignInInput, SignInResponse } from "./types";
 const COOKIE_NAME = "sorare_jwt_token";
 const COOKIE_OTP_CHALLENGE = "sorare_otp_challenge";
 const SORARE_API_BASE = "https://api.sorare.com";
+const INVALID_CREDENTIALS_MESSAGE =
+  "Credenziali non valide. Usa la tua email Sorare (non username) e verifica la password.";
+const TWO_FACTOR_ERROR_REGEX = /2fa|two[- ]factor|otp/i;
 
 async function getSalt(email: string): Promise<string> {
   const response = await fetch(
@@ -73,6 +76,56 @@ function setOtpChallenge(challenge: string): void {
   });
 }
 
+function normalizeCredentials(data: { email: string; password: string }): {
+  email: string;
+  password: string;
+} {
+  return {
+    email: data.email.trim().toLowerCase(),
+    password: data.password,
+  };
+}
+
+function isInvalidCredentialsError(message?: string): boolean {
+  if (!message) {
+    return false;
+  }
+  const normalized = message.trim().toLowerCase();
+  return normalized === "invalid" || normalized.includes("invalid credentials");
+}
+
+function hasOnlyInvalidCredentialsErrors(
+  errors?: SignInResponse["errors"]
+): boolean {
+  if (!errors || errors.length === 0) {
+    return false;
+  }
+  return errors.every((error) => isInvalidCredentialsError(error.message));
+}
+
+function hasTwoFactorError(errors?: SignInResponse["errors"]): boolean {
+  if (!errors || errors.length === 0) {
+    return false;
+  }
+  return errors.some((error) => TWO_FACTOR_ERROR_REGEX.test(error.message));
+}
+
+function buildAuthErrorMessage(errors?: SignInResponse["errors"]): string {
+  if (!errors || errors.length === 0) {
+    return "Login failed";
+  }
+
+  if (hasTwoFactorError(errors)) {
+    return "Two-factor authentication is required.";
+  }
+
+  if (hasOnlyInvalidCredentialsErrors(errors)) {
+    return INVALID_CREDENTIALS_MESSAGE;
+  }
+
+  return errors.map((error) => error.message).join(", ");
+}
+
 export const isAuthenticated = createServerFn({ method: "GET" }).handler(
   async (): Promise<boolean> => !!getCookie(COOKIE_NAME)
 );
@@ -81,17 +134,34 @@ export const login = createServerFn({ method: "POST" })
   .inputValidator((data: { email: string; password: string }) => data)
   .handler(async ({ data }): Promise<AuthResult> => {
     try {
-      const salt = await getSalt(data.email);
-      const hashedPassword = await hashPassword(data.password, salt);
+      const { email, password } = normalizeCredentials(data);
+      const salt = await getSalt(email);
+      const hashedPassword = await hashPassword(password, salt);
       const client = createGraphQLClient();
-      const variables = {
-        input: { email: data.email, password: hashedPassword } as SignInInput,
+      const hashedVariables = {
+        input: { email, password: hashedPassword } as SignInInput,
       };
-      const response = await client.request<{ signIn: SignInResponse }>(
+      const hashedResponse = await client.request<{ signIn: SignInResponse }>(
         SIGN_IN_MUTATION,
-        variables
+        hashedVariables
       );
-      const signInData = response.signIn;
+
+      let signInData = hashedResponse.signIn;
+
+      // Some environments/accounts expect a plain password instead of a salted hash.
+      if (
+        !signInData.otpSessionChallenge &&
+        hasOnlyInvalidCredentialsErrors(signInData.errors)
+      ) {
+        const plainVariables = {
+          input: { email, password } as SignInInput,
+        };
+        const plainResponse = await client.request<{ signIn: SignInResponse }>(
+          SIGN_IN_MUTATION,
+          plainVariables
+        );
+        signInData = plainResponse.signIn;
+      }
 
       if (signInData.otpSessionChallenge) {
         setOtpChallenge(signInData.otpSessionChallenge);
@@ -99,18 +169,9 @@ export const login = createServerFn({ method: "POST" })
       }
 
       if (signInData.errors?.length) {
-        const has2faError = signInData.errors.some(
-          (e) => e.code === "2fa_missing" || e.message?.includes("2fa")
-        );
-        if (has2faError) {
-          return {
-            success: false,
-            error: "Two-factor authentication is required.",
-          };
-        }
         return {
           success: false,
-          error: signInData.errors.map((e) => e.message).join(", "),
+          error: buildAuthErrorMessage(signInData.errors),
         };
       }
 
@@ -169,7 +230,7 @@ export const loginWithTwoFactor = createServerFn({ method: "POST" })
     }
   });
 
-export const logout = createServerFn({ method: "POST" }).handler(async () => {
+export const logout = createServerFn({ method: "POST" }).handler(() => {
   deleteCookie(COOKIE_NAME);
   deleteCookie(COOKIE_OTP_CHALLENGE);
 });

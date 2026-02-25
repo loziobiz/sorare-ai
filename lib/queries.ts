@@ -41,6 +41,17 @@ export const GET_CARDS_QUERY = `
                 }
               }
             }
+            ... on Player {
+              nextGame(so5FixtureEligible: true) {
+                date
+                homeTeam {
+                  name
+                }
+                awayTeam {
+                  name
+                }
+              }
+            }
           }
           l5Average: averageScore(type: LAST_FIVE_SO5_AVERAGE_SCORE)
           l10Average: averageScore(type: LAST_TEN_PLAYED_SO5_AVERAGE_SCORE)

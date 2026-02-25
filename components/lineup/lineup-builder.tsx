@@ -782,6 +782,12 @@ export function LineupBuilder() {
                       </th>
                       <th
                         className="h-10 whitespace-nowrap px-2 text-left align-middle font-medium text-foreground"
+                        style={{ width: COLUMN_WIDTHS.match }}
+                      >
+                        <div className="flex items-center">Prossima</div>
+                      </th>
+                      <th
+                        className="h-10 whitespace-nowrap px-2 text-left align-middle font-medium text-foreground"
                         style={{ width: COLUMN_WIDTHS.forma }}
                       >
                         <div className="flex items-center">Forma</div>

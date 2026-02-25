@@ -41,6 +41,15 @@ export interface CardData {
         };
       }>;
     };
+    nextGame?: {
+      date?: string | null;
+      homeTeam?: {
+        name?: string;
+      } | null;
+      awayTeam?: {
+        name?: string;
+      } | null;
+    } | null;
   };
   l5Average?: number;
   l10Average?: number;

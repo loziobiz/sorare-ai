@@ -9,15 +9,17 @@ import { ETH_TO_EUR_RATE } from "@/lib/config";
 import type { CardData } from "@/lib/sorare-api";
 import { cn } from "@/lib/utils";
 import { CardThumbnail } from "./card-thumbnail";
+import { NextMatchBlock } from "./next-match-block";
 
 // Larghezze fisse delle colonne per lineup-builder
 export const COLUMN_WIDTHS = {
-  name: 230,
-  team: 250,
-  forma: 100,
-  l5: 50,
-  l15: 50,
-  l40: 50,
+  name: 200,
+  team: 200,
+  match: 120,
+  forma: 90,
+  l5: 45,
+  l15: 45,
+  l40: 45,
 } as const;
 
 // Larghezze fisse delle colonne per cards-dashboard (standalone)
@@ -34,6 +36,7 @@ export const COLUMN_WIDTHS_STANDALONE = {
 export interface ColumnWidths {
   name: number;
   team: number;
+  match?: number;
   forma: number;
   price?: number;
   l5: number;
@@ -454,6 +457,11 @@ export function CardsList({
                   </div>
                 </div>
               </TableCell>
+              {widths.match && (
+                <TableCell style={{ width: widths.match }}>
+                  <NextMatchBlock card={card} />
+                </TableCell>
+              )}
               {widths.price && (
                 <TableCell style={{ width: widths.price }}>
                   <div className="text-xs">{getPriceDisplay(card)}</div>
