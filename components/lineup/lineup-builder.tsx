@@ -59,8 +59,13 @@ const INITIAL_FORMATION: FormationSlot[] = [
   { position: "POR", card: null },
 ];
 
-// CAP massimo per la somma dei valori L10 della lineup
-const L10_CAP = 260;
+// Opzioni CAP per la somma dei valori L10 della lineup
+type CapOption = "uncapped" | 260 | 220;
+const CAP_OPTIONS: { value: CapOption; label: string }[] = [
+  { value: "uncapped", label: "Uncapped" },
+  { value: 260, label: "CAP 260" },
+  { value: 220, label: "CAP 220" },
+];
 
 function getEmptyMessage(
   leagueFilter: string,
@@ -203,6 +208,7 @@ export function LineupBuilder() {
   const [tableSortKey, setTableSortKey] = useState<SortKey>("name");
   const [tableSortDirection, setTableSortDirection] =
     useState<SortDirection>("asc");
+  const [capOption, setCapOption] = useState<CapOption>(260);
   const [toasts, setToasts] = useState<
     Array<{ id: string; message: string; type?: "success" | "error" | "info" }>
   >([]);
@@ -235,7 +241,9 @@ export function LineupBuilder() {
     }, 0);
   }, [formation]);
 
-  const l10Remaining = L10_CAP - l10Used;
+  const l10Cap =
+    capOption === "uncapped" ? Number.POSITIVE_INFINITY : capOption;
+  const l10Remaining = l10Cap - l10Used;
 
   // Carte filtrate per la selezione
   const filteredCards = useMemo(() => {
@@ -287,10 +295,12 @@ export function LineupBuilder() {
       filtered = filtered.filter((card) => card.inSeasonEligible === true);
     }
 
-    // Filtra per CAP L10 - mostra solo giocatori compatibili
-    filtered = filtered.filter(
-      (card) => (card.l10Average ?? 0) <= l10Remaining
-    );
+    // Filtra per CAP L10 - mostra solo giocatori compatibili (se non uncapped)
+    if (capOption !== "uncapped") {
+      filtered = filtered.filter(
+        (card) => (card.l10Average ?? 0) <= l10Remaining
+      );
+    }
 
     // Ordina secondo il criterio selezionato
     filtered.sort((a, b) => {
@@ -325,6 +335,7 @@ export function LineupBuilder() {
     sortBy,
     inSeasonOnly,
     l10Remaining,
+    capOption,
   ]);
 
   // Calcola bonus formazione (simulato)
@@ -440,13 +451,15 @@ export function LineupBuilder() {
       return;
     }
 
-    // Verifica CAP L10
-    const cardL10 = card.l10Average ?? 0;
-    if (cardL10 > l10Remaining) {
-      setError(
-        `Impossibile aggiungere: L10 ${cardL10.toFixed(0)} supera il residuo ${l10Remaining.toFixed(0)}`
-      );
-      return;
+    // Verifica CAP L10 (solo se non uncapped)
+    if (capOption !== "uncapped") {
+      const cardL10 = card.l10Average ?? 0;
+      if (cardL10 > l10Remaining) {
+        setError(
+          `Impossibile aggiungere: L10 ${cardL10.toFixed(0)} supera il residuo ${l10Remaining.toFixed(0)}`
+        );
+        return;
+      }
     }
 
     setFormation((prev) => {
@@ -563,21 +576,43 @@ export function LineupBuilder() {
               required
               value={formationName}
             />
-            <div className="flex items-center justify-between rounded-md bg-slate-100 px-3 py-2">
-              <span className="font-medium text-slate-600 text-sm">
-                CAP L10:
-              </span>
-              <span
-                className={cn(
-                  "font-bold text-sm",
-                  l10Remaining < 0 && "text-red-600",
-                  l10Remaining >= 0 && l10Remaining < 50 && "text-orange-500",
-                  l10Remaining >= 50 && "text-emerald-600"
-                )}
+            <div className="flex items-center gap-2">
+              <label
+                className="whitespace-nowrap font-medium text-sm"
+                htmlFor="cap-select"
               >
-                {l10Remaining.toFixed(0)}/{L10_CAP}
-              </span>
+                Modalità:
+              </label>
+              <select
+                className="flex h-9 flex-1 rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                id="cap-select"
+                onChange={(e) => setCapOption(e.target.value as CapOption)}
+                value={capOption}
+              >
+                {CAP_OPTIONS.map((opt) => (
+                  <option key={opt.value} value={opt.value}>
+                    {opt.label}
+                  </option>
+                ))}
+              </select>
             </div>
+            {capOption !== "uncapped" && (
+              <div className="flex items-center justify-between rounded-md bg-slate-100 px-3 py-2">
+                <span className="font-medium text-slate-600 text-sm">
+                  Residuo:
+                </span>
+                <span
+                  className={cn(
+                    "font-bold text-sm",
+                    l10Remaining < 0 && "text-red-600",
+                    l10Remaining >= 0 && l10Remaining < 50 && "text-orange-500",
+                    l10Remaining >= 50 && "text-emerald-600"
+                  )}
+                >
+                  {l10Remaining.toFixed(0)}/{capOption}
+                </span>
+              </div>
+            )}
           </div>
 
           {/* Bottone conferma */}
