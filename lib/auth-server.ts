@@ -1,5 +1,9 @@
 import { createServerFn } from "@tanstack/react-start";
-import { getCookie, setCookie, deleteCookie } from "@tanstack/react-start/server";
+import {
+  deleteCookie,
+  getCookie,
+  setCookie,
+} from "@tanstack/react-start/server";
 import bcrypt from "bcryptjs";
 import { createGraphQLClient } from "./graphql/client";
 import { SIGN_IN_MUTATION } from "./graphql/mutations";
@@ -14,8 +18,9 @@ async function getSalt(email: string): Promise<string> {
     `${SORARE_API_BASE}/api/v1/users/${encodeURIComponent(email)}`,
     {
       headers: {
-        "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
-        "Accept": "application/json",
+        "User-Agent":
+          "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+        Accept: "application/json",
       },
     }
   );
@@ -79,8 +84,13 @@ export const login = createServerFn({ method: "POST" })
       const salt = await getSalt(data.email);
       const hashedPassword = await hashPassword(data.password, salt);
       const client = createGraphQLClient();
-      const variables = { input: { email: data.email, password: hashedPassword } as SignInInput };
-      const response = await client.request<{ signIn: SignInResponse }>(SIGN_IN_MUTATION, variables);
+      const variables = {
+        input: { email: data.email, password: hashedPassword } as SignInInput,
+      };
+      const response = await client.request<{ signIn: SignInResponse }>(
+        SIGN_IN_MUTATION,
+        variables
+      );
       const signInData = response.signIn;
 
       if (signInData.otpSessionChallenge) {
@@ -93,9 +103,15 @@ export const login = createServerFn({ method: "POST" })
           (e) => e.code === "2fa_missing" || e.message?.includes("2fa")
         );
         if (has2faError) {
-          return { success: false, error: "Two-factor authentication is required." };
+          return {
+            success: false,
+            error: "Two-factor authentication is required.",
+          };
         }
-        return { success: false, error: signInData.errors.map((e) => e.message).join(", ") };
+        return {
+          success: false,
+          error: signInData.errors.map((e) => e.message).join(", "),
+        };
       }
 
       if (signInData.jwtToken?.token && signInData.currentUser) {
@@ -104,7 +120,10 @@ export const login = createServerFn({ method: "POST" })
       }
       return { success: false, error: "Unexpected response" };
     } catch (error) {
-      return { success: false, error: error instanceof Error ? error.message : "Login failed" };
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : "Login failed",
+      };
     }
   });
 
@@ -118,13 +137,22 @@ export const loginWithTwoFactor = createServerFn({ method: "POST" })
       }
       const client = createGraphQLClient();
       const variables = {
-        input: { otpAttempt: data.otpCode, otpSessionChallenge: otpChallenge } as SignInInput,
+        input: {
+          otpAttempt: data.otpCode,
+          otpSessionChallenge: otpChallenge,
+        } as SignInInput,
       };
-      const response = await client.request<{ signIn: SignInResponse }>(SIGN_IN_MUTATION, variables);
+      const response = await client.request<{ signIn: SignInResponse }>(
+        SIGN_IN_MUTATION,
+        variables
+      );
       const signInData = response.signIn;
 
       if (signInData.errors?.length) {
-        return { success: false, error: signInData.errors.map((e) => e.message).join(", ") };
+        return {
+          success: false,
+          error: signInData.errors.map((e) => e.message).join(", "),
+        };
       }
 
       if (signInData.jwtToken?.token && signInData.currentUser) {
@@ -134,7 +162,10 @@ export const loginWithTwoFactor = createServerFn({ method: "POST" })
       }
       return { success: false, error: "Unexpected response" };
     } catch (error) {
-      return { success: false, error: error instanceof Error ? error.message : "2FA failed" };
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : "2FA failed",
+      };
     }
   });
 

@@ -1,6 +1,6 @@
 {
   "compilerOptions": {
-    "target": "ES2017",
+    "target": "ES2022",
     "lib": ["dom", "dom.iterable", "esnext"],
     "allowJs": true,
     "skipLibCheck": true,
@@ -14,25 +14,20 @@
     "jsx": "preserve",
     "incremental": true,
     "forceConsistentCasingInFileNames": true,
-    "plugins": [
-      {
-        "name": "next"
-      }
-    ],
     "paths": {
       "@/*": ["./*"]
     }
   },
-  "include": [
-    "next-env.d.ts",
-    "**/*.ts",
-    "**/*.tsx",
-    ".next/types/**/*.ts",
-    ".next/dev/types/**/*.ts",
-    "**/*.mts",
-    "app/routeTree.gen.ts",
-    "app/**/*.ts",
-    "app/**/*.tsx"
-  ],
-  "exclude": ["node_modules"]
+  "include": ["**/*.ts", "**/*.tsx", "**/*.mts"],
+  "exclude": [
+    "node_modules",
+    "dist",
+    ".next",
+    "app",
+    "middleware.ts",
+    "next.config.ts",
+    "open-next.config.ts",
+    "nitro.config.ts",
+    "lib/auth.ts"
+  ]
 }

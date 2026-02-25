@@ -438,7 +438,7 @@ function getResponse() {
   return event.res;
 }
 async function getStartManifest(matchedRoutes) {
-  const { tsrStartManifest } = await import("./assets/_tanstack-start-manifest_v-Dk_fuSer.js");
+  const { tsrStartManifest } = await import("./assets/_tanstack-start-manifest_v-DFp5Ehpr.js");
   const startManifest = tsrStartManifest();
   const rootRoute = startManifest.routes[rootRouteId] = startManifest.routes[rootRouteId] || {};
   rootRoute.assets = rootRoute.assets || [];
@@ -594,22 +594,22 @@ function createMultiplexedStream(jsonStream, rawStreams) {
 }
 const manifest = { "338fa27ae3120c7fe66337d2fae279a327ce8fd59d688bf62b75de6ad23e48c2": {
   functionName: "getAuthToken_createServerFn_handler",
-  importer: () => import("./assets/auth-server-BdMF0EWa.js")
+  importer: () => import("./assets/auth-server-DsJT5Ytx.js")
 }, "988f932a00c333c6bb8e7100cd237c222e46cb103f32a16ff656c65e637f9308": {
   functionName: "getOtpChallenge_createServerFn_handler",
-  importer: () => import("./assets/auth-server-BdMF0EWa.js")
+  importer: () => import("./assets/auth-server-DsJT5Ytx.js")
 }, "a3fe213e5275d66396225ebc27bc3c6146678f5a2b3bd9e366a35a4c260ab1c1": {
   functionName: "isAuthenticated_createServerFn_handler",
-  importer: () => import("./assets/auth-server-BdMF0EWa.js")
+  importer: () => import("./assets/auth-server-DsJT5Ytx.js")
 }, "aceb4afc59163ecc33d059aa019da606105f8d4c88dc43f0d6b58389b410b7a8": {
   functionName: "login_createServerFn_handler",
-  importer: () => import("./assets/auth-server-BdMF0EWa.js")
+  importer: () => import("./assets/auth-server-DsJT5Ytx.js")
 }, "e7425d8a87ce7784e974ad7333aebdfd2a4903dbe9ee1ee190edb6420088c802": {
   functionName: "loginWithTwoFactor_createServerFn_handler",
-  importer: () => import("./assets/auth-server-BdMF0EWa.js")
+  importer: () => import("./assets/auth-server-DsJT5Ytx.js")
 }, "ea03da1fb8c22df1fb3d0dbe331c56db03b76d0fffef9c546bfb779df08466ce": {
   functionName: "logout_createServerFn_handler",
-  importer: () => import("./assets/auth-server-BdMF0EWa.js")
+  importer: () => import("./assets/auth-server-DsJT5Ytx.js")
 }, "839441a41d5dbe2adf36bea048fa4b81e937fbb4fef4a9b95d1c3bfd0513a0ca": {
   functionName: "graphqlProxy_createServerFn_handler",
   importer: () => import("./assets/api-server-DGgWoQHL.js")
@@ -1034,7 +1034,7 @@ let entriesPromise;
 let baseManifestPromise;
 let cachedFinalManifestPromise;
 async function loadEntries() {
-  const routerEntry = await import("./assets/router-D3cm6-ze.js");
+  const routerEntry = await import("./assets/router-QM2yTlFD.js");
   const startEntry = await import("./assets/start-HYkvq4Ni.js");
   return { startEntry, routerEntry };
 }

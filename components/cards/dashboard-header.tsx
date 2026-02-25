@@ -1,7 +1,7 @@
 "use client";
 
-import { LogOut, RefreshCw, Trash2 } from "lucide-react";
 import { useRouter } from "@tanstack/react-router";
+import { LogOut, RefreshCw, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { logout } from "@/lib/auth-server";
 import { formatLastUpdate } from "@/lib/cards-utils";

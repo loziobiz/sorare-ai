@@ -41,7 +41,7 @@ export function TwoFactorAuthForm({
       } else {
         setError(result.error || "Two-factor authentication failed");
       }
-    } catch (err) {
+    } catch (_err) {
       setError("An unexpected error occurred");
     } finally {
       setIsLoading(false);

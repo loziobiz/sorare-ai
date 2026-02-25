@@ -1,5 +1,6 @@
 import { createFileRoute, redirect } from "@tanstack/react-router";
 import { CardsDashboard } from "@/components/cards-dashboard";
+import { PageLayout } from "@/components/layout/page-layout";
 import { isAuthenticated } from "@/lib/auth-server";
 
 export const Route = createFileRoute("/cards")({
@@ -14,10 +15,8 @@ export const Route = createFileRoute("/cards")({
 
 function CardsPage() {
   return (
-    <main className="min-h-screen from-slate-50 to-slate-100 p-4 md:p-8 dark:from-slate-900 dark:to-slate-800">
-      <div className="mx-auto max-w-7xl">
-        <CardsDashboard />
-      </div>
-    </main>
+    <PageLayout containerSize="default" showNav>
+      <CardsDashboard />
+    </PageLayout>
   );
 }

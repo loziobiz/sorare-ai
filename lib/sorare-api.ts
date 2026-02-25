@@ -1,7 +1,7 @@
+import { graphqlProxy } from "./api-server";
 import { db } from "./db";
 import { cachedFetch, graphqlCache } from "./graphql-cache";
 import { GET_CARDS_QUERY } from "./queries";
-import { graphqlProxy } from "./api-server";
 
 export interface CardData {
   slug: string;

@@ -1,9 +1,7 @@
-import { AlertCircle } from "lucide-react";
-import { useState } from "react";
 import { createFileRoute, redirect, useRouter } from "@tanstack/react-router";
+import { useState } from "react";
 import { LoginForm } from "@/components/login-form";
 import { TwoFactorAuthForm } from "@/components/TwoFactorAuthForm";
-import { Alert } from "@/components/ui/alert";
 import { isAuthenticated } from "@/lib/auth-server";
 
 type AuthStep = "login" | "two-factor";
@@ -21,7 +19,7 @@ export const Route = createFileRoute("/")({
 function Home() {
   const router = useRouter();
   const [authStep, setAuthStep] = useState<AuthStep>("login");
-  const [error, setError] = useState("");
+  const [, setError] = useState("");
 
   const handleLoginSuccess = () => {
     router.navigate({ to: "/cards" });
@@ -46,14 +44,7 @@ function Home() {
           <h1 className="font-bold text-4xl tracking-tight">Sorare AI</h1>
         </div>
 
-        {error && (
-          <Alert variant="destructive">
-            <AlertCircle className="h-4 w-4" />
-            <div>{error}</div>
-          </Alert>
-        )}
-
-        {authStep === "login" ? (
+{authStep === "login" ? (
           <LoginForm
             onSuccess={handleLoginSuccess}
             onTwoFactorRequired={handleTwoFactorRequired}

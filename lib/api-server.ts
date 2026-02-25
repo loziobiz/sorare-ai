@@ -6,7 +6,9 @@ import { createGraphQLClient } from "./graphql/client";
  * Server function per il proxy GraphQL
  */
 export const graphqlProxy = createServerFn({ method: "POST" })
-  .inputValidator((data: { query: string; variables?: Record<string, unknown> }) => data)
+  .inputValidator(
+    (data: { query: string; variables?: Record<string, unknown> }) => data
+  )
   .handler(async ({ data }) => {
     try {
       const token = await getAuthToken();
@@ -26,7 +28,9 @@ export const graphqlProxy = createServerFn({ method: "POST" })
         }
       }
       throw new Error(
-        error instanceof Error ? error.message : "Failed to execute GraphQL query"
+        error instanceof Error
+          ? error.message
+          : "Failed to execute GraphQL query"
       );
     }
   });
