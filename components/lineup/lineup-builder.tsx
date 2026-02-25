@@ -59,6 +59,9 @@ const INITIAL_FORMATION: FormationSlot[] = [
   { position: "POR", card: null },
 ];
 
+// CAP massimo per la somma dei valori L10 della lineup
+const L10_CAP = 260;
+
 function getEmptyMessage(
   leagueFilter: string,
   activeSlot: SlotPosition | null
@@ -225,6 +228,15 @@ export function LineupBuilder() {
     [formation]
   );
 
+  // Calcola residuo CAP L10
+  const l10Used = useMemo(() => {
+    return formation.reduce((sum, slot) => {
+      return sum + (slot.card?.l10Average ?? 0);
+    }, 0);
+  }, [formation]);
+
+  const l10Remaining = L10_CAP - l10Used;
+
   // Carte filtrate per la selezione
   const filteredCards = useMemo(() => {
     let filtered = cards.filter((card) => !usedCardSlugs.has(card.slug));
@@ -275,6 +287,11 @@ export function LineupBuilder() {
       filtered = filtered.filter((card) => card.inSeasonEligible === true);
     }
 
+    // Filtra per CAP L10 - mostra solo giocatori compatibili
+    filtered = filtered.filter(
+      (card) => (card.l10Average ?? 0) <= l10Remaining
+    );
+
     // Ordina secondo il criterio selezionato
     filtered.sort((a, b) => {
       switch (sortBy) {
@@ -307,6 +324,7 @@ export function LineupBuilder() {
     searchQuery,
     sortBy,
     inSeasonOnly,
+    l10Remaining,
   ]);
 
   // Calcola bonus formazione (simulato)
@@ -422,6 +440,15 @@ export function LineupBuilder() {
       return;
     }
 
+    // Verifica CAP L10
+    const cardL10 = card.l10Average ?? 0;
+    if (cardL10 > l10Remaining) {
+      setError(
+        `Impossibile aggiungere: L10 ${cardL10.toFixed(0)} supera il residuo ${l10Remaining.toFixed(0)}`
+      );
+      return;
+    }
+
     setFormation((prev) => {
       const updated = prev.map((s) =>
         s.position === activeSlot ? { ...s, card } : s
@@ -526,8 +553,8 @@ export function LineupBuilder() {
       <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:gap-6">
         {/* Sezione sinistra - Campo di calcio */}
         <div className="flex max-h-[calc(100vh-6rem)] shrink-0 flex-col overflow-y-auto lg:w-[420px]">
-          {/* Nome formazione */}
-          <div className="mb-3">
+          {/* Nome formazione e CAP L10 */}
+          <div className="mb-3 space-y-2">
             <Input
               className="h-9"
               id="formation-name"
@@ -536,6 +563,21 @@ export function LineupBuilder() {
               required
               value={formationName}
             />
+            <div className="flex items-center justify-between rounded-md bg-slate-100 px-3 py-2">
+              <span className="font-medium text-slate-600 text-sm">
+                CAP L10:
+              </span>
+              <span
+                className={cn(
+                  "font-bold text-sm",
+                  l10Remaining < 0 && "text-red-600",
+                  l10Remaining >= 0 && l10Remaining < 50 && "text-orange-500",
+                  l10Remaining >= 50 && "text-emerald-600"
+                )}
+              >
+                {l10Remaining.toFixed(0)}/{L10_CAP}
+              </span>
+            </div>
           </div>
 
           {/* Bottone conferma */}
