@@ -63,8 +63,8 @@ const INITIAL_FORMATION: FormationSlot[] = [
 type CapOption = "uncapped" | 260 | 220;
 const CAP_OPTIONS: { value: CapOption; label: string }[] = [
   { value: "uncapped", label: "Uncapped" },
-  { value: 260, label: "CAP 260" },
-  { value: 220, label: "CAP 220" },
+  { value: 260, label: "ARENA CAP 260" },
+  { value: 220, label: "ARENACAP 220" },
 ];
 
 function getEmptyMessage(
