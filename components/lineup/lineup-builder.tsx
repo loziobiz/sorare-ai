@@ -814,18 +814,18 @@ export function LineupBuilder() {
                         className="h-10 cursor-pointer select-none whitespace-nowrap px-2 text-left align-middle font-medium text-foreground hover:bg-muted/80"
                         onClick={() =>
                           handleTableSort(
-                            "l15",
-                            tableSortKey === "l15" &&
+                            "l10",
+                            tableSortKey === "l10" &&
                               tableSortDirection === "asc"
                               ? "desc"
                               : "asc"
                           )
                         }
-                        style={{ width: COLUMN_WIDTHS.l15 }}
+                        style={{ width: COLUMN_WIDTHS.l10 }}
                       >
                         <div className="flex items-center">
-                          L15
-                          {getSortIcon("l15", tableSortKey, tableSortDirection)}
+                          L10
+                          {getSortIcon("l10", tableSortKey, tableSortDirection)}
                         </div>
                       </th>
                       <th

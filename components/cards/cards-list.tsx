@@ -18,7 +18,7 @@ export const COLUMN_WIDTHS = {
   match: 120,
   forma: 90,
   l5: 45,
-  l15: 45,
+  l10: 45,
   l40: 45,
 } as const;
 
@@ -29,7 +29,7 @@ export const COLUMN_WIDTHS_STANDALONE = {
   forma: 90,
   price: 400,
   l5: 50,
-  l15: 50,
+  l10: 50,
   l40: 50,
 } as const;
 
@@ -40,10 +40,10 @@ export interface ColumnWidths {
   forma: number;
   price?: number;
   l5: number;
-  l15: number;
+  l10: number;
   l40: number;
 }
-export type SortKey = "name" | "team" | "l5" | "l15" | "l40";
+export type SortKey = "name" | "team" | "l5" | "l10" | "l40";
 export type SortDirection = "asc" | "desc";
 
 export interface CardsListProps {
@@ -293,10 +293,10 @@ export function CardsList({
             b.l5Average ?? 0,
             sortDirection
           );
-        case "l15":
+        case "l10":
           return compareValues(
-            a.l15Average ?? 0,
-            b.l15Average ?? 0,
+            a.l10Average ?? 0,
+            b.l10Average ?? 0,
             sortDirection
           );
         case "l40":
@@ -389,12 +389,12 @@ export function CardsList({
               </th>
               <th
                 className="h-10 cursor-pointer select-none whitespace-nowrap px-2 text-left align-middle font-medium text-foreground hover:bg-muted/80"
-                onClick={() => handleSort("l15")}
-                style={{ width: widths.l15 }}
+                onClick={() => handleSort("l10")}
+                style={{ width: widths.l10 }}
               >
                 <div className="flex items-center">
-                  L15
-                  {renderSortIcon("l15")}
+                  L10
+                  {renderSortIcon("l10")}
                 </div>
               </th>
               <th
@@ -475,9 +475,9 @@ export function CardsList({
                   {card.l5Average?.toFixed(0) ?? "-"}
                 </div>
               </TableCell>
-              <TableCell style={{ width: widths.l15 }}>
+              <TableCell style={{ width: widths.l10 }}>
                 <div className="font-medium">
-                  {card.l15Average?.toFixed(0) ?? "-"}
+                  {card.l10Average?.toFixed(0) ?? "-"}
                 </div>
               </TableCell>
               <TableCell style={{ width: widths.l40 }}>
