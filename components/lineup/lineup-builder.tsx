@@ -24,7 +24,8 @@ import { DEFAULT_TTL, db } from "@/lib/db";
 import type { CardData } from "@/lib/sorare-api";
 import { fetchAllCards } from "@/lib/sorare-api";
 import { cn } from "@/lib/utils";
-import { PitchSlot } from "./pitch-slot";
+import { PitchField } from "./pitch-field";
+import { useFilteredCards } from "./use-filtered-cards";
 
 interface LeagueOption {
   value: string;
@@ -37,14 +38,7 @@ type SortOption = "name" | "team" | "l5" | "l10" | "l15" | "l40";
 // Posizioni disponibili nel campo (base 5)
 type SlotPosition5 = "ATT" | "EX" | "DIF" | "CEN" | "POR";
 // Posizioni disponibili nel campo (Pro GAS 7)
-type SlotPosition7 =
-  | "ATT1"
-  | "ATT2"
-  | "ATT3"
-  | "CEN1"
-  | "CEN2"
-  | "DIF1"
-  | "POR";
+type SlotPosition7 = "ATT1" | "EXT" | "CEN2" | "DIF1" | "CEN1" | "DIF2" | "POR";
 type SlotPosition = SlotPosition5 | SlotPosition7;
 
 interface FormationSlot {
@@ -53,7 +47,7 @@ interface FormationSlot {
 }
 
 // Posizioni Sorare mappate alle slot
-const POSITION_MAPPING: Record<SlotPosition, string[]> = {
+export const POSITION_MAPPING: Record<SlotPosition, string[]> = {
   // 5 giocatori
   ATT: ["Forward"],
   EX: ["Forward", "Midfielder", "Defender"],
@@ -73,7 +67,7 @@ const POSITION_MAPPING: Record<SlotPosition, string[]> = {
 // Configurazioni formazione per modalità
 type GameMode = "uncapped" | 260 | 220 | "pro_gas";
 
-interface GameModeConfig {
+export interface GameModeConfig {
   label: string;
   slotCount: 5 | 7;
   cap: number | null;
@@ -319,91 +313,7 @@ export function LineupBuilder() {
   const l10Remaining = l10Cap - l10Used;
 
   // Carte filtrate per la selezione
-  const filteredCards = useMemo(() => {
-    let filtered = cards.filter((card) => !usedCardSlugs.has(card.slug));
-
-    // Esclude giocatori senza squadra
-    filtered = filtered.filter((card) =>
-      Boolean(card.anyPlayer?.activeClub?.name?.trim())
-    );
-
-    // Filtra le carte in cassaforte (mostra solo carte libere)
-    filtered = filtered.filter((card) => card.sealed !== true);
-
-    // Filtra per lega se selezionata
-    if (leagueFilter) {
-      const [leagueName, countryCode] = leagueFilter.split("|");
-      filtered = filtered.filter((card) =>
-        card.anyPlayer?.activeClub?.activeCompetitions?.some(
-          (c) =>
-            c.format === "DOMESTIC_LEAGUE" &&
-            c.name === leagueName &&
-            c.country?.code === countryCode
-        )
-      );
-    }
-
-    // Filtra per rarità
-    if (rarityFilter !== "all") {
-      filtered = filtered.filter(
-        (card) => card.rarityTyped.toLowerCase() === rarityFilter
-      );
-    }
-
-    // Filtra per posizione se c'è uno slot attivo
-    if (activeSlot) {
-      const allowedPositions = POSITION_MAPPING[activeSlot];
-      filtered = filtered.filter((card) =>
-        card.anyPositions?.some((pos) => allowedPositions.includes(pos))
-      );
-    }
-
-    // Filtra per ricerca
-    if (searchQuery.trim()) {
-      const query = searchQuery.toLowerCase();
-      filtered = filtered.filter(
-        (card) =>
-          card.name.toLowerCase().includes(query) ||
-          card.anyPlayer?.activeClub?.name?.toLowerCase().includes(query)
-      );
-    }
-
-    // Filtra per in-season eligibility
-    if (inSeasonOnly) {
-      filtered = filtered.filter((card) => card.inSeasonEligible === true);
-    }
-
-    // Filtra per CAP L10 - mostra solo giocatori compatibili (se non uncapped)
-    if (gameModeConfig.cap !== null) {
-      filtered = filtered.filter(
-        (card) => (card.l10Average ?? 0) <= l10Remaining
-      );
-    }
-
-    // Ordina secondo il criterio selezionato
-    filtered.sort((a, b) => {
-      switch (sortBy) {
-        case "name":
-          return a.name.localeCompare(b.name);
-        case "team":
-          return (a.anyPlayer?.activeClub?.name ?? "").localeCompare(
-            b.anyPlayer?.activeClub?.name ?? ""
-          );
-        case "l5":
-          return (b.l5Average ?? 0) - (a.l5Average ?? 0);
-        case "l10":
-          return (b.l10Average ?? 0) - (a.l10Average ?? 0);
-        case "l15":
-          return (b.l15Average ?? 0) - (a.l15Average ?? 0);
-        case "l40":
-          return (b.l40Average ?? 0) - (a.l40Average ?? 0);
-        default:
-          return 0;
-      }
-    });
-
-    return filtered;
-  }, [
+  const filteredCards = useFilteredCards({
     cards,
     usedCardSlugs,
     leagueFilter,
@@ -413,8 +323,9 @@ export function LineupBuilder() {
     sortBy,
     inSeasonOnly,
     l10Remaining,
-    gameModeConfig.cap,
-  ]);
+    cap: gameModeConfig.cap,
+    positionMapping: POSITION_MAPPING,
+  });
 
   // Calcola bonus formazione (simulato)
   const _formationBonus = useMemo(() => {
@@ -721,156 +632,12 @@ export function LineupBuilder() {
           )}
 
           {/* Campo di calcio */}
-          <div className="relative flex aspect-[21/31] flex-col overflow-hidden rounded-xl bg-gradient-to-b from-emerald-600 to-emerald-700 shadow-lg">
-            {/* Linee del campo */}
-            <div className="absolute inset-5 rounded-lg border-2 border-white/30" />
-            <div className="absolute top-1/2 right-5 left-5 h-0.5 -translate-y-1/2 bg-white/30" />
-            <div className="absolute top-1/2 left-1/2 h-28 w-28 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 border-white/30" />
-            <div className="absolute bottom-5 left-1/2 h-24 w-40 -translate-x-1/2 border-2 border-white/30 border-b-0" />
-            <div className="absolute top-5 left-1/2 h-24 w-40 -translate-x-1/2 border-2 border-white/30 border-t-0" />
-
-            {/* Slot posizioni */}
-            <div className="relative z-10 flex h-full flex-col justify-between gap-2 px-4 py-3">
-              {gameMode === "pro_gas" ? (
-                <>
-                  {/* Pro GAS: ATT1-CEN2-EXT / DIF1-CEN1-DIF2 / POR */}
-                  {/* Riga alta - ATT1, CEN2, EXT */}
-                  <div className="flex justify-around">
-                    <PitchSlot
-                      card={
-                        formation.find((s) => s.position === "ATT1")?.card ??
-                        null
-                      }
-                      isActive={activeSlot === "ATT1"}
-                      label="ATT1"
-                      onClick={() => handleSlotClick("ATT1")}
-                    />
-                    <PitchSlot
-                      card={
-                        formation.find((s) => s.position === "CEN2")?.card ??
-                        null
-                      }
-                      isActive={activeSlot === "CEN2"}
-                      label="CEN2"
-                      onClick={() => handleSlotClick("CEN2")}
-                    />
-                    <PitchSlot
-                      card={
-                        formation.find((s) => s.position === "EXT")?.card ??
-                        null
-                      }
-                      isActive={activeSlot === "EXT"}
-                      label="EXT"
-                      onClick={() => handleSlotClick("EXT")}
-                    />
-                  </div>
-
-                  {/* Riga centrale - DIF1, CEN1, DIF2 */}
-                  <div className="flex justify-around">
-                    <PitchSlot
-                      card={
-                        formation.find((s) => s.position === "DIF1")?.card ??
-                        null
-                      }
-                      isActive={activeSlot === "DIF1"}
-                      label="DIF1"
-                      onClick={() => handleSlotClick("DIF1")}
-                    />
-                    <PitchSlot
-                      card={
-                        formation.find((s) => s.position === "CEN1")?.card ??
-                        null
-                      }
-                      isActive={activeSlot === "CEN1"}
-                      label="CEN1"
-                      onClick={() => handleSlotClick("CEN1")}
-                    />
-                    <PitchSlot
-                      card={
-                        formation.find((s) => s.position === "DIF2")?.card ??
-                        null
-                      }
-                      isActive={activeSlot === "DIF2"}
-                      label="DIF2"
-                      onClick={() => handleSlotClick("DIF2")}
-                    />
-                  </div>
-
-                  {/* Riga bassa - POR */}
-                  <div className="flex justify-center">
-                    <PitchSlot
-                      card={
-                        formation.find((s) => s.position === "POR")?.card ??
-                        null
-                      }
-                      isActive={activeSlot === "POR"}
-                      label="POR"
-                      onClick={() => handleSlotClick("POR")}
-                    />
-                  </div>
-                </>
-              ) : (
-                <>
-                  {/* Standard: 2-2-1 */}
-                  {/* Riga alta - ATT ed EX */}
-                  <div className="flex justify-around">
-                    <PitchSlot
-                      card={
-                        formation.find((s) => s.position === "ATT")?.card ??
-                        null
-                      }
-                      isActive={activeSlot === "ATT"}
-                      label="ATT"
-                      onClick={() => handleSlotClick("ATT")}
-                    />
-                    <PitchSlot
-                      card={
-                        formation.find((s) => s.position === "EX")?.card ?? null
-                      }
-                      isActive={activeSlot === "EX"}
-                      label="EX"
-                      onClick={() => handleSlotClick("EX")}
-                    />
-                  </div>
-
-                  {/* Riga centrale - DIF e CEN */}
-                  <div className="flex justify-around">
-                    <PitchSlot
-                      card={
-                        formation.find((s) => s.position === "DIF")?.card ??
-                        null
-                      }
-                      isActive={activeSlot === "DIF"}
-                      label="DIF"
-                      onClick={() => handleSlotClick("DIF")}
-                    />
-                    <PitchSlot
-                      card={
-                        formation.find((s) => s.position === "CEN")?.card ??
-                        null
-                      }
-                      isActive={activeSlot === "CEN"}
-                      label="CEN"
-                      onClick={() => handleSlotClick("CEN")}
-                    />
-                  </div>
-
-                  {/* Riga bassa - POR */}
-                  <div className="flex justify-center">
-                    <PitchSlot
-                      card={
-                        formation.find((s) => s.position === "POR")?.card ??
-                        null
-                      }
-                      isActive={activeSlot === "POR"}
-                      label="POR"
-                      onClick={() => handleSlotClick("POR")}
-                    />
-                  </div>
-                </>
-              )}
-            </div>
-          </div>
+          <PitchField
+            activeSlot={activeSlot}
+            formation={formation}
+            gameMode={gameMode}
+            onSlotClick={handleSlotClick}
+          />
         </div>
 
         {/* Sezione destra - Collezione carte */}
