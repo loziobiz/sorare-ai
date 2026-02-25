@@ -1,4 +1,3 @@
-import Image from "next/image";
 import { Card, CardContent } from "@/components/ui/card";
 import type { CardData } from "@/lib/sorare-api";
 
@@ -10,15 +9,12 @@ interface CardImageProps {
 export function CardImage({ src, alt }: CardImageProps) {
   return (
     <div className="flex justify-center">
-      <Image
+      <img
         alt={alt}
-        blurDataURL="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjIwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSIjZTBlMGUwIi8+PC9zdmc+"
         className="h-auto max-w-[200px] rounded-lg"
         height={200}
         loading="lazy"
-        placeholder="blur"
         src={src}
-        unoptimized
         width={200}
       />
     </div>

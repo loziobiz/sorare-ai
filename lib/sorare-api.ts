@@ -1,6 +1,7 @@
 import { db } from "./db";
 import { cachedFetch, graphqlCache } from "./graphql-cache";
 import { GET_CARDS_QUERY } from "./queries";
+import { graphqlProxy } from "./api-server";
 
 export interface CardData {
   slug: string;
@@ -120,40 +121,18 @@ export async function fetchCardsPage({
   };
 
   const fetcher = async (): Promise<CardsResponse> => {
-    const response = await fetch("/api/graphql", {
-      body: JSON.stringify({
+    const result = await graphqlProxy({
+      data: {
         query: GET_CARDS_QUERY,
         variables: { after: cursor },
-      }),
-      headers: {
-        "Content-Type": "application/json",
       },
-      method: "POST",
-      signal,
     });
 
-    if (response.status === 429) {
-      const retryAfter = response.headers.get("Retry-After");
-      const waitTime = retryAfter
-        ? Number.parseInt(retryAfter, 10) * 1000
-        : 2000;
-      await new Promise((resolve) => setTimeout(resolve, waitTime));
-      return fetchCardsPage({ cursor, signal, useCache: false });
-    }
-
-    const data = await response.json();
-
-    if (data.errors) {
-      throw new Error(
-        data.errors.map((e: { message: string }) => e.message).join(", ")
-      );
-    }
-
-    if (!data.data?.currentUser) {
+    if (!result.data?.currentUser) {
       return { cards: [], cursor: null };
     }
 
-    const newCards = (data.data.currentUser.cards?.nodes || []).filter(
+    const newCards = (result.data.currentUser.cards?.nodes || []).filter(
       (card: CardData) => {
         // Escludi carte NBA (hanno "NBA" tra le competizioni)
         const competitions =
@@ -173,13 +152,13 @@ export async function fetchCardsPage({
         lowestPriceCard: newCards[0].lowestPriceCard,
       });
     }
-    const pageInfo = data.data.currentUser.cards?.pageInfo;
+    const pageInfo = result.data.currentUser.cards?.pageInfo;
     const nextCursor = pageInfo?.hasNextPage ? pageInfo?.endCursor : null;
 
     return {
       cards: newCards,
       cursor: nextCursor,
-      userSlug: data.data.currentUser.slug,
+      userSlug: result.data.currentUser.slug,
     };
   };
 

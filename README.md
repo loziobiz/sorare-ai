@@ -1,36 +1,112 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Sorare AI Dashboard
 
-## Getting Started
+Applicazione per interagire con Sorare API e gestire le tue carte collezionabili. Costruita con **TanStack Start** e deployata su **Cloudflare Workers**.
 
-First, run the development server:
+## 🚀 Tecnologie
+
+- **[TanStack Start](https://tanstack.com/start)** - Full-stack React framework
+- **[TanStack Router](https://tanstack.com/router)** - Type-safe routing
+- **[Cloudflare Workers](https://workers.cloudflare.com/)** - Edge deployment
+- **[Tailwind CSS](https://tailwindcss.com/)** - Styling
+- **[TypeScript](https://www.typescriptlang.org/)** - Type safety
+
+## 🛠️ Scripts disponibili
+
+### Sviluppo
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+# Avvia il server di sviluppo TanStack Start
+npm run dev:start
+
+# Build di produzione
+npm run build:start
+
+# Preview in locale
+npm run preview:start
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+### Deploy
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+```bash
+# Deploy su Cloudflare Workers
+npm run deploy:start
+```
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+### Legacy (Next.js - da rimuovere)
 
-## Learn More
+```bash
+# Comandi Next.js (legacy, da rimuovere dopo il cutover)
+npm run dev      # Dev server Next.js
+npm run build    # Build Next.js
+npm run preview  # Preview OpenNext Cloudflare
+npm run deploy   # Deploy OpenNext Cloudflare
+```
 
-To learn more about Next.js, take a look at the following resources:
+## 📁 Struttura del progetto
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+```
+.
+├── src/                      # Nuova app TanStack Start
+│   ├── routes/              # Route definitions
+│   │   ├── __root.tsx       # Root layout
+│   │   ├── index.tsx        # Login page
+│   │   ├── cards.tsx        # Dashboard carte
+│   │   ├── lineup.tsx       # Lineup builder
+│   │   └── saved-lineups.tsx # Formazioni salvate
+│   ├── router.tsx           # Router configuration
+│   ├── routeTree.gen.ts     # Generated route tree
+│   └── styles/              # Additional styles
+├── app/                     # Legacy Next.js (da rimuovere)
+├── components/              # React components
+├── lib/                     # Utilities e server functions
+│   ├── auth-server.ts      # Auth server functions
+│   ├── api-server.ts       # API server functions
+│   └── ...
+├── public/                  # Static assets
+├── dist/                    # Build output
+└── vite.config.ts          # Vite configuration
+```
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## 🔐 Autenticazione
 
-## Deploy on Vercel
+L'autenticazione è gestita tramite **server functions** di TanStack Start con cookie HTTP-only:
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+- `sorare_jwt_token` - Token JWT per l'accesso alle API Sorare
+- `sorare_otp_challenge` - Challenge per 2FA
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## 🌐 Deploy
+
+Il deploy avviene su **Cloudflare Workers** utilizzando Wrangler:
+
+1. Configura le tue credenziali Cloudflare
+2. Esegui `npm run deploy:start`
+
+La configurazione è in `wrangler.jsonc`.
+
+## 📝 Note sulla migrazione
+
+Questo progetto è stato migrato da **Next.js 15** a **TanStack Start** per:
+
+- Migliore supporto per Cloudflare Workers
+- Type-safe routing integrato
+- Server functions più semplici delle Server Actions
+- Esperienza di sviluppo migliorata con Vite
+
+## 🧪 Test
+
+Esegui il check dei tipi TypeScript:
+
+```bash
+npx tsc --noEmit
+```
+
+Esegui linting e formattazione:
+
+```bash
+npm exec -- ultracite check
+npm exec -- ultracite fix
+```
+
+## 📄 Licenza
+
+MIT

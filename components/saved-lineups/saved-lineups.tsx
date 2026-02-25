@@ -1,8 +1,7 @@
 "use client";
 
 import { Pencil, Trash2 } from "lucide-react";
-import Image from "next/image";
-import { useRouter } from "next/navigation";
+import { useRouter } from "@tanstack/react-router";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { LoadingSpinner } from "@/components/loading-spinner";
 import { SiteNav } from "@/components/site-nav";
@@ -33,12 +32,12 @@ function CompactCard({ card }: CompactCardProps) {
   return (
     <div className="flex flex-col items-center gap-1">
       {card.pictureUrl && (
-        <Image
+        <img
           alt={card.name}
           className="h-auto max-w-[95px] rounded-lg"
           height={100}
+          loading="lazy"
           src={card.pictureUrl}
-          unoptimized
           width={85}
         />
       )}
@@ -198,7 +197,7 @@ export function SavedLineups() {
 
   const handleEdit = (formation: SavedFormation) => {
     // Pass the formation data to the edit page via router state
-    router.push(`/lineup?edit=${formation.id}`);
+    router.navigate({ to: "/lineup", search: { edit: formation.id } });
   };
 
   const handleDeleteClick = (id: number) => {
@@ -256,7 +255,10 @@ export function SavedLineups() {
       {formations.length === 0 ? (
         <div className="py-12 text-center text-slate-500">
           <p>Nessuna formazione salvata.</p>
-          <Button className="mt-4" onClick={() => router.push("/lineup")}>
+          <Button
+            className="mt-4"
+            onClick={() => router.navigate({ to: "/lineup" })}
+          >
             Crea una nuova formazione
           </Button>
         </div>

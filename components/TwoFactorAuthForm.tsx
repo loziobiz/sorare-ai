@@ -13,7 +13,7 @@ import {
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { loginWithTwoFactor } from "@/lib/auth";
+import { loginWithTwoFactor } from "@/lib/auth-server";
 
 interface TwoFactorAuthFormProps {
   onSuccess?: () => void;
@@ -34,7 +34,7 @@ export function TwoFactorAuthForm({
     setError("");
 
     try {
-      const result = await loginWithTwoFactor(otpCode);
+      const result = await loginWithTwoFactor({ data: { otpCode } });
 
       if (result.success) {
         onSuccess?.();

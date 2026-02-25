@@ -1,8 +1,5 @@
-"use client";
-
 import { CreditCard, Layers, Save } from "lucide-react";
-import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { Link, useLocation } from "@tanstack/react-router";
 
 interface NavItem {
   href: string;
@@ -17,7 +14,8 @@ const navItems: NavItem[] = [
 ];
 
 export function SiteNav() {
-  const pathname = usePathname();
+  const location = useLocation();
+  const pathname = location.pathname;
 
   return (
     <nav className="mb-4 flex items-center gap-2 border-slate-200 border-b pb-0">
@@ -33,7 +31,7 @@ export function SiteNav() {
                 : "text-slate-600 hover:bg-slate-100 hover:text-slate-900"
             }
             `}
-            href={item.href}
+            to={item.href}
             key={item.href}
           >
             <Icon className="h-4 w-4" />

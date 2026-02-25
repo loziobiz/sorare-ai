@@ -29,7 +29,10 @@
     "**/*.tsx",
     ".next/types/**/*.ts",
     ".next/dev/types/**/*.ts",
-    "**/*.mts"
+    "**/*.mts",
+    "app/routeTree.gen.ts",
+    "app/**/*.ts",
+    "app/**/*.tsx"
   ],
   "exclude": ["node_modules"]
 }

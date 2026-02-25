@@ -1,7 +1,7 @@
 "use client";
 
 import { Check, Search } from "lucide-react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useRouter, useSearch } from "@tanstack/react-router";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { SorareCard } from "@/components/cards/card";
 import {
@@ -182,7 +182,8 @@ function getPositionForCard(card: CardData): SlotPosition | null {
 
 export function LineupBuilder() {
   const router = useRouter();
-  const searchParams = useSearchParams();
+  const search = useSearch({ from: "/lineup" });
+  const searchParams = new URLSearchParams(search as Record<string, string>);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState("");
   const [cards, setCards] = useState<CardData[]>([]);
@@ -503,7 +504,7 @@ export function LineupBuilder() {
       setFormation(INITIAL_FORMATION);
       setEditingId(null);
       setError("");
-      router.push("/saved-lineups");
+      router.navigate({ to: "/saved-lineups" });
     } catch (err) {
       setError(err instanceof Error ? err.message : "Errore nel salvataggio");
     }

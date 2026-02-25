@@ -13,7 +13,7 @@ import {
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { login } from "@/lib/auth";
+import { login } from "@/lib/auth-server";
 
 interface LoginFormProps {
   onSuccess?: () => void;
@@ -32,7 +32,7 @@ export function LoginForm({ onSuccess, onTwoFactorRequired }: LoginFormProps) {
     setError("");
 
     try {
-      const result = await login(email, password);
+      const result = await login({ data: { email, password } });
 
       if (result.success) {
         onSuccess?.();

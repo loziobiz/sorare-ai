@@ -1,7 +1,6 @@
 "use client";
 
 import { Plus, X } from "lucide-react";
-import Image from "next/image";
 import type { CardData } from "@/lib/sorare-api";
 import { cn } from "@/lib/utils";
 
@@ -29,12 +28,12 @@ export function PitchSlot({ label, card, isActive, onClick }: PitchSlotProps) {
 
         {/* Immagine della carta */}
         {card.pictureUrl ? (
-          <Image
+          <img
             alt={card.name}
             className="h-50 w-32 rounded-lg object-cover shadow-lg"
             height={176}
+            loading="lazy"
             src={card.pictureUrl}
-            unoptimized
             width={128}
           />
         ) : (

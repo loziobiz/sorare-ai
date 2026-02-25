@@ -1,9 +1,9 @@
 "use client";
 
 import { LogOut, RefreshCw, Trash2 } from "lucide-react";
-import { useRouter } from "next/navigation";
+import { useRouter } from "@tanstack/react-router";
 import { Button } from "@/components/ui/button";
-import { logout } from "@/lib/auth";
+import { logout } from "@/lib/auth-server";
 import { formatLastUpdate } from "@/lib/cards-utils";
 
 interface DashboardHeaderProps {
@@ -27,7 +27,7 @@ export function DashboardHeader({
 
   const handleLogout = async () => {
     await logout();
-    router.push("/");
+    router.navigate({ to: "/" });
   };
 
   const isDisabled = isRefreshing || isLoading;

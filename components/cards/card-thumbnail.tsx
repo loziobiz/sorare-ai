@@ -1,6 +1,5 @@
 "use client";
 
-import Image from "next/image";
 import { useState } from "react";
 
 interface CardThumbnailProps {
@@ -25,10 +24,10 @@ export function CardThumbnail({ src, alt, size = 60 }: CardThumbnailProps) {
 
   return (
     <div className="relative shrink-0" style={{ width: size, height: size }}>
-      <Image
+      <img
         alt={alt}
         className="absolute inset-0 rounded-full object-cover"
-        height={280}
+        height={size}
         loading="lazy"
         onError={() => setImageError(true)}
         src={src}
@@ -37,8 +36,7 @@ export function CardThumbnail({ src, alt, size = 60 }: CardThumbnailProps) {
           width: size,
           height: size,
         }}
-        unoptimized
-        width={200}
+        width={size}
       />
     </div>
   );
