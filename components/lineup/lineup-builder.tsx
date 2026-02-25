@@ -249,6 +249,11 @@ export function LineupBuilder() {
   const filteredCards = useMemo(() => {
     let filtered = cards.filter((card) => !usedCardSlugs.has(card.slug));
 
+    // Esclude giocatori senza squadra
+    filtered = filtered.filter((card) =>
+      Boolean(card.anyPlayer?.activeClub?.name?.trim())
+    );
+
     // Filtra le carte in cassaforte (mostra solo carte libere)
     filtered = filtered.filter((card) => card.sealed !== true);
 
