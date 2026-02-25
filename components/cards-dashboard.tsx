@@ -13,7 +13,6 @@ import {
 import { DashboardHeader } from "@/components/cards/dashboard-header";
 import { type ViewMode, ViewToggle } from "@/components/cards/view-toggle";
 import { LoadingSpinner } from "@/components/loading-spinner";
-import { SiteNav } from "@/components/site-nav";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { useCardFilters } from "@/hooks/use-card-filters";
 import { useCards } from "@/hooks/use-cards";
@@ -73,8 +72,6 @@ export function CardsDashboard() {
     <div className="flex h-[calc(100vh-2rem)] flex-col">
       {/* Header e filtri sticky */}
       <div className="sticky top-0 z-20 bg-white pb-2">
-        <SiteNav />
-
         <div className="mt-6">
           <DashboardHeader
             isLoading={isLoading}

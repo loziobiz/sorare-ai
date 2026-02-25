@@ -44,7 +44,7 @@ function Home() {
           <h1 className="font-bold text-4xl tracking-tight">Sorare AI</h1>
         </div>
 
-{authStep === "login" ? (
+        {authStep === "login" ? (
           <LoginForm
             onSuccess={handleLoginSuccess}
             onTwoFactorRequired={handleTwoFactorRequired}

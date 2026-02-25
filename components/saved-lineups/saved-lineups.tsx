@@ -4,7 +4,6 @@ import { useRouter } from "@tanstack/react-router";
 import { Pencil, Trash2 } from "lucide-react";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { LoadingSpinner } from "@/components/loading-spinner";
-import { SiteNav } from "@/components/site-nav";
 import {
   Alert,
   AlertAction,
@@ -242,8 +241,6 @@ export function SavedLineups() {
 
   return (
     <div className="space-y-6">
-      <SiteNav />
-
       <div>
         <h1 className="font-bold text-3xl">Formazioni Salvate</h1>
         <p className="text-muted-foreground">

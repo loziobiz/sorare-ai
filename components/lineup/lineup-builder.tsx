@@ -13,7 +13,6 @@ import {
 } from "@/components/cards/cards-list";
 import { type ViewMode, ViewToggle } from "@/components/cards/view-toggle";
 import { LoadingSpinner } from "@/components/loading-spinner";
-import { SiteNav } from "@/components/site-nav";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -520,7 +519,6 @@ export function LineupBuilder() {
 
   return (
     <div className="space-y-6">
-      <SiteNav />
       <ToastContainer
         onRemove={(id) => setToasts((prev) => prev.filter((t) => t.id !== id))}
         toasts={toasts}
