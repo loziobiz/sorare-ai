@@ -15,7 +15,7 @@ export const Route = createFileRoute("/saved-lineups")({
 
 function SavedLineupsPage() {
   return (
-    <PageLayout containerSize="default" showNav>
+    <PageLayout containerSize="wide" showNav>
       <SavedLineups />
     </PageLayout>
   );

@@ -517,7 +517,7 @@ export function SavedLineups() {
             </Button>
           </div>
         ) : (
-          <div className="space-y-8">
+          <div className="space-y-6">
             {Object.entries(groupedFormations).map(([league, items]) => (
               <div key={league}>
                 <h2 className="mb-4 font-bold text-slate-700 text-xl">

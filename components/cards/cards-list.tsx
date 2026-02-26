@@ -13,13 +13,13 @@ import { NextMatchBlock } from "./next-match-block";
 
 // Larghezze fisse delle colonne per lineup-builder
 export const COLUMN_WIDTHS = {
-  name: 200,
+  name: 260,
   team: 200,
-  match: 120,
-  forma: 90,
-  l5: 45,
-  l10: 45,
-  l40: 45,
+  match: 150,
+  forma: 100,
+  l5: 50,
+  l10: 50,
+  l40: 50,
 } as const;
 
 // Larghezze fisse delle colonne per cards-dashboard (standalone)
@@ -373,6 +373,14 @@ export function CardsList({
                   style={{ width: widths.price }}
                 />
               )}
+              {widths.match && (
+                <th
+                  className="h-10 whitespace-nowrap px-2 text-left align-middle font-medium text-foreground"
+                  style={{ width: widths.match }}
+                >
+                  <div className="flex items-center">Prossima</div>
+                </th>
+              )}
               <th
                 className="h-10 whitespace-nowrap px-2 text-left align-middle font-medium text-foreground"
                 style={{ width: widths.forma }}
@@ -442,11 +450,13 @@ export function CardsList({
                       </div>
                       {markedCards?.has(card.slug) && (
                         <span
-                          className="inline-flex max-w-[100px] items-center gap-0.5 truncate rounded bg-amber-100 px-1.5 py-0.5 text-[10px] font-medium text-amber-700"
+                          className="inline-flex max-w-[100px] items-center gap-0.5 truncate rounded bg-amber-100 px-1.5 py-0.5 font-medium text-[10px] text-amber-700"
                           title={markedCards.get(card.slug)}
                         >
                           <Bookmark className="h-3 w-3 shrink-0" />
-                          <span className="truncate">{markedCards.get(card.slug)}</span>
+                          <span className="truncate">
+                            {markedCards.get(card.slug)}
+                          </span>
                         </span>
                       )}
                     </div>
@@ -457,6 +467,11 @@ export function CardsList({
                           .join(", ")}
                         {" • XP "}
                         {getXP(card) || "-"}%
+                        {card.inSeasonEligible && (
+                          <span className="ml-1.5 inline-flex items-center rounded bg-emerald-100 px-1 py-0.5 font-medium text-[9px] text-emerald-700">
+                            IN-SEASON
+                          </span>
+                        )}
                       </div>
                     )}
                   </div>
