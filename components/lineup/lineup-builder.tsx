@@ -276,6 +276,7 @@ export function LineupBuilder() {
   const [rarityFilter, setRarityFilter] = useState<RarityFilter>("all");
   const [sortBy] = useState<SortOption>("l5");
   const [inSeasonOnly, setInSeasonOnly] = useState(false);
+  const [homeOnly, setHomeOnly] = useState(false);
   const [showUsedCards, setShowUsedCards] = useState(false);
   const [savedFormationsCards, setSavedFormationsCards] = useState<
     Map<string, string>
@@ -349,6 +350,7 @@ export function LineupBuilder() {
     searchQuery,
     sortBy,
     inSeasonOnly,
+    homeOnly,
     l10Remaining,
     cap: gameModeConfig.cap,
     positionMapping: POSITION_MAPPING,
@@ -639,10 +641,8 @@ export function LineupBuilder() {
             <div className="mb-4 flex flex-wrap gap-3">
               {/* Lega */}
               <div className="flex items-center gap-2">
-                <label className="font-medium text-sm" htmlFor="league-filter">
-                  Lega:
-                </label>
                 <select
+                  aria-label="Seleziona lega"
                   className="flex h-9 rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                   id="league-filter"
                   onChange={(e) => {
@@ -693,6 +693,22 @@ export function LineupBuilder() {
                   htmlFor="in-season-filter"
                 >
                   In-Season
+                </label>
+              </div>
+              {/* Home Only Filter */}
+              <div className="flex items-center gap-2">
+                <Checkbox
+                  checked={homeOnly}
+                  id="home-only-filter"
+                  onCheckedChange={(checked) =>
+                    setHomeOnly(checked === true)
+                  }
+                />
+                <label
+                  className="cursor-pointer font-medium text-sm"
+                  htmlFor="home-only-filter"
+                >
+                  In casa
                 </label>
               </div>
               {/* Mostra utilizzati */}

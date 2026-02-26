@@ -13,6 +13,7 @@ interface UseFilteredCardsOptions {
   searchQuery: string;
   sortBy: "name" | "team" | "l5" | "l10" | "l15" | "l40";
   inSeasonOnly: boolean;
+  homeOnly: boolean;
   l10Remaining: number;
   cap: number | null;
   positionMapping: Record<SlotPosition, string[]>;
@@ -30,6 +31,7 @@ export function useFilteredCards(options: UseFilteredCardsOptions): CardData[] {
     searchQuery,
     sortBy,
     inSeasonOnly,
+    homeOnly,
     l10Remaining,
     cap,
     positionMapping,
@@ -91,6 +93,15 @@ export function useFilteredCards(options: UseFilteredCardsOptions): CardData[] {
       filtered = filtered.filter((card) => card.inSeasonEligible === true);
     }
 
+    // Filtra per giocatori che giocano in casa
+    if (homeOnly) {
+      filtered = filtered.filter((card) => {
+        const clubName = card.anyPlayer?.activeClub?.name;
+        const homeTeamName = card.anyPlayer?.nextGame?.homeTeam?.name;
+        return Boolean(clubName && homeTeamName && clubName === homeTeamName);
+      });
+    }
+
     // Filtra per CAP L10 - mostra solo giocatori compatibili (se non uncapped)
     if (cap !== null) {
       filtered = filtered.filter(
@@ -137,6 +148,7 @@ export function useFilteredCards(options: UseFilteredCardsOptions): CardData[] {
     searchQuery,
     sortBy,
     inSeasonOnly,
+    homeOnly,
     l10Remaining,
     cap,
     positionMapping,
