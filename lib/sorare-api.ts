@@ -52,6 +52,23 @@ export interface CardData {
         name?: string;
         code?: string;
       } | null;
+      homeStats?: {
+        winOddsBasisPoints?: number | null;
+        drawOddsBasisPoints?: number | null;
+        loseOddsBasisPoints?: number | null;
+      } | null;
+      awayStats?: {
+        winOddsBasisPoints?: number | null;
+        drawOddsBasisPoints?: number | null;
+        loseOddsBasisPoints?: number | null;
+      } | null;
+    } | null;
+    nextClassicFixturePlayingStatusOdds?: {
+      starterOddsBasisPoints: number;
+      substituteOddsBasisPoints: number;
+      nonPlayingOddsBasisPoints: number;
+      reliability: string;
+      providerIconUrl: string;
     } | null;
   };
   l5Average?: number;

@@ -6,9 +6,10 @@ Gestione collezioni, lineup, tornei, statistiche, ecc.
 Always refer to the following resources for Sorare API and GraphQL documentation:
 
 - [Sorare API how-to](./docs/sorare_api.md)
-- [Sorare GraphQL Schema](./docs/sorare_graphql_schema.md)
+- [Sorare GraphQL Schema](./docs/schema.basic.graphql)
 - [Sorare Scoring Rules](./docs/sorare_scoring_rules.md)
 - [Sorare Game Rules and Mechanics](./docs/sorare_rules.md)
+
 
 ## Ultracite Code Standards
 

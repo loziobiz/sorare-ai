@@ -201,6 +201,11 @@ export function getLineupColumns(
                 <div className="font-oswald-medium text-[14px] uppercase">
                   {getPlayerName(card)}
                 </div>
+                {card.inSeasonEligible && (
+                  <span className="inline-flex items-center rounded bg-emerald-100 px-1 py-0.5 font-medium text-[9px] text-emerald-700">
+                    IN-SEASON
+                  </span>
+                )}
                 {markedCards?.has(card.slug) && (
                   <span
                     className="inline-flex max-w-[100px] items-center gap-0.5 truncate rounded bg-amber-100 px-1.5 py-0.5 font-medium text-[10px] text-amber-700"
@@ -220,11 +225,40 @@ export function getLineupColumns(
                     .join(", ")}
                   {" • XP "}
                   {getXP(card) || "-"}%
-                  {card.inSeasonEligible && (
-                    <span className="ml-1.5 inline-flex items-center rounded bg-emerald-100 px-1 py-0.5 font-medium text-[9px] text-emerald-700">
-                      IN-SEASON
+                  {card.anyPlayer?.nextClassicFixturePlayingStatusOdds && (
+                    <span className="ml-1.5 inline-flex items-center gap-0.5 text-slate-600">
+                      <span className="text-[10px]">👕</span>
+                      {Math.round(
+                        card.anyPlayer.nextClassicFixturePlayingStatusOdds
+                          .starterOddsBasisPoints / 100
+                      )}
+                      %
                     </span>
                   )}
+                  {(() => {
+                    const clubName = card.anyPlayer?.activeClub?.name;
+                    const nextGame = card.anyPlayer?.nextGame;
+                    if (!clubName || !nextGame) return null;
+                    
+                    const isHomeTeam = nextGame.homeTeam?.name === clubName;
+                    const isAwayTeam = nextGame.awayTeam?.name === clubName;
+                    
+                    let winOdds: number | null | undefined;
+                    if (isHomeTeam) {
+                      winOdds = nextGame.homeStats?.winOddsBasisPoints;
+                    } else if (isAwayTeam) {
+                      winOdds = nextGame.awayStats?.winOddsBasisPoints;
+                    }
+                    
+                    if (!winOdds) return null;
+                    
+                    return (
+                      <span className="ml-1.5 inline-flex items-center gap-0.5 text-slate-600">
+                        <span className="text-[10px]">🏆</span>
+                        {Math.round(winOdds / 100)}%
+                      </span>
+                    );
+                  })()}
                 </div>
               )}
             </div>

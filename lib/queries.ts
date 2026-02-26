@@ -53,6 +53,27 @@ export const GET_CARDS_QUERY = `
                   name
                   code
                 }
+                homeStats {
+                  ... on FootballTeamGameStats {
+                    winOddsBasisPoints
+                    drawOddsBasisPoints
+                    loseOddsBasisPoints
+                  }
+                }
+                awayStats {
+                  ... on FootballTeamGameStats {
+                    winOddsBasisPoints
+                    drawOddsBasisPoints
+                    loseOddsBasisPoints
+                  }
+                }
+              }
+              nextClassicFixturePlayingStatusOdds {
+                starterOddsBasisPoints
+                substituteOddsBasisPoints
+                nonPlayingOddsBasisPoints
+                reliability
+                providerIconUrl
               }
             }
           }
