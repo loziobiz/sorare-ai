@@ -125,4 +125,3 @@ Biome's linter will catch most issues automatically. Focus your attention on:
 
 Most formatting and common issues are automatically fixed by Biome. Run `pnpm exec -- ultracite fix` before committing to ensure compliance.
 
-
