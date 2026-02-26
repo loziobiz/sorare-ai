@@ -10,6 +10,9 @@ import { useCards } from "@/hooks/use-cards";
 import { ACTIVE_LEAGUES } from "@/lib/config";
 import type { SavedFormation } from "@/lib/db";
 import { db } from "@/lib/db";
+import type { CardData } from "@/lib/sorare-api";
+import { SavedLineupsDnDProvider, useSavedLineupsDnD } from "./dnd-context";
+import { DraggableCard, PlaceholderSlot } from "./draggable-card";
 
 interface CompactCardProps {
   card: {
@@ -20,11 +23,11 @@ interface CompactCardProps {
     l10Average?: number;
     power?: string;
     anyPlayer?: {
-      activeClub?: { name?: string } | null;
+      activeClub?: { name: string; code?: string } | null;
       nextGame?: {
         date?: string | null;
-        homeTeam?: { name?: string; shortName?: string } | null;
-        awayTeam?: { name?: string; shortName?: string } | null;
+        homeTeam?: { name?: string; code?: string } | null;
+        awayTeam?: { name?: string; code?: string } | null;
       } | null;
     };
   };
@@ -110,7 +113,20 @@ function MatchInfo({
   );
 }
 
-function CompactCard({ card }: CompactCardProps) {
+function CompactCard({
+  card,
+  formationId,
+  slotPosition,
+  isDragging,
+}: CompactCardProps & {
+  formationId: number;
+  slotPosition: string;
+  isDragging?: boolean;
+}) {
+  if (isDragging) {
+    return <PlaceholderSlot slotPosition={slotPosition} />;
+  }
+
   return (
     <div className="flex w-[85px] flex-col items-center gap-1">
       <div className="relative">
@@ -137,6 +153,7 @@ function CompactCard({ card }: CompactCardProps) {
 
 interface FormationCardProps {
   formation: SavedFormation;
+  allFormations: SavedFormation[];
   onEdit: (formation: SavedFormation) => void;
   onDelete: (id: number) => void;
   currentCardsMap: Map<string, Record<string, unknown>>;
@@ -144,10 +161,13 @@ interface FormationCardProps {
 
 function FormationCard({
   formation,
+  allFormations,
   onEdit,
   onDelete,
   currentCardsMap,
 }: FormationCardProps) {
+  const { dragState, updateCompatibility } = useSavedLineupsDnD();
+
   // Define position order: POR → DIF → DIF1 → DIF2 → CEN → CEN1 → CEN2 → ATT → ATT1 → ATT2 → EXTRA (EX/EXT)
   const positionOrder: Record<string, number> = {
     POR: 0,
@@ -190,7 +210,7 @@ function FormationCard({
           l10Average: freshData.l10Average as number | undefined,
           anyPlayer: freshData.anyPlayer as
             | {
-                activeClub?: { name?: string } | null;
+                activeClub?: { name: string; code?: string } | null;
                 nextGame?: {
                   date?: string | null;
                   homeTeam?: { name?: string; code?: string } | null;
@@ -202,6 +222,13 @@ function FormationCard({
       }
       return card;
     });
+
+  // Aggiorna compatibilità quando inizia il drag
+  useEffect(() => {
+    if (dragState.activeItem) {
+      updateCompatibility(allFormations);
+    }
+  }, [dragState.activeItem, allFormations, updateCompatibility]);
 
   // Label della modalità
   const modeLabels: Record<string, string> = {
@@ -216,25 +243,40 @@ function FormationCard({
       ? "bg-purple-100 text-purple-700"
       : "bg-slate-100 text-slate-600";
 
+  const isCardDragging = (card: CardData) => dragState.activeItem?.card.slug === card.slug;
+
   return (
-    <div className="w-fit space-y-4 rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
+    <div className="mb-5 max-w-full space-y-4 rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
       {/* Nome formazione, modalità e lega */}
       <div className="flex items-center justify-between">
         <div>
           <h3 className="font-bold text-slate-800 text-xl">{formation.name}</h3>
-          <span
-            className={`mt-1 inline-block rounded-full px-2 py-0.5 font-medium text-[10px] ${modeColor}`}
-          >
-            {modeLabel} • {formation.slots.length} giocatori
-          </span>
         </div>
       </div>
 
       {/* Carte in orizzontale */}
       <div className="flex gap-1 overflow-x-auto pb-2">
-        {sortedCards.map((card) => (
-          <CompactCard card={card} key={card.slug} />
-        ))}
+        {sortedCards.map((card) => {
+          const slot = formation.slots.find((s) => s.cardSlug === card.slug);
+          const slotPosition = slot?.position ?? "";
+          const isDragging = isCardDragging(card);
+
+          return (
+            <DraggableCard
+              key={card.slug}
+              card={card}
+              formationId={formation.id ?? 0}
+              slotPosition={slotPosition}
+            >
+              <CompactCard
+                card={card}
+                formationId={formation.id ?? 0}
+                slotPosition={slotPosition}
+                isDragging={isDragging}
+              />
+            </DraggableCard>
+          );
+        })}
       </div>
 
       {/* Pulsanti azione */}
@@ -327,6 +369,71 @@ export function SavedLineups() {
     }
   };
 
+  const handleSwapCards = useCallback(
+    async (
+      source: { formationId: number; card: CardData; slotPosition: string },
+      target: { formationId: number; card: CardData; slotPosition: string }
+    ) => {
+      try {
+        // Trova le formazioni coinvolte
+        const sourceFormation = formations.find((f) => f.id === source.formationId);
+        const targetFormation = formations.find((f) => f.id === target.formationId);
+
+        if (!sourceFormation || !targetFormation) return;
+
+        // Crea copie delle formazioni con le carte scambiate
+        const updatedSourceCards = sourceFormation.cards.map((c) =>
+          c.slug === source.card.slug ? target.card : c
+        );
+        const updatedTargetCards = targetFormation.cards.map((c) =>
+          c.slug === target.card.slug ? source.card : c
+        );
+
+        // Crea copie degli slot con le posizioni scambiate
+        const updatedSourceSlots = sourceFormation.slots?.map((s) => {
+          if (s.cardSlug === source.card.slug) {
+            return { ...s, cardSlug: target.card.slug };
+          }
+          return s;
+        });
+        const updatedTargetSlots = targetFormation.slots?.map((s) => {
+          if (s.cardSlug === target.card.slug) {
+            return { ...s, cardSlug: source.card.slug };
+          }
+          return s;
+        });
+
+        // Aggiorna nel database
+        await Promise.all([
+          db.savedFormations.update(source.formationId, {
+            cards: updatedSourceCards,
+            slots: updatedSourceSlots,
+          }),
+          db.savedFormations.update(target.formationId, {
+            cards: updatedTargetCards,
+            slots: updatedTargetSlots,
+          }),
+        ]);
+
+        // Aggiorna stato locale
+        setFormations((prev) =>
+          prev.map((f) => {
+            if (f.id === source.formationId) {
+              return { ...f, cards: updatedSourceCards, slots: updatedSourceSlots };
+            }
+            if (f.id === target.formationId) {
+              return { ...f, cards: updatedTargetCards, slots: updatedTargetSlots };
+            }
+            return f;
+          })
+        );
+      } catch (err) {
+        console.error("Error swapping cards:", err);
+      }
+    },
+    [formations]
+  );
+
   const groupedFormations = useMemo(() => {
     const groups: Record<string, SavedFormation[]> = {};
     for (const formation of formations) {
@@ -360,38 +467,41 @@ export function SavedLineups() {
         </p>
       </div>
 
-      {formations.length === 0 ? (
-        <div className="py-12 text-center text-slate-500">
-          <p>Nessuna formazione salvata.</p>
-          <Button
-            className="mt-4"
-            onClick={() => router.navigate({ to: "/lineup" })}
-          >
-            Crea una nuova formazione
-          </Button>
-        </div>
-      ) : (
-        <div className="space-y-8">
-          {Object.entries(groupedFormations).map(([league, items]) => (
-            <div key={league}>
-              <h2 className="mb-4 font-bold text-slate-700 text-xl">
-                {league}
-              </h2>
-              <div className="grid gap-2 lg:grid-cols-3">
-                {items.map((formation) => (
-                  <FormationCard
-                    currentCardsMap={currentCardsMap}
-                    formation={formation}
-                    key={formation.id}
-                    onDelete={handleDeleteClick}
-                    onEdit={handleEdit}
-                  />
-                ))}
+      <SavedLineupsDnDProvider onSwap={handleSwapCards}>
+        {formations.length === 0 ? (
+          <div className="py-12 text-center text-slate-500">
+            <p>Nessuna formazione salvata.</p>
+            <Button
+              className="mt-4"
+              onClick={() => router.navigate({ to: "/lineup" })}
+            >
+              Crea una nuova formazione
+            </Button>
+          </div>
+        ) : (
+          <div className="space-y-8">
+            {Object.entries(groupedFormations).map(([league, items]) => (
+              <div key={league}>
+                <h2 className="mb-4 font-bold text-slate-700 text-xl">
+                  {league}
+                </h2>
+                <div className="grid gap-5 lg:grid-cols-3">
+                  {items.map((formation) => (
+                    <FormationCard
+                      allFormations={formations}
+                      currentCardsMap={currentCardsMap}
+                      formation={formation}
+                      key={formation.id}
+                      onDelete={handleDeleteClick}
+                      onEdit={handleEdit}
+                    />
+                  ))}
+                </div>
               </div>
-            </div>
-          ))}
-        </div>
-      )}
+            ))}
+          </div>
+        )}
+      </SavedLineupsDnDProvider>
 
       {/* Modale conferma cancellazione */}
       {deleteConfirm !== null && (

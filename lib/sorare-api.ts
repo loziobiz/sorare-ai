@@ -41,7 +41,7 @@ export interface CardData {
           name: string;
         };
       }>;
-    };
+    } | null;
     nextGame?: {
       date?: string | null;
       homeTeam?: {
