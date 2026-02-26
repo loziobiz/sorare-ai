@@ -14,6 +14,7 @@ interface UseFilteredCardsOptions {
   sortBy: "name" | "team" | "l5" | "l10" | "l15" | "l40";
   inSeasonOnly: boolean;
   homeOnly: boolean;
+  starterOnly: boolean;
   l10Remaining: number;
   cap: number | null;
   positionMapping: Record<SlotPosition, string[]>;
@@ -32,6 +33,7 @@ export function useFilteredCards(options: UseFilteredCardsOptions): CardData[] {
     sortBy,
     inSeasonOnly,
     homeOnly,
+    starterOnly,
     l10Remaining,
     cap,
     positionMapping,
@@ -102,6 +104,16 @@ export function useFilteredCards(options: UseFilteredCardsOptions): CardData[] {
       });
     }
 
+    // Filtra per giocatori con alta probabilità di essere titolari (>= 70%)
+    if (starterOnly) {
+      filtered = filtered.filter((card) => {
+        const starterOdds =
+          card.anyPlayer?.nextClassicFixturePlayingStatusOdds
+            ?.starterOddsBasisPoints;
+        return Boolean(starterOdds && starterOdds >= 7000);
+      });
+    }
+
     // Filtra per CAP L10 - mostra solo giocatori compatibili (se non uncapped)
     if (cap !== null) {
       filtered = filtered.filter(
@@ -149,6 +161,7 @@ export function useFilteredCards(options: UseFilteredCardsOptions): CardData[] {
     sortBy,
     inSeasonOnly,
     homeOnly,
+    starterOnly,
     l10Remaining,
     cap,
     positionMapping,

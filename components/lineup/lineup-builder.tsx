@@ -277,6 +277,7 @@ export function LineupBuilder() {
   const [sortBy] = useState<SortOption>("l5");
   const [inSeasonOnly, setInSeasonOnly] = useState(false);
   const [homeOnly, setHomeOnly] = useState(false);
+  const [starterOnly, setStarterOnly] = useState(false);
   const [showUsedCards, setShowUsedCards] = useState(false);
   const [savedFormationsCards, setSavedFormationsCards] = useState<
     Map<string, string>
@@ -351,6 +352,7 @@ export function LineupBuilder() {
     sortBy,
     inSeasonOnly,
     homeOnly,
+    starterOnly,
     l10Remaining,
     cap: gameModeConfig.cap,
     positionMapping: POSITION_MAPPING,
@@ -679,53 +681,72 @@ export function LineupBuilder() {
                   <option value="rare">Rare</option>
                 </select>
               </div>
-              {/* In-Season Filter */}
-              <div className="flex items-center gap-2">
-                <Checkbox
-                  checked={inSeasonOnly}
-                  id="in-season-filter"
-                  onCheckedChange={(checked) =>
-                    setInSeasonOnly(checked === true)
-                  }
-                />
-                <label
-                  className="cursor-pointer font-medium text-sm"
-                  htmlFor="in-season-filter"
-                >
-                  In-Season
-                </label>
-              </div>
-              {/* Home Only Filter */}
-              <div className="flex items-center gap-2">
-                <Checkbox
-                  checked={homeOnly}
-                  id="home-only-filter"
-                  onCheckedChange={(checked) =>
-                    setHomeOnly(checked === true)
-                  }
-                />
-                <label
-                  className="cursor-pointer font-medium text-sm"
-                  htmlFor="home-only-filter"
-                >
-                  In casa
-                </label>
-              </div>
-              {/* Mostra utilizzati */}
-              <div className="flex items-center gap-2">
-                <Checkbox
-                  checked={showUsedCards}
-                  id="show-used-cards"
-                  onCheckedChange={(checked) =>
-                    setShowUsedCards(checked === true)
-                  }
-                />
-                <label
-                  className="cursor-pointer font-medium text-sm"
-                  htmlFor="show-used-cards"
-                >
-                  Mostra utilizzati
-                </label>
+              {/* Griglia filtri checkbox 2x2 */}
+              <div className="grid grid-cols-2 gap-x-4 gap-y-2">
+                {/* In-Season Filter */}
+                <div className="flex items-center gap-2">
+                  <Checkbox
+                    checked={inSeasonOnly}
+                    id="in-season-filter"
+                    onCheckedChange={(checked) =>
+                      setInSeasonOnly(checked === true)
+                    }
+                  />
+                  <label
+                    className="cursor-pointer font-medium text-sm"
+                    htmlFor="in-season-filter"
+                  >
+                    In-Season
+                  </label>
+                </div>
+                {/* Home Only Filter */}
+                <div className="flex items-center gap-2">
+                  <Checkbox
+                    checked={homeOnly}
+                    id="home-only-filter"
+                    onCheckedChange={(checked) =>
+                      setHomeOnly(checked === true)
+                    }
+                  />
+                  <label
+                    className="cursor-pointer font-medium text-sm"
+                    htmlFor="home-only-filter"
+                  >
+                    In casa
+                  </label>
+                </div>
+                {/* Starter Only Filter */}
+                <div className="flex items-center gap-2">
+                  <Checkbox
+                    checked={starterOnly}
+                    id="starter-only-filter"
+                    onCheckedChange={(checked) =>
+                      setStarterOnly(checked === true)
+                    }
+                  />
+                  <label
+                    className="cursor-pointer font-medium text-sm"
+                    htmlFor="starter-only-filter"
+                  >
+                    Titolare
+                  </label>
+                </div>
+                {/* Già utilizzati */}
+                <div className="flex items-center gap-2">
+                  <Checkbox
+                    checked={showUsedCards}
+                    id="show-used-cards"
+                    onCheckedChange={(checked) =>
+                      setShowUsedCards(checked === true)
+                    }
+                  />
+                  <label
+                    className="cursor-pointer font-medium text-sm"
+                    htmlFor="show-used-cards"
+                  >
+                    Già utilizzati
+                  </label>
+                </div>
               </div>
               {/* Nome */}
               <div className="relative min-w-[200px] flex-1">

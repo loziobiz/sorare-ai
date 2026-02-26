@@ -241,7 +241,7 @@ export function getLineupColumns(
                         colorClass = "bg-emerald-100 text-emerald-700";
                       }
                       return (
-                        <span className={`ml-1.5 inline-flex items-center gap-0.5 rounded px-1 py-0.5 font-medium text-[10px] ${colorClass}`}>
+                        <span className={`ml-1.5 inline-flex items-center gap-0.5 rounded px-1 py-0.5 font-medium text-[11px] ${colorClass}`}>
                           <span>👕</span>
                           {starterOdds}%
                         </span>
@@ -266,7 +266,7 @@ export function getLineupColumns(
                     if (!winOdds) return null;
                     
                     return (
-                      <span className="ml-1.5 inline-flex items-center gap-0.5 text-[10px] text-slate-600">
+                      <span className="ml-1.5 inline-flex items-center gap-0.5 text-[11px] text-slate-600">
                         <span>• 🏆 </span>
                         {Math.round(winOdds / 100)}%
                       </span>
