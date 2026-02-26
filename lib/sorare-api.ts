@@ -30,6 +30,7 @@ export interface CardData {
   anyPlayer?: {
     activeClub?: {
       name: string;
+      code?: string;
       pictureUrl?: string;
       activeCompetitions?: Array<{
         name: string;
@@ -45,9 +46,11 @@ export interface CardData {
       date?: string | null;
       homeTeam?: {
         name?: string;
+        code?: string;
       } | null;
       awayTeam?: {
         name?: string;
+        code?: string;
       } | null;
     } | null;
   };
@@ -78,9 +81,11 @@ export interface CardData {
       date?: string | null;
       homeTeam?: {
         name?: string;
+        code?: string;
       } | null;
       awayTeam?: {
         name?: string;
+        code?: string;
       } | null;
     } | null;
   }>;
@@ -150,17 +155,7 @@ export async function fetchCardsPage({
       }
     );
 
-    // DEBUG: log prima carta per vedere i dati monetari
-    if (newCards.length > 0) {
-      console.log("DEBUG - First card price data:", {
-        slug: newCards[0].slug,
-        ownershipHistory: newCards[0].ownershipHistory,
-        liveSingleSaleOffer: newCards[0].liveSingleSaleOffer,
-        privateMinPrices: newCards[0].privateMinPrices,
-        publicMinPrices: newCards[0].publicMinPrices,
-        lowestPriceCard: newCards[0].lowestPriceCard,
-      });
-    }
+
     const pageInfo = result.data.currentUser.cards?.pageInfo;
     const nextCursor = pageInfo?.hasNextPage ? pageInfo?.endCursor : null;
 

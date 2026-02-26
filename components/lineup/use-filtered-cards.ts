@@ -16,6 +16,8 @@ interface UseFilteredCardsOptions {
   l10Remaining: number;
   cap: number | null;
   positionMapping: Record<SlotPosition, string[]>;
+  savedFormationsCards: Map<string, string>; // slug -> formationName
+  showUsedCards: boolean;
 }
 
 export function useFilteredCards(options: UseFilteredCardsOptions): CardData[] {
@@ -31,6 +33,8 @@ export function useFilteredCards(options: UseFilteredCardsOptions): CardData[] {
     l10Remaining,
     cap,
     positionMapping,
+    savedFormationsCards,
+    showUsedCards,
   } = options;
 
   return useMemo(() => {
@@ -94,6 +98,11 @@ export function useFilteredCards(options: UseFilteredCardsOptions): CardData[] {
       );
     }
 
+    // Filtra giocatori già utilizzati in altre formazioni salvate
+    if (!showUsedCards) {
+      filtered = filtered.filter((card) => !savedFormationsCards.has(card.slug));
+    }
+
     // Ordina secondo il criterio selezionato
     filtered.sort((a, b) => {
       switch (sortBy) {
@@ -129,5 +138,7 @@ export function useFilteredCards(options: UseFilteredCardsOptions): CardData[] {
     l10Remaining,
     cap,
     positionMapping,
+    savedFormationsCards,
+    showUsedCards,
   ]);
 }

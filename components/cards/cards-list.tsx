@@ -1,6 +1,6 @@
 "use client";
 
-import { ArrowDown, ArrowUp, ArrowUpDown } from "lucide-react";
+import { ArrowDown, ArrowUp, ArrowUpDown, Bookmark } from "lucide-react";
 import { useMemo, useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableRow } from "@/components/ui/table";
@@ -57,6 +57,7 @@ export interface CardsListProps {
   sortDirection?: SortDirection;
   onSort?: (key: SortKey, direction: SortDirection) => void;
   columnWidths?: ColumnWidths;
+  markedCards?: Map<string, string>; // slug -> formationName per carte già utilizzate
 }
 
 // Regex per estrarre solo il nome del giocatore (rimuove anno e info carta)
@@ -264,6 +265,7 @@ export function CardsList({
   sortDirection: externalSortDirection,
   onSort,
   columnWidths = COLUMN_WIDTHS,
+  markedCards,
 }: CardsListProps) {
   const [internalSortKey, setInternalSortKey] = useState<SortKey>("name");
   const [internalSortDirection, setInternalSortDirection] =
@@ -434,8 +436,19 @@ export function CardsList({
                     />
                   )}
                   <div className="flex flex-col">
-                    <div className="font-oswald-medium text-[14px] uppercase">
-                      {getPlayerName(card)}
+                    <div className="flex items-center gap-2">
+                      <div className="font-oswald-medium text-[14px] uppercase">
+                        {getPlayerName(card)}
+                      </div>
+                      {markedCards?.has(card.slug) && (
+                        <span
+                          className="inline-flex max-w-[100px] items-center gap-0.5 truncate rounded bg-amber-100 px-1.5 py-0.5 text-[10px] font-medium text-amber-700"
+                          title={markedCards.get(card.slug)}
+                        >
+                          <Bookmark className="h-3 w-3 shrink-0" />
+                          <span className="truncate">{markedCards.get(card.slug)}</span>
+                        </span>
+                      )}
                     </div>
                     {card.anyPositions && card.anyPositions.length > 0 && (
                       <div className="text-muted-foreground text-xs">

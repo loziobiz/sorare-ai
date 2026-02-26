@@ -7,9 +7,16 @@ interface NextMatchBlockProps {
 }
 
 /**
- * Estrae i primi 3 caratteri del nome squadra in maiuscolo
+ * Restituisce l'abbreviazione della squadra.
+ * Usa 'code' se disponibile (es: "JUV", "RMA"), altrimenti fallback ai primi 3 caratteri del nome.
  */
-function getTeamAbbreviation(name: string | undefined | null): string {
+function getTeamAbbreviation(
+  name: string | undefined | null,
+  code: string | undefined | null
+): string {
+  if (code) {
+    return code;
+  }
   if (!name) {
     return "???";
   }
@@ -69,8 +76,10 @@ export function NextMatchBlock({ card }: NextMatchBlockProps) {
 
   const homeTeamName = nextGame.homeTeam?.name;
   const awayTeamName = nextGame.awayTeam?.name;
-  const homeTeam = getTeamAbbreviation(homeTeamName);
-  const awayTeam = getTeamAbbreviation(awayTeamName);
+  const homeTeamCode = nextGame.homeTeam?.code;
+  const awayTeamCode = nextGame.awayTeam?.code;
+  const homeTeam = getTeamAbbreviation(homeTeamName, homeTeamCode);
+  const awayTeam = getTeamAbbreviation(awayTeamName, awayTeamCode);
 
   // Determina la squadra del giocatore
   const playerClubName = card.anyPlayer?.activeClub?.name;

@@ -30,6 +30,7 @@ export const GET_CARDS_QUERY = `
           anyPlayer {
             activeClub {
               name
+              code
               pictureUrl
               activeCompetitions {
                 name
@@ -46,9 +47,11 @@ export const GET_CARDS_QUERY = `
                 date
                 homeTeam {
                   name
+                  code
                 }
                 awayTeam {
                   name
+                  code
                 }
               }
             }

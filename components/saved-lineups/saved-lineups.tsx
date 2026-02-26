@@ -20,16 +20,23 @@ interface CompactCardProps {
     l10Average?: number;
     power?: string;
     anyPlayer?: {
+      activeClub?: { name?: string } | null;
       nextGame?: {
         date?: string | null;
-        homeTeam?: { name?: string } | null;
-        awayTeam?: { name?: string } | null;
+        homeTeam?: { name?: string; shortName?: string } | null;
+        awayTeam?: { name?: string; shortName?: string } | null;
       } | null;
     };
   };
 }
 
-function getTeamAbbreviation(name: string | undefined | null): string {
+function getTeamAbbreviation(
+  name: string | undefined | null,
+  code: string | undefined | null
+): string {
+  if (code) {
+    return code;
+  }
   if (!name) {
     return "???";
   }
@@ -61,12 +68,14 @@ function formatMatchDate(dateString: string | undefined | null): {
 
 function MatchInfo({
   nextGame,
+  playerClubName,
 }: {
   nextGame?: {
     date?: string | null;
-    homeTeam?: { name?: string } | null;
-    awayTeam?: { name?: string } | null;
+    homeTeam?: { name?: string; code?: string } | null;
+    awayTeam?: { name?: string; code?: string } | null;
   } | null;
+  playerClubName?: string | null;
 }) {
   if (!nextGame?.date) {
     return <span className="text-[10px] text-slate-400">-</span>;
@@ -77,15 +86,22 @@ function MatchInfo({
     return <span className="text-[10px] text-slate-400">-</span>;
   }
 
-  const homeTeam = getTeamAbbreviation(nextGame.homeTeam?.name);
-  const awayTeam = getTeamAbbreviation(nextGame.awayTeam?.name);
+  const homeTeamName = nextGame.homeTeam?.name;
+  const awayTeamName = nextGame.awayTeam?.name;
+  const homeTeamCode = nextGame.homeTeam?.code;
+  const awayTeamCode = nextGame.awayTeam?.code;
+  const homeTeam = getTeamAbbreviation(homeTeamName, homeTeamCode);
+  const awayTeam = getTeamAbbreviation(awayTeamName, awayTeamCode);
+
+  const isHomeTeam = playerClubName && homeTeamName && playerClubName === homeTeamName;
+  const isAwayTeam = playerClubName && awayTeamName && playerClubName === awayTeamName;
 
   return (
     <div className="flex flex-col items-center leading-tight">
       <div className="flex items-center gap-1 font-medium text-[11px] text-slate-700">
-        <span>{homeTeam}</span>
+        <span className={isHomeTeam ? "rounded bg-slate-200 px-1" : ""}>{homeTeam}</span>
         <span className="text-slate-400">vs</span>
-        <span>{awayTeam}</span>
+        <span className={isAwayTeam ? "rounded bg-slate-200 px-1" : ""}>{awayTeam}</span>
       </div>
       <div className="text-[10px] text-slate-500">
         {formatted.day} · {formatted.time}
@@ -114,7 +130,7 @@ function CompactCard({ card }: CompactCardProps) {
         </div>
       </div>
       {/* Info partita */}
-      <MatchInfo nextGame={card.anyPlayer?.nextGame} />
+      <MatchInfo nextGame={card.anyPlayer?.nextGame} playerClubName={card.anyPlayer?.activeClub?.name} />
     </div>
   );
 }
@@ -165,7 +181,7 @@ function FormationCard({
       return orderA - orderB;
     })
     .map((card) => {
-      // Merge saved card with fresh data to get power, l10Average, and nextGame
+      // Merge saved card with fresh data to get power, l10Average, activeClub, and nextGame
       const freshData = currentCardsMap.get(card.slug);
       if (freshData) {
         return {
@@ -174,10 +190,11 @@ function FormationCard({
           l10Average: freshData.l10Average as number | undefined,
           anyPlayer: freshData.anyPlayer as
             | {
+                activeClub?: { name?: string } | null;
                 nextGame?: {
                   date?: string | null;
-                  homeTeam?: { name?: string } | null;
-                  awayTeam?: { name?: string } | null;
+                  homeTeam?: { name?: string; code?: string } | null;
+                  awayTeam?: { name?: string; code?: string } | null;
                 } | null;
               }
             | undefined,
@@ -200,10 +217,7 @@ function FormationCard({
       : "bg-slate-100 text-slate-600";
 
   return (
-    <div
-      className="space-y-4 rounded-lg border border-slate-200 bg-white p-4 shadow-sm"
-      style={{ maxWidth: "480px" }}
-    >
+    <div className="w-fit space-y-4 rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
       {/* Nome formazione, modalità e lega */}
       <div className="flex items-center justify-between">
         <div>

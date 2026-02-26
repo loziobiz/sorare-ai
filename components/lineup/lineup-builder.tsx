@@ -81,13 +81,13 @@ const GAME_MODES: Record<GameMode, GameModeConfig> = {
     formation: ["ATT", "EX", "DIF", "CEN", "POR"],
   },
   260: {
-    label: "ARENA CAP 260",
+    label: "ARENA 260",
     slotCount: 5,
     cap: 260,
     formation: ["ATT", "EX", "DIF", "CEN", "POR"],
   },
   220: {
-    label: "ARENACAP 220",
+    label: "ARENA 220",
     slotCount: 5,
     cap: 220,
     formation: ["ATT", "EX", "DIF", "CEN", "POR"],
@@ -102,8 +102,8 @@ const GAME_MODES: Record<GameMode, GameModeConfig> = {
 
 const GAME_MODE_OPTIONS: { value: GameMode; label: string }[] = [
   { value: "uncapped", label: "ARENA NO CAP" },
-  { value: 260, label: "ARENA CAP 260" },
-  { value: 220, label: "ARENACAP 220" },
+  { value: 260, label: "ARENA 260" },
+  { value: 220, label: "ARENA 220" },
   { value: "pro_gas", label: "PRO GAS" },
 ];
 
@@ -271,6 +271,8 @@ export function LineupBuilder() {
   const [rarityFilter, setRarityFilter] = useState<RarityFilter>("all");
   const [sortBy, setSortBy] = useState<SortOption>("l5");
   const [inSeasonOnly, setInSeasonOnly] = useState(false);
+  const [showUsedCards, setShowUsedCards] = useState(false);
+  const [savedFormationsCards, setSavedFormationsCards] = useState<Map<string, string>>(new Map());
   const [formationName, setFormationName] = useState("");
   const [editingId, setEditingId] = useState<number | null>(null);
   const [viewMode, setViewMode] = useState<ViewMode>("list");
@@ -294,6 +296,23 @@ export function LineupBuilder() {
       .map(([value, label]) => ({ value, label }))
       .sort((a, b) => a.label.localeCompare(b.label));
   }, [cards]);
+
+  // Carica le formazioni salvate per identificare giocatori già utilizzati
+  useEffect(() => {
+    const loadSavedFormations = async () => {
+      const formations = await db.savedFormations.toArray();
+      const slugToFormation = new Map<string, string>();
+      for (const formation of formations) {
+        for (const card of formation.cards) {
+          if (card.slug) {
+            slugToFormation.set(card.slug, formation.name);
+          }
+        }
+      }
+      setSavedFormationsCards(slugToFormation);
+    };
+    loadSavedFormations();
+  }, []);
 
   // Carte già usate nella formazione
   const usedCardSlugs = useMemo(
@@ -326,6 +345,8 @@ export function LineupBuilder() {
     l10Remaining,
     cap: gameModeConfig.cap,
     positionMapping: POSITION_MAPPING,
+    savedFormationsCards,
+    showUsedCards,
   });
 
   // Calcola bonus formazione (simulato)
@@ -428,14 +449,19 @@ export function LineupBuilder() {
     setSearchQuery("");
   };
 
+  // Ottieni il nome effettivo della formazione (quello inserito o il default della modalità)
+  const getEffectiveFormationName = (): string => {
+    const trimmed = formationName.trim();
+    if (trimmed) {
+      return trimmed;
+    }
+    return gameModeConfig.label;
+  };
+
   const handleConfirmFormation = async () => {
     const filledSlots = formation.filter((s) => s.card).length;
     if (filledSlots < gameModeConfig.slotCount) {
       setError("Completa la formazione prima di confermare");
-      return;
-    }
-    if (!formationName.trim()) {
-      setError("Inserisci un nome per la formazione");
       return;
     }
 
@@ -450,10 +476,12 @@ export function LineupBuilder() {
         .map((s) => ({ position: s.position, cardSlug: s.card?.slug ?? "" }))
         .filter((s) => s.cardSlug !== "");
 
+      const effectiveName = getEffectiveFormationName();
+
       if (editingId) {
         // Update existing formation
         await db.savedFormations.update(editingId, {
-          name: formationName.trim(),
+          name: effectiveName,
           league: leagueFilter,
           cards: formationCards,
           slots,
@@ -463,7 +491,7 @@ export function LineupBuilder() {
       } else {
         // Create new formation
         await db.savedFormations.add({
-          name: formationName.trim(),
+          name: effectiveName,
           league: leagueFilter,
           cards: formationCards,
           slots,
@@ -509,8 +537,7 @@ export function LineupBuilder() {
               className="h-9"
               id="formation-name"
               onChange={(e) => setFormationName(e.target.value)}
-              placeholder="Nome formazione (obbligatorio)"
-              required
+              placeholder={`Nome formazione (default: ${gameModeConfig.label})`}
               value={formationName}
             />
             <div className="flex items-center gap-2">
@@ -561,7 +588,6 @@ export function LineupBuilder() {
           <Button
             className="mb-2 h-9 gap-2 bg-violet-600 font-semibold text-base hover:bg-violet-700"
             disabled={
-              !formationName.trim() ||
               formation.filter((s) => s.card).length < gameModeConfig.slotCount
             }
             onClick={handleConfirmFormation}
@@ -646,24 +672,6 @@ export function LineupBuilder() {
                   <option value="rare">Rare</option>
                 </select>
               </div>
-              {/* Ordina per */}
-              <div className="flex items-center gap-2">
-                <label className="font-medium text-sm" htmlFor="sort-by">
-                  Ordina:
-                </label>
-                <select
-                  className="flex h-9 rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-                  id="sort-by"
-                  onChange={(e) => setSortBy(e.target.value as SortOption)}
-                  value={sortBy}
-                >
-                  <option value="name">Nome</option>
-                  <option value="team">Squadra</option>
-                  <option value="l5">Media L5</option>
-                  <option value="l15">Media L15</option>
-                  <option value="l40">Media L40</option>
-                </select>
-              </div>
               {/* In-Season Filter */}
               <div className="flex items-center gap-2">
                 <Checkbox
@@ -678,6 +686,22 @@ export function LineupBuilder() {
                   htmlFor="in-season-filter"
                 >
                   In-Season
+                </label>
+              </div>
+              {/* Mostra utilizzati */}
+              <div className="flex items-center gap-2">
+                <Checkbox
+                  checked={showUsedCards}
+                  id="show-used-cards"
+                  onCheckedChange={(checked) =>
+                    setShowUsedCards(checked === true)
+                  }
+                />
+                <label
+                  className="cursor-pointer font-medium text-sm"
+                  htmlFor="show-used-cards"
+                >
+                  Mostra utilizzati
                 </label>
               </div>
               {/* Nome */}
@@ -854,6 +878,7 @@ export function LineupBuilder() {
                 cards={filteredCards}
                 disabled={!activeSlot}
                 emptyMessage={getEmptyMessage(leagueFilter, activeSlot)}
+                markedCards={showUsedCards ? savedFormationsCards : undefined}
                 onCardClick={handleCardSelect}
                 onSort={handleTableSort}
                 showHeader={false}
