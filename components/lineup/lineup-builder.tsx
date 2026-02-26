@@ -278,6 +278,7 @@ export function LineupBuilder() {
   const [inSeasonOnly, setInSeasonOnly] = useState(false);
   const [homeOnly, setHomeOnly] = useState(false);
   const [starterOnly, setStarterOnly] = useState(false);
+  const [l10MinFilter, setL10MinFilter] = useState<string>("");
   const [showUsedCards, setShowUsedCards] = useState(false);
   const [savedFormationsCards, setSavedFormationsCards] = useState<
     Map<string, string>
@@ -353,6 +354,7 @@ export function LineupBuilder() {
     inSeasonOnly,
     homeOnly,
     starterOnly,
+    l10MaxFilter: l10MinFilter ? Number.parseInt(l10MinFilter, 10) : null,
     l10Remaining,
     cap: gameModeConfig.cap,
     positionMapping: POSITION_MAPPING,
@@ -746,6 +748,64 @@ export function LineupBuilder() {
                   >
                     Già utilizzati
                   </label>
+                </div>
+              </div>
+              {/* L10 Max Filter */}
+              <div className="flex flex-col gap-1">
+                <div className="flex items-center gap-2">
+                  <label className="font-medium text-sm" htmlFor="l10-min-filter">
+                    L10 Max:
+                  </label>
+                  <Input
+                    className="h-9 w-16 rounded-md border-slate-200 bg-slate-50 text-center text-slate-700"
+                    id="l10-min-filter"
+                    max="99"
+                    min="0"
+                    onChange={(e) => {
+                      const value = e.target.value;
+                      if (value === "") {
+                        setL10MinFilter("");
+                      } else {
+                        const num = Number.parseInt(value, 10);
+                        if (!Number.isNaN(num) && num >= 0 && num <= 99) {
+                          setL10MinFilter(value);
+                        }
+                      }
+                    }}
+                    placeholder="0"
+                    type="number"
+                    value={l10MinFilter}
+                  />
+                </div>
+                <div className="flex justify-center gap-1">
+                  <button
+                    className="rounded bg-slate-100 px-2 py-0.5 text-[10px] font-medium text-slate-600 hover:bg-slate-200"
+                    onClick={() => setL10MinFilter("40")}
+                    type="button"
+                  >
+                    40
+                  </button>
+                  <button
+                    className="rounded bg-slate-100 px-2 py-0.5 text-[10px] font-medium text-slate-600 hover:bg-slate-200"
+                    onClick={() => setL10MinFilter("50")}
+                    type="button"
+                  >
+                    50
+                  </button>
+                  <button
+                    className="rounded bg-slate-100 px-2 py-0.5 text-[10px] font-medium text-slate-600 hover:bg-slate-200"
+                    onClick={() => setL10MinFilter("60")}
+                    type="button"
+                  >
+                    60
+                  </button>
+                  <button
+                    className="rounded bg-slate-100 px-2 py-0.5 text-[10px] font-medium text-slate-600 hover:bg-slate-200"
+                    onClick={() => setL10MinFilter("")}
+                    type="button"
+                  >
+                    ALL
+                  </button>
                 </div>
               </div>
               {/* Nome */}

@@ -75,6 +75,7 @@ export function DataTable<TData>({
       sorting,
     },
     enableSorting,
+    enableSortingRemoval: false,
   });
 
   if (data.length === 0 && showEmptyMessage) {

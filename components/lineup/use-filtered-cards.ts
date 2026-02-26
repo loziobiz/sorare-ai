@@ -15,6 +15,7 @@ interface UseFilteredCardsOptions {
   inSeasonOnly: boolean;
   homeOnly: boolean;
   starterOnly: boolean;
+  l10MaxFilter: number | null;
   l10Remaining: number;
   cap: number | null;
   positionMapping: Record<SlotPosition, string[]>;
@@ -34,6 +35,7 @@ export function useFilteredCards(options: UseFilteredCardsOptions): CardData[] {
     inSeasonOnly,
     homeOnly,
     starterOnly,
+    l10MaxFilter,
     l10Remaining,
     cap,
     positionMapping,
@@ -114,6 +116,14 @@ export function useFilteredCards(options: UseFilteredCardsOptions): CardData[] {
       });
     }
 
+    // Filtra per L10 massimo
+    if (l10MaxFilter !== null) {
+      filtered = filtered.filter((card) => {
+        const l10 = card.l10Average ?? 0;
+        return l10 <= l10MaxFilter;
+      });
+    }
+
     // Filtra per CAP L10 - mostra solo giocatori compatibili (se non uncapped)
     if (cap !== null) {
       filtered = filtered.filter(
@@ -162,6 +172,7 @@ export function useFilteredCards(options: UseFilteredCardsOptions): CardData[] {
     inSeasonOnly,
     homeOnly,
     starterOnly,
+    l10MaxFilter,
     l10Remaining,
     cap,
     positionMapping,

@@ -202,7 +202,7 @@ export function getLineupColumns(
                   {getPlayerName(card)}
                 </div>
                 {card.inSeasonEligible && (
-                  <span className="inline-flex items-center rounded bg-emerald-100 px-1 py-0.5 font-medium text-[9px] text-emerald-700">
+                  <span className="inline-flex items-center rounded bg-cyan-100 px-1 py-0.5 font-medium text-[9px] text-cyan-700">
                     IN-SEASON
                   </span>
                 )}
