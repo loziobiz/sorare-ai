@@ -246,7 +246,7 @@ function FormationCard({
   const isCardDragging = (card: CardData) => dragState.activeItem?.card.slug === card.slug;
 
   return (
-    <div className="mb-5 max-w-full space-y-4 rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
+    <div className="max-w-full min-w-0 space-y-4 rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
       {/* Nome formazione, modalità e lega */}
       <div className="flex items-center justify-between">
         <div>
@@ -485,7 +485,7 @@ export function SavedLineups() {
                 <h2 className="mb-4 font-bold text-slate-700 text-xl">
                   {league}
                 </h2>
-                <div className="grid gap-5 lg:grid-cols-3">
+                <div className="flex flex-wrap items-start gap-5">
                   {items.map((formation) => (
                     <FormationCard
                       allFormations={formations}
