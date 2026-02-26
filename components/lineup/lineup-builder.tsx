@@ -69,51 +69,93 @@ export const POSITION_MAPPING: Record<SlotPosition, string[]> = {
 };
 
 // Configurazioni formazione per modalità
-export type GameMode = "uncapped" | 260 | 220 | "pro_gas";
+export type GameMode =
+  | "mls_arena_260"
+  | "mls_in_season"
+  | "gas_arena_260"
+  | "gas_arena_220"
+  | "gas_arena_nocap"
+  | "gas_classic";
 
 export interface GameModeConfig {
   label: string;
   slotCount: 5 | 7;
   cap: number | null;
   formation: SlotPosition[];
+  requiredLeague: string | null; // Filtro obbligatorio su lega (es. "MLS")
+  minInSeasonCount: number | null; // Minimo carte in-season richieste
+  saveConditionText: string; // Descrizione condizione salvataggio
 }
 
 const GAME_MODES: Record<GameMode, GameModeConfig> = {
-  uncapped: {
-    label: "ARENA NO CAP",
-    slotCount: 5,
-    cap: null,
-    formation: ["ATT", "EX", "DIF", "CEN", "POR"],
-  },
-  260: {
-    label: "ARENA 260",
+  mls_arena_260: {
+    label: "MLS ARENA 260",
     slotCount: 5,
     cap: 260,
     formation: ["ATT", "EX", "DIF", "CEN", "POR"],
+    requiredLeague: "MLS",
+    minInSeasonCount: null,
+    saveConditionText: "Totale L10 ≤ 260",
   },
-  220: {
-    label: "ARENA 220",
+  mls_in_season: {
+    label: "MLS IN-SEASON",
+    slotCount: 5,
+    cap: null,
+    formation: ["ATT", "EX", "DIF", "CEN", "POR"],
+    requiredLeague: "MLS",
+    minInSeasonCount: 4,
+    saveConditionText: "Almeno 4/5 carte in-season",
+  },
+  gas_arena_260: {
+    label: "GAS ARENA 260",
+    slotCount: 5,
+    cap: 260,
+    formation: ["ATT", "EX", "DIF", "CEN", "POR"],
+    requiredLeague: null,
+    minInSeasonCount: null,
+    saveConditionText: "Totale L10 ≤ 260",
+  },
+  gas_arena_220: {
+    label: "GAS ARENA 220",
     slotCount: 5,
     cap: 220,
     formation: ["ATT", "EX", "DIF", "CEN", "POR"],
+    requiredLeague: null,
+    minInSeasonCount: null,
+    saveConditionText: "Totale L10 ≤ 220",
   },
-  pro_gas: {
-    label: "Pro GAS",
+  gas_arena_nocap: {
+    label: "GAS ARENA NOCAP",
+    slotCount: 5,
+    cap: null,
+    formation: ["ATT", "EX", "DIF", "CEN", "POR"],
+    requiredLeague: null,
+    minInSeasonCount: null,
+    saveConditionText: "Nessun vincolo",
+  },
+  gas_classic: {
+    label: "GAS CLASSIC",
     slotCount: 7,
     cap: null,
     formation: ["ATT1", "EXT", "CEN2", "DIF1", "CEN1", "DIF2", "POR"],
+    requiredLeague: null,
+    minInSeasonCount: null,
+    saveConditionText: "Nessun vincolo",
   },
 };
 
 const GAME_MODE_OPTIONS: { value: GameMode; label: string }[] = [
-  { value: "uncapped", label: "ARENA NO CAP" },
-  { value: 260, label: "ARENA 260" },
-  { value: 220, label: "ARENA 220" },
-  { value: "pro_gas", label: "PRO GAS" },
+  { value: "mls_arena_260", label: "MLS ARENA 260" },
+  { value: "mls_in_season", label: "MLS IN-SEASON" },
+  { value: "gas_arena_260", label: "GAS ARENA 260" },
+  { value: "gas_arena_220", label: "GAS ARENA 220" },
+  { value: "gas_arena_nocap", label: "GAS ARENA NOCAP" },
+  { value: "gas_classic", label: "GAS CLASSIC" },
 ];
 
 function getInitialFormation(mode: GameMode): FormationSlot[] {
-  return GAME_MODES[mode].formation.map((pos) => ({
+  const config = GAME_MODES[mode] ?? GAME_MODES["gas_arena_260"];
+  return config.formation.map((pos: SlotPosition) => ({
     position: pos,
     card: null,
   }));
@@ -182,7 +224,7 @@ function restoreFormationFromSlots(
 
   // Se vuota, ritorna formazione default a 5
   if (newFormation.length === 0) {
-    return GAME_MODES[260].formation.map((pos) => ({
+    return GAME_MODES["gas_arena_260"].formation.map((pos: SlotPosition) => ({
       position: pos,
       card: null,
     }));
@@ -209,10 +251,12 @@ function restoreFormationLegacy(
   saved: SavedFormationWithSlots
 ): FormationSlot[] {
   // Legacy: usa sempre formazione a 5
-  const newFormation = GAME_MODES[260].formation.map((pos) => ({
-    position: pos,
-    card: null as CardData | null,
-  }));
+  const newFormation = GAME_MODES["gas_arena_260"].formation.map(
+    (pos: SlotPosition) => ({
+      position: pos,
+      card: null as CardData | null,
+    })
+  );
   for (const savedCard of saved.cards) {
     const position = getPositionForCard(savedCard);
     if (position) {
@@ -255,6 +299,21 @@ function getPositionForCard(card: CardData): SlotPosition | null {
   return null;
 }
 
+/**
+ * Trova il valore della lega MLS dalle carte disponibili
+ */
+function findMlsLeagueValue(cards: CardData[]): string | null {
+  for (const card of cards) {
+    for (const competition of card.anyPlayer?.activeClub?.activeCompetitions ??
+      []) {
+      if (competition.name === "MLS") {
+        return "MLS";
+      }
+    }
+  }
+  return null;
+}
+
 export function LineupBuilder() {
   const router = useRouter();
   const search = useSearch({ from: "/lineup" });
@@ -266,9 +325,9 @@ export function LineupBuilder() {
     isRefreshing: isCardsRefreshing,
   } = useCards();
   const [error, setError] = useState("");
-  const [gameMode, setGameMode] = useState<GameMode>(260);
+  const [gameMode, setGameMode] = useState<GameMode>("gas_arena_260");
   const [formation, setFormation] = useState<FormationSlot[]>(
-    getInitialFormation(260)
+    getInitialFormation("gas_arena_260")
   );
   const [activeSlot, setActiveSlot] = useState<SlotPosition | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
@@ -391,8 +450,22 @@ export function LineupBuilder() {
           setEditingId(id);
           setFormationName(saved.name);
           setLeagueFilter(saved.league);
-          // Carica il gameMode salvato o usa il default 260 per compatibilità legacy
-          const savedGameMode = saved.gameMode ?? 260;
+          // Mappa vecchi gameMode ai nuovi per retrocompatibilità
+          const mapLegacyGameMode = (
+            mode: GameMode | string | number | undefined
+          ): GameMode => {
+            if (!mode) return "gas_arena_260";
+            // Vecchie modalità numeriche
+            if (mode === 260) return "gas_arena_260";
+            if (mode === 220) return "gas_arena_220";
+            // Vecchie modalità stringa
+            if (mode === "uncapped") return "gas_arena_nocap";
+            if (mode === "pro_gas") return "gas_classic";
+            // Nuove modalità
+            if (mode in GAME_MODES) return mode as GameMode;
+            return "gas_arena_260";
+          };
+          const savedGameMode = mapLegacyGameMode(saved.gameMode);
           setGameMode(savedGameMode);
           setFormation(loadSavedFormation(saved));
         }
@@ -430,7 +503,7 @@ export function LineupBuilder() {
 
       // Auto-select next empty slot based on game mode
       const slotOrder: SlotPosition[] =
-        gameMode === "pro_gas"
+        gameModeConfig.slotCount === 7
           ? ["POR", "DIF1", "DIF2", "CEN1", "CEN2", "ATT1", "EXT"]
           : ["POR", "DIF", "CEN", "ATT", "EX"];
       const currentIndex = slotOrder.indexOf(activeSlot);
@@ -471,8 +544,36 @@ export function LineupBuilder() {
   const handleConfirmFormation = async () => {
     const filledSlots = formation.filter((s) => s.card).length;
     if (filledSlots < gameModeConfig.slotCount) {
-      setError("Completa la formazione prima di confermare");
+      setError(
+        `Completa la formazione (${filledSlots}/${gameModeConfig.slotCount})`
+      );
       return;
+    }
+
+    // Validazione CAP L10
+    if (gameModeConfig.cap !== null) {
+      const totalL10 = formation.reduce((sum, slot) => {
+        return sum + (slot.card?.l10Average ?? 0);
+      }, 0);
+      if (totalL10 > gameModeConfig.cap) {
+        setError(
+          `Totale L10 (${totalL10.toFixed(0)}) supera il CAP (${gameModeConfig.cap})`
+        );
+        return;
+      }
+    }
+
+    // Validazione minimo carte in-season
+    if (gameModeConfig.minInSeasonCount !== null) {
+      const inSeasonCount = formation.filter(
+        (s) => s.card?.inSeasonEligible
+      ).length;
+      if (inSeasonCount < gameModeConfig.minInSeasonCount) {
+        setError(
+          `Servono almeno ${gameModeConfig.minInSeasonCount} carte in-season (ne hai ${inSeasonCount})`
+        );
+        return;
+      }
     }
 
     try {
@@ -562,9 +663,17 @@ export function LineupBuilder() {
                 id="cap-select"
                 onChange={(e) => {
                   const newMode = e.target.value as GameMode;
+                  const config = GAME_MODES[newMode];
                   setGameMode(newMode);
                   setFormation(getInitialFormation(newMode));
                   setActiveSlot(null);
+                  // Applica filtro lega obbligatorio se presente
+                  if (config.requiredLeague) {
+                    setLeagueFilter(config.requiredLeague);
+                  } else {
+                    // Se non c'è lega richiesta, resetta il filtro
+                    setLeagueFilter("");
+                  }
                 }}
                 value={gameMode}
               >
@@ -575,10 +684,11 @@ export function LineupBuilder() {
                 ))}
               </select>
             </div>
+            {/* Info CAP L10 */}
             {gameModeConfig.cap !== null && (
               <div className="flex items-center justify-between rounded-md bg-slate-100 px-3 py-2">
                 <span className="font-medium text-slate-600 text-sm">
-                  Residuo:
+                  Residuo L10:
                 </span>
                 <span
                   className={cn(
@@ -589,6 +699,35 @@ export function LineupBuilder() {
                   )}
                 >
                   {l10Remaining.toFixed(0)}/{gameModeConfig.cap}
+                </span>
+              </div>
+            )}
+            {/* Info In-Season */}
+            {gameModeConfig.minInSeasonCount !== null && (
+              <div className="flex items-center justify-between rounded-md bg-slate-100 px-3 py-2">
+                <span className="font-medium text-slate-600 text-sm">
+                  In-Season:
+                </span>
+                <span
+                  className={cn(
+                    "font-bold text-sm",
+                    (() => {
+                      const inSeasonCount = formation.filter(
+                        (s) => s.card?.inSeasonEligible
+                      ).length;
+                      const remaining =
+                        gameModeConfig.minInSeasonCount - inSeasonCount;
+                      if (remaining > 0) return "text-red-600";
+                      return "text-emerald-600";
+                    })()
+                  )}
+                >
+                  {(() => {
+                    const inSeasonCount = formation.filter(
+                      (s) => s.card?.inSeasonEligible
+                    ).length;
+                    return `${inSeasonCount}/${gameModeConfig.minInSeasonCount}`;
+                  })()}
                 </span>
               </div>
             )}
@@ -616,8 +755,8 @@ export function LineupBuilder() {
           <PitchField
             activeSlot={activeSlot}
             formation={formation}
-            gameMode={gameMode}
             onSlotClick={handleSlotClick}
+            slotCount={gameModeConfig.slotCount}
           />
         </div>
 
@@ -644,7 +783,13 @@ export function LineupBuilder() {
               <div className="flex items-center gap-2">
                 <select
                   aria-label="Seleziona lega"
-                  className="flex h-9 rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                  className={cn(
+                    "flex h-9 rounded-md border px-3 py-1 text-sm shadow-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+                    gameModeConfig.requiredLeague
+                      ? "border-amber-300 bg-amber-50 text-amber-800"
+                      : "border-input bg-background"
+                  )}
+                  disabled={!!gameModeConfig.requiredLeague}
                   id="league-filter"
                   onChange={(e) => {
                     setLeagueFilter(e.target.value);
@@ -660,6 +805,15 @@ export function LineupBuilder() {
                       {league.label}
                     </option>
                   ))}
+                  {/* Aggiungi opzione lega obbligatoria se non presente nelle leghe disponibili */}
+                  {gameModeConfig.requiredLeague &&
+                    !leagues.some(
+                      (l) => l.value === gameModeConfig.requiredLeague
+                    ) && (
+                      <option value={gameModeConfig.requiredLeague}>
+                        {gameModeConfig.requiredLeague}
+                      </option>
+                    )}
                 </select>
               </div>
               {/* Rarità */}

@@ -56,13 +56,21 @@ export function useFilteredCards(options: UseFilteredCardsOptions): CardData[] {
 
     // Filtra per lega se selezionata
     if (leagueFilter) {
-      const [leagueName, countryCode] = leagueFilter.split("|");
+      const pipeIndex = leagueFilter.indexOf("|");
+      const hasCountryCode = pipeIndex !== -1;
+      const leagueName = hasCountryCode
+        ? leagueFilter.slice(0, pipeIndex)
+        : leagueFilter;
+      const countryCode = hasCountryCode
+        ? leagueFilter.slice(pipeIndex + 1)
+        : null;
+
       filtered = filtered.filter((card) =>
         card.anyPlayer?.activeClub?.activeCompetitions?.some(
           (c) =>
             c.format === "DOMESTIC_LEAGUE" &&
             c.name === leagueName &&
-            c.country?.code === countryCode
+            (countryCode === null || c.country?.code === countryCode)
         )
       );
     }

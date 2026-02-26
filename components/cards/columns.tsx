@@ -317,10 +317,12 @@ export function getLineupColumns(
               {l10Value}
             </div>
             {exceedsCap && (
-              <AlertTriangle
-                className="h-4 w-4 shrink-0 text-red-500"
+              <span
+                className="flex items-center"
                 title={`L10 (${l10Value}) supera il CAP residuo (${l10Remaining?.toFixed(0)})`}
-              />
+              >
+                <AlertTriangle className="h-4 w-4 shrink-0 text-red-500" />
+              </span>
             )}
           </div>
         );

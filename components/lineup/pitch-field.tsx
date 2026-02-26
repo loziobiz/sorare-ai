@@ -1,22 +1,22 @@
 "use client";
 
-import type { FormationSlot, GameMode, SlotPosition } from "./lineup-builder";
+import type { FormationSlot, SlotPosition } from "./lineup-builder";
 import { PitchSlot } from "./pitch-slot";
 
 interface PitchFieldProps {
-  gameMode: GameMode;
+  slotCount: 5 | 7;
   formation: FormationSlot[];
   activeSlot: SlotPosition | null;
   onSlotClick: (position: SlotPosition) => void;
 }
 
 export function PitchField({
-  gameMode,
+  slotCount,
   formation,
   activeSlot,
   onSlotClick,
 }: PitchFieldProps) {
-  const isProGas = gameMode === "pro_gas";
+  const isProGas = slotCount === 7;
 
   return (
     <div className="relative flex aspect-[21/31] flex-col overflow-hidden rounded-xl bg-gradient-to-b from-emerald-600 to-emerald-700 shadow-lg">

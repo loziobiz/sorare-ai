@@ -16,13 +16,26 @@ export interface CacheEntry {
   ttl?: number;
 }
 
+export type GameMode =
+  | "mls_arena_260"
+  | "mls_in_season"
+  | "gas_arena_260"
+  | "gas_arena_220"
+  | "gas_arena_nocap"
+  | "gas_classic"
+  // Legacy types for backward compatibility
+  | "uncapped"
+  | "pro_gas"
+  | 260
+  | 220;
+
 export interface SavedFormation {
   id?: number;
   name: string;
   league: string; // "leagueName|countryCode"
   cards: CardData[];
   slots: Array<{ position: string; cardSlug: string }>;
-  gameMode: "uncapped" | 260 | 220 | "pro_gas";
+  gameMode: GameMode;
   createdAt: number;
 }
 

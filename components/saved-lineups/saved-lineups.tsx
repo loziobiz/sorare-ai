@@ -29,6 +29,13 @@ interface CompactCardProps {
         homeTeam?: { name?: string; code?: string } | null;
         awayTeam?: { name?: string; code?: string } | null;
       } | null;
+      nextClassicFixturePlayingStatusOdds?: {
+        starterOddsBasisPoints: number;
+        substituteOddsBasisPoints?: number;
+        nonPlayingOddsBasisPoints?: number;
+        reliability?: string;
+        providerIconUrl?: string;
+      } | null;
     };
   };
 }
