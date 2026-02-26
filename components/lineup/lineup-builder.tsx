@@ -2,7 +2,7 @@
 
 import { useRouter, useSearch } from "@tanstack/react-router";
 import { Check, Search } from "lucide-react";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { SorareCard } from "@/components/cards/card";
 import {
   CardsList,
@@ -18,11 +18,10 @@ import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { showToast, ToastContainer } from "@/components/ui/toast";
-import { useCacheCleanup } from "@/hooks/use-indexed-db";
+import { useCards } from "@/hooks/use-cards";
 import { ACTIVE_LEAGUES, SHOW_ONLY_ACTIVE_LEAGUES } from "@/lib/config";
-import { DEFAULT_TTL, db } from "@/lib/db";
+import { db } from "@/lib/db";
 import type { CardData } from "@/lib/sorare-api";
-import { fetchAllCards } from "@/lib/sorare-api";
 import { cn } from "@/lib/utils";
 import { PitchField } from "./pitch-field";
 import { useFilteredCards } from "./use-filtered-cards";
@@ -255,9 +254,13 @@ export function LineupBuilder() {
   const router = useRouter();
   const search = useSearch({ from: "/lineup" });
   const searchParams = new URLSearchParams(search as Record<string, string>);
-  const [isLoading, setIsLoading] = useState(true);
+  const {
+    cards,
+    error: cardsError,
+    isLoading: isCardsLoading,
+    isRefreshing: isCardsRefreshing,
+  } = useCards();
   const [error, setError] = useState("");
-  const [cards, setCards] = useState<CardData[]>([]);
   const [gameMode, setGameMode] = useState<GameMode>(260);
   const [formation, setFormation] = useState<FormationSlot[]>(
     getInitialFormation(260)
@@ -283,8 +286,6 @@ export function LineupBuilder() {
     setTableSortKey(key);
     setTableSortDirection(direction);
   };
-
-  useCacheCleanup();
 
   // Get unique leagues from cards
   const leagues = useMemo((): LeagueOption[] => {
@@ -332,69 +333,6 @@ export function LineupBuilder() {
     const filledSlots = formation.filter((s) => s.card).length;
     return filledSlots >= 3 ? 2 : 0;
   }, [formation]);
-
-  const loadCardsFromDb = useCallback(async (): Promise<boolean> => {
-    try {
-      const cached = await db.cache.get("user_cards");
-      if (!cached) {
-        return false;
-      }
-
-      const { timestamp, value, ttl } = cached;
-      const cacheAge = Date.now() - timestamp;
-      if (ttl && cacheAge > ttl) {
-        await db.cache.delete("user_cards");
-        return false;
-      }
-
-      const data = value as { cards: CardData[]; userSlug: string };
-      setCards(data.cards);
-      setIsLoading(false);
-      return true;
-    } catch {
-      return false;
-    }
-  }, []);
-
-  const saveCardsToDb = useCallback(
-    async (cardsData: CardData[], userSlug: string) => {
-      await db.cache.put({
-        key: "user_cards",
-        value: { cards: cardsData, userSlug },
-        timestamp: Date.now(),
-        ttl: DEFAULT_TTL.LONG,
-      });
-    },
-    []
-  );
-
-  const fetchCards = useCallback(async () => {
-    setIsLoading(true);
-    setError("");
-
-    try {
-      const result = await fetchAllCards({
-        enablePagination: true,
-      });
-      setCards(result.cards);
-      await saveCardsToDb(result.cards, result.userSlug);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Errore nel caricamento");
-    } finally {
-      setIsLoading(false);
-    }
-  }, [saveCardsToDb]);
-
-  const loadCards = useCallback(async () => {
-    const found = await loadCardsFromDb();
-    if (!found) {
-      await fetchCards();
-    }
-  }, [loadCardsFromDb, fetchCards]);
-
-  useEffect(() => {
-    loadCards();
-  }, [loadCards]);
 
   // Load formation for editing
   useEffect(() => {
@@ -541,7 +479,9 @@ export function LineupBuilder() {
     }
   };
 
-  if (isLoading) {
+  const displayError = error || cardsError;
+
+  if (isCardsLoading || isCardsRefreshing) {
     return (
       <div className="flex h-[80vh] items-center justify-center">
         <LoadingSpinner icon="loader" message="Caricamento carte..." />
@@ -625,9 +565,9 @@ export function LineupBuilder() {
             {editingId ? "Aggiorna formazione" : "Salva formazione"}
           </Button>
 
-          {error && (
+          {displayError && (
             <Alert className="mb-3" variant="destructive">
-              <AlertDescription>{error}</AlertDescription>
+              <AlertDescription>{displayError}</AlertDescription>
             </Alert>
           )}
 
