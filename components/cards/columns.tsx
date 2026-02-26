@@ -224,7 +224,8 @@ export function getLineupColumns(
                     .map((pos) => getPositionLabel(pos))
                     .join(", ")}
                   {" • XP "}
-                  {getXP(card) || "-"}%
+                  {getXP(card) || "-" }
+                  {" % •"}
                   {card.anyPlayer?.nextClassicFixturePlayingStatusOdds && (
                     (() => {
                       const starterOdds = Math.round(
@@ -328,11 +329,32 @@ export function getLineupColumns(
       accessorKey: "l10Average",
       header: "L10",
       size: LINEUP_COLUMN_WIDTHS.l10,
-      cell: ({ row }) => (
-        <div className="font-medium">
-          {row.original.l10Average?.toFixed(0) ?? "-"}
-        </div>
-      ),
+      cell: ({ row }) => {
+        const l10 = row.original.l10Average;
+        if (l10 === undefined || l10 === null) {
+          return <div className="font-medium">-</div>;
+        }
+        const l10Value = Math.round(l10);
+        let colorClass = "";
+        if (l10Value === 0) {
+          colorClass = "bg-gray-100 text-gray-600";
+        } else if (l10Value <= 30) {
+          colorClass = "bg-red-100 text-red-700";
+        } else if (l10Value <= 40) {
+          colorClass = "bg-orange-100 text-orange-700";
+        } else if (l10Value <= 59) {
+          colorClass = "bg-lime-100 text-lime-700";
+        } else if (l10Value <= 79) {
+          colorClass = "bg-green-100 text-green-700";
+        } else {
+          colorClass = "bg-cyan-100 text-cyan-700";
+        }
+        return (
+          <div className={`inline-flex rounded px-1.5 py-0.5 font-medium ${colorClass}`}>
+            {l10Value}
+          </div>
+        );
+      },
     },
     {
       accessorKey: "l40Average",
