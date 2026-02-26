@@ -16,7 +16,7 @@ interface UseFilteredCardsOptions {
   homeOnly: boolean;
   starterOnly: boolean;
   l10MaxFilter: number | null;
-  l10Remaining: number;
+
   cap: number | null;
   positionMapping: Record<SlotPosition, string[]>;
   savedFormationsCards: Map<string, string>; // slug -> formationName
@@ -36,7 +36,7 @@ export function useFilteredCards(options: UseFilteredCardsOptions): CardData[] {
     homeOnly,
     starterOnly,
     l10MaxFilter,
-    l10Remaining,
+
     cap,
     positionMapping,
     savedFormationsCards,
@@ -124,13 +124,6 @@ export function useFilteredCards(options: UseFilteredCardsOptions): CardData[] {
       });
     }
 
-    // Filtra per CAP L10 - mostra solo giocatori compatibili (se non uncapped)
-    if (cap !== null) {
-      filtered = filtered.filter(
-        (card) => (card.l10Average ?? 0) <= l10Remaining
-      );
-    }
-
     // Filtra giocatori già utilizzati in altre formazioni salvate
     if (!showUsedCards) {
       filtered = filtered.filter(
@@ -173,7 +166,6 @@ export function useFilteredCards(options: UseFilteredCardsOptions): CardData[] {
     homeOnly,
     starterOnly,
     l10MaxFilter,
-    l10Remaining,
     cap,
     positionMapping,
     savedFormationsCards,

@@ -286,9 +286,9 @@ export function LineupBuilder() {
   const [formationName, setFormationName] = useState("");
   const [editingId, setEditingId] = useState<number | null>(null);
   const [viewMode, setViewMode] = useState<ViewMode>("list");
-  const [tableSortKey, setTableSortKey] = useState<SortKey>("name");
+  const [tableSortKey, setTableSortKey] = useState<SortKey>("l10");
   const [tableSortDirection, setTableSortDirection] =
-    useState<SortDirection>("asc");
+    useState<SortDirection>("desc");
 
   const [toasts, setToasts] = useState<
     Array<{ id: string; message: string; type?: "success" | "error" | "info" }>
@@ -355,7 +355,6 @@ export function LineupBuilder() {
     homeOnly,
     starterOnly,
     l10MaxFilter: l10MinFilter ? Number.parseInt(l10MinFilter, 10) : null,
-    l10Remaining,
     cap: gameModeConfig.cap,
     positionMapping: POSITION_MAPPING,
     savedFormationsCards,
@@ -413,17 +412,6 @@ export function LineupBuilder() {
   const handleCardSelect = (card: CardData) => {
     if (!activeSlot) {
       return;
-    }
-
-    // Verifica CAP L10 (solo se la modalità ha un cap)
-    if (gameModeConfig.cap !== null) {
-      const cardL10 = card.l10Average ?? 0;
-      if (cardL10 > l10Remaining) {
-        setError(
-          `Impossibile aggiungere: L10 ${cardL10.toFixed(0)} supera il residuo ${l10Remaining.toFixed(0)}`
-        );
-        return;
-      }
     }
 
     setFormation((prev) => {

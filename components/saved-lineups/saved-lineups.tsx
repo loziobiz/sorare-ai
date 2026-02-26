@@ -171,17 +171,42 @@ function CompactCard({
             width={85}
           />
         )}
-        {/* Badge L10 con colore dinamico */}
+      </div>
+      {/* Banda con L10 e % Titolarità */}
+      <div className="flex w-full items-center justify-center gap-2">
+        {/* L10 */}
         {(() => {
           const colors = getL10BadgeColor(card.l10Average);
           return (
-            <div
-              className={`absolute -top-1.5 -right-1.5 flex h-8 w-8 items-center justify-center rounded-full ${colors.bg} font-bold text-sm ${colors.text} shadow-sm`}
-            >
+            <span className={`inline-flex w-10 items-center justify-center gap-0.5 rounded px-1 py-0.5 font-medium text-[9px] ${colors.bg} ${colors.text}`}>
+              <span>📊</span>
               {card.l10Average?.toFixed(0) ?? "-"}
-            </div>
+            </span>
           );
         })()}
+        {/* % Titolarità */}
+        {card.anyPlayer?.nextClassicFixturePlayingStatusOdds && (
+          (() => {
+            const starterOdds = Math.round(
+              card.anyPlayer.nextClassicFixturePlayingStatusOdds
+                .starterOddsBasisPoints / 100
+            );
+            let colorClass = "";
+            if (starterOdds < 50) {
+              colorClass = "bg-red-100 text-red-700";
+            } else if (starterOdds <= 70) {
+              colorClass = "bg-amber-100 text-amber-700";
+            } else {
+              colorClass = "bg-emerald-100 text-emerald-700";
+            }
+            return (
+              <span className={`inline-flex w-10 items-center justify-center gap-0.5 rounded px-1 py-0.5 font-medium text-[9px] ${colorClass}`}>
+                <span>👕</span>
+                {starterOdds}
+              </span>
+            );
+          })()
+        )}
       </div>
       {/* Info partita */}
       <MatchInfo
@@ -304,7 +329,7 @@ function FormationCard({
           <h3 className="font-bold text-slate-800 text-xl">{formation.name}</h3>
           {capRatio !== null && (
             <span
-              className={`inline-block rounded-full px-2 py-0.5 font-medium text-[10px] ${capRatio > 1 ? "bg-amber-100 text-amber-700" : "bg-emerald-100 text-emerald-700"}`}
+              className={`inline-block rounded-full px-2 py-0.5 font-medium text-[12px] ${capRatio > 1 ? "bg-amber-100 text-amber-700" : "bg-emerald-100 text-emerald-700"}`}
             >
               {totalL10.toFixed(0)}/{capValue}
             </span>
@@ -539,10 +564,6 @@ export function SavedLineups() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="font-bold text-3xl">Formazioni Salvate</h1>
-      </div>
-
       <SavedLineupsDnDProvider onSwap={handleSwapCards}>
         {formations.length === 0 ? (
           <div className="py-12 text-center text-slate-500">
