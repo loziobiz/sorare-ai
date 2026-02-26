@@ -4,6 +4,31 @@ import { Plus, X } from "lucide-react";
 import type { CardData } from "@/lib/sorare-api";
 import { cn } from "@/lib/utils";
 
+/**
+ * Restituisce il colore del badge L10 in base al valore
+ */
+function getL10BadgeColor(l10: number | undefined): {
+  bg: string;
+  text: string;
+} {
+  if (!l10 || l10 === 0) {
+    return { bg: "bg-slate-100", text: "text-slate-500" };
+  }
+  if (l10 <= 30) {
+    return { bg: "bg-rose-100", text: "text-rose-700" };
+  }
+  if (l10 <= 40) {
+    return { bg: "bg-orange-100", text: "text-orange-700" };
+  }
+  if (l10 <= 59) {
+    return { bg: "bg-lime-100", text: "text-lime-700" };
+  }
+  if (l10 <= 79) {
+    return { bg: "bg-emerald-100", text: "text-emerald-700" };
+  }
+  return { bg: "bg-cyan-100", text: "text-cyan-700" };
+}
+
 interface PitchSlotProps {
   label: string;
   card: CardData | null;
@@ -13,11 +38,11 @@ interface PitchSlotProps {
 
 export function PitchSlot({ label, card, isActive, onClick }: PitchSlotProps) {
   if (card) {
-    // Slot con carta - mostra solo l'immagine
+    // Slot con carta - mostra l'immagine e la banda con L10 e % titolarità
     return (
       <button
         aria-label={`Rimuovi ${card.name}`}
-        className="group relative transition-transform hover:scale-105"
+        className="group relative flex flex-col items-center transition-transform hover:scale-105"
         onClick={onClick}
         type="button"
       >
@@ -41,6 +66,46 @@ export function PitchSlot({ label, card, isActive, onClick }: PitchSlotProps) {
             {card.name.charAt(0)}
           </div>
         )}
+
+        {/* Banda con L10 e % Titolarità */}
+        <div className="flex w-24 items-center justify-center gap-1">
+          {/* L10 */}
+          {(() => {
+            const colors = getL10BadgeColor(card.l10Average);
+            return (
+              <span
+                className={`inline-flex w-11 items-center justify-center gap-0.5 rounded px-1 py-0.5 font-medium text-[9px] ${colors.bg} ${colors.text}`}
+              >
+                <span>📊</span>
+                {card.l10Average?.toFixed(0) ?? "-"}
+              </span>
+            );
+          })()}
+          {/* % Titolarità */}
+          {card.anyPlayer?.nextClassicFixturePlayingStatusOdds &&
+            (() => {
+              const starterOdds = Math.round(
+                card.anyPlayer.nextClassicFixturePlayingStatusOdds
+                  .starterOddsBasisPoints / 100
+              );
+              let colorClass = "";
+              if (starterOdds < 50) {
+                colorClass = "bg-red-100 text-red-700";
+              } else if (starterOdds <= 70) {
+                colorClass = "bg-amber-100 text-amber-700";
+              } else {
+                colorClass = "bg-emerald-100 text-emerald-700";
+              }
+              return (
+                <span
+                  className={`inline-flex w-11 items-center justify-center gap-0.5 rounded px-1 py-0.5 font-medium text-[9px] ${colorClass}`}
+                >
+                  <span>👕</span>
+                  {starterOdds}
+                </span>
+              );
+            })()}
+        </div>
       </button>
     );
   }
