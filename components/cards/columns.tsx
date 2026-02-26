@@ -162,9 +162,9 @@ export const LINEUP_COLUMN_WIDTHS = {
   team: 240,
   match: 80,
   spacer: 30,
-  forma: 110,
+  forma: 100,
   l5: 50,
-  l10: 50,
+  l10: 60,
   l40: 50,
 } as const;
 
@@ -280,17 +280,32 @@ export function getLineupColumns(
       },
     },
     {
-      accessorKey: "team",
-      header: "Squadra",
-      size: LINEUP_COLUMN_WIDTHS.team,
+      accessorKey: "l10Average",
+      header: "L10",
+      size: LINEUP_COLUMN_WIDTHS.l10,
       cell: ({ row }) => {
-        const card = row.original;
+        const l10 = row.original.l10Average;
+        if (l10 === undefined || l10 === null) {
+          return <div className="font-medium">-</div>;
+        }
+        const l10Value = Math.round(l10);
+        let colorClass = "";
+        if (l10Value === 0) {
+          colorClass = "bg-gray-100 text-gray-600";
+        } else if (l10Value <= 30) {
+          colorClass = "bg-red-100 text-red-700";
+        } else if (l10Value <= 40) {
+          colorClass = "bg-orange-100 text-orange-700";
+        } else if (l10Value <= 59) {
+          colorClass = "bg-lime-100 text-lime-700";
+        } else if (l10Value <= 79) {
+          colorClass = "bg-green-100 text-green-700";
+        } else {
+          colorClass = "bg-cyan-100 text-cyan-700";
+        }
         return (
-          <div className="flex flex-col">
-            <div>{getTeamName(card)}</div>
-            <div className="text-muted-foreground text-xs">
-              {getLeagueName(card)}
-            </div>
+          <div className={`inline-flex rounded px-1.5 py-0.5 font-medium ${colorClass}`}>
+            {l10Value}
           </div>
         );
       },
@@ -326,37 +341,6 @@ export function getLineupColumns(
       ),
     },
     {
-      accessorKey: "l10Average",
-      header: "L10",
-      size: LINEUP_COLUMN_WIDTHS.l10,
-      cell: ({ row }) => {
-        const l10 = row.original.l10Average;
-        if (l10 === undefined || l10 === null) {
-          return <div className="font-medium">-</div>;
-        }
-        const l10Value = Math.round(l10);
-        let colorClass = "";
-        if (l10Value === 0) {
-          colorClass = "bg-gray-100 text-gray-600";
-        } else if (l10Value <= 30) {
-          colorClass = "bg-red-100 text-red-700";
-        } else if (l10Value <= 40) {
-          colorClass = "bg-orange-100 text-orange-700";
-        } else if (l10Value <= 59) {
-          colorClass = "bg-lime-100 text-lime-700";
-        } else if (l10Value <= 79) {
-          colorClass = "bg-green-100 text-green-700";
-        } else {
-          colorClass = "bg-cyan-100 text-cyan-700";
-        }
-        return (
-          <div className={`inline-flex rounded px-1.5 py-0.5 font-medium ${colorClass}`}>
-            {l10Value}
-          </div>
-        );
-      },
-    },
-    {
       accessorKey: "l40Average",
       header: "L40",
       size: LINEUP_COLUMN_WIDTHS.l40,
@@ -365,6 +349,22 @@ export function getLineupColumns(
           {row.original.l40Average?.toFixed(0) ?? "-"}
         </div>
       ),
+    },
+    {
+      accessorKey: "team",
+      header: "Squadra",
+      size: LINEUP_COLUMN_WIDTHS.team,
+      cell: ({ row }) => {
+        const card = row.original;
+        return (
+          <div className="flex flex-col">
+            <div>{getTeamName(card)}</div>
+            <div className="text-muted-foreground text-xs">
+              {getLeagueName(card)}
+            </div>
+          </div>
+        );
+      },
     },
   ];
 }
