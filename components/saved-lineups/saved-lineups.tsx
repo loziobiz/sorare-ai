@@ -297,7 +297,7 @@ function FormationCard({
     dragState.activeItem?.card.slug === card.slug;
 
   return (
-    <div className="min-w-0 max-w-full space-y-4 rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
+    <div className="min-w-0 max-w-full space-y-2 rounded-lg border border-slate-200 bg-white p-2 shadow-sm">
       {/* Nome formazione, L10/CAP e azioni */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
@@ -332,7 +332,13 @@ function FormationCard({
       </div>
 
       {/* Carte in orizzontale */}
-      <div className="flex gap-1 overflow-x-auto pb-2">
+      <div
+        className="no-scrollbar flex gap-1 overflow-x-auto pb-0"
+        style={{
+          scrollbarWidth: "none",
+          msOverflowStyle: "none",
+        }}
+      >
         {sortedCards.map((card) => {
           const slot = formation.slots.find((s) => s.cardSlug === card.slug);
           const slotPosition = slot?.position ?? "";
@@ -355,6 +361,11 @@ function FormationCard({
           );
         })}
       </div>
+      <style>{`
+        .no-scrollbar::-webkit-scrollbar {
+          display: none;
+        }
+      `}</style>
     </div>
   );
 }
@@ -530,10 +541,6 @@ export function SavedLineups() {
     <div className="space-y-6">
       <div>
         <h1 className="font-bold text-3xl">Formazioni Salvate</h1>
-        <p className="text-muted-foreground">
-          {formations.length}{" "}
-          {formations.length === 1 ? "formazione" : "formazioni"}
-        </p>
       </div>
 
       <SavedLineupsDnDProvider onSwap={handleSwapCards}>

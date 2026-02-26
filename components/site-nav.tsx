@@ -1,18 +1,17 @@
+"use client";
+
 import { Link, useLocation } from "@tanstack/react-router";
 import { CreditCard, Layers, Save } from "lucide-react";
+import { useEffect, useState } from "react";
+import { db } from "@/lib/db";
 import { cn } from "@/lib/utils";
 
 interface NavItem {
   href: string;
   label: string;
   icon: React.ComponentType<{ className?: string }>;
+  count?: number | null;
 }
-
-const navItems: NavItem[] = [
-  { href: "/cards", label: "Le mie Carte", icon: CreditCard },
-  { href: "/lineup", label: "Crea Formazione", icon: Layers },
-  { href: "/saved-lineups", label: "Formazioni Salvate", icon: Save },
-];
 
 interface SiteNavProps {
   className?: string;
@@ -25,6 +24,34 @@ interface SiteNavProps {
 export function SiteNav({ className }: SiteNavProps) {
   const location = useLocation();
   const pathname = location.pathname;
+  const [savedLineupsCount, setSavedLineupsCount] = useState<number | null>(
+    null
+  );
+
+  useEffect(() => {
+    const loadCount = async () => {
+      try {
+        const formations = await db.savedFormations.toArray();
+        setSavedLineupsCount(formations.length);
+      } catch {
+        setSavedLineupsCount(null);
+      }
+    };
+    loadCount();
+  }, []);
+
+  const navItems: NavItem[] = [
+    { href: "/cards", label: "Le mie Carte", icon: CreditCard },
+    { href: "/lineup", label: "Crea Formazione", icon: Layers },
+    {
+      href: "/saved-lineups",
+      label:
+        savedLineupsCount !== null
+          ? `Formazioni Salvate (${savedLineupsCount})`
+          : "Formazioni Salvate",
+      icon: Save,
+    },
+  ];
 
   return (
     <nav
