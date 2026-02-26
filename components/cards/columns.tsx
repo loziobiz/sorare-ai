@@ -164,9 +164,9 @@ export const LINEUP_COLUMN_WIDTHS = {
   match: 80,
   spacer: 30,
   forma: 100,
-  l5: 50,
-  l10: 60,
-  l40: 50,
+  l5: 40,
+  l10: 80,
+  l40: 40,
 } as const;
 
 // Larghezze colonne per cards-dashboard

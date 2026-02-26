@@ -2,7 +2,7 @@
 
 import { useRouter, useSearch } from "@tanstack/react-router";
 import { Check, Search } from "lucide-react";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { SorareCard } from "@/components/cards/card";
 import {
   CardsList,
@@ -294,6 +294,9 @@ export function LineupBuilder() {
     Array<{ id: string; message: string; type?: "success" | "error" | "info" }>
   >([]);
 
+  // Ref per tracciare se la formazione è già stata caricata (evita reload su cambio cards)
+  const formationLoadedRef = useRef(false);
+
   const handleTableSort = (key: SortKey, direction: SortDirection) => {
     setTableSortKey(key);
     setTableSortDirection(direction);
@@ -374,11 +377,17 @@ export function LineupBuilder() {
       return;
     }
 
+    // Evita di ricaricare la formazione se è già stata caricata
+    if (formationLoadedRef.current) {
+      return;
+    }
+
     const loadFormation = async () => {
       try {
         const id = Number.parseInt(editId, 10);
         const saved = await db.savedFormations.get(id);
         if (saved) {
+          formationLoadedRef.current = true;
           setEditingId(id);
           setFormationName(saved.name);
           setLeagueFilter(saved.league);
