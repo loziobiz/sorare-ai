@@ -1,15 +1,10 @@
 "use client";
 
 import { useRouter } from "@tanstack/react-router";
-import { Pencil, Trash2 } from "lucide-react";
+import { AlertTriangle, Pencil, Trash2 } from "lucide-react";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { LoadingSpinner } from "@/components/loading-spinner";
-import {
-  Alert,
-  AlertAction,
-  AlertDescription,
-  AlertTitle,
-} from "@/components/ui/alert";
+
 import { Button } from "@/components/ui/button";
 import { useCards } from "@/hooks/use-cards";
 import { ACTIVE_LEAGUES } from "@/lib/config";
@@ -22,44 +17,104 @@ interface CompactCardProps {
     name: string;
     pictureUrl?: string;
     l5Average?: number;
-    l15Average?: number;
+    l10Average?: number;
     power?: string;
+    anyPlayer?: {
+      nextGame?: {
+        date?: string | null;
+        homeTeam?: { name?: string } | null;
+        awayTeam?: { name?: string } | null;
+      } | null;
+    };
   };
+}
+
+function getTeamAbbreviation(name: string | undefined | null): string {
+  if (!name) {
+    return "???";
+  }
+  return name.slice(0, 3).toUpperCase();
+}
+
+function formatMatchDate(dateString: string | undefined | null): {
+  day: string;
+  time: string;
+} | null {
+  if (!dateString) {
+    return null;
+  }
+
+  const date = new Date(dateString);
+  if (Number.isNaN(date.getTime())) {
+    return null;
+  }
+
+  const days = ["DOM", "LUN", "MAR", "MER", "GIO", "VEN", "SAB"];
+  const day = days[date.getDay()];
+
+  const hours = date.getHours().toString().padStart(2, "0");
+  const minutes = date.getMinutes().toString().padStart(2, "0");
+  const time = `${hours}:${minutes}`;
+
+  return { day, time };
+}
+
+function MatchInfo({
+  nextGame,
+}: {
+  nextGame?: {
+    date?: string | null;
+    homeTeam?: { name?: string } | null;
+    awayTeam?: { name?: string } | null;
+  } | null;
+}) {
+  if (!nextGame?.date) {
+    return <span className="text-[10px] text-slate-400">-</span>;
+  }
+
+  const formatted = formatMatchDate(nextGame.date);
+  if (!formatted) {
+    return <span className="text-[10px] text-slate-400">-</span>;
+  }
+
+  const homeTeam = getTeamAbbreviation(nextGame.homeTeam?.name);
+  const awayTeam = getTeamAbbreviation(nextGame.awayTeam?.name);
+
+  return (
+    <div className="flex flex-col items-center leading-tight">
+      <div className="flex items-center gap-1 font-medium text-[11px] text-slate-700">
+        <span>{homeTeam}</span>
+        <span className="text-slate-400">vs</span>
+        <span>{awayTeam}</span>
+      </div>
+      <div className="text-[10px] text-slate-500">
+        {formatted.day} · {formatted.time}
+      </div>
+    </div>
+  );
 }
 
 function CompactCard({ card }: CompactCardProps) {
   return (
-    <div className="flex flex-col items-center gap-1">
-      {card.pictureUrl && (
-        <img
-          alt={card.name}
-          className="h-auto max-w-[95px] rounded-lg"
-          height={100}
-          loading="lazy"
-          src={card.pictureUrl}
-          width={85}
-        />
-      )}
-      <div className="grid grid-cols-3 gap-1 text-center text-[10px]">
-        <div>
-          <div className="text-muted-foreground">L5</div>
-          <div className="font-medium">{card.l5Average?.toFixed(1) ?? "-"}</div>
-        </div>
-        <div>
-          <div className="text-muted-foreground">L15</div>
-          <div className="font-medium">
-            {card.l15Average?.toFixed(1) ?? "-"}
-          </div>
-        </div>
-        <div>
-          <div className="text-muted-foreground">XP</div>
-          <div className="font-medium">
-            {card.power
-              ? Math.round((Number.parseFloat(card.power) - 1) * 100)
-              : "-"}
-          </div>
+    <div className="flex w-[85px] flex-col items-center gap-1">
+      <div className="relative">
+        {card.pictureUrl && (
+          <img
+            alt={card.name}
+            className="h-auto max-w-[85px] rounded-lg"
+            height={100}
+            loading="lazy"
+            src={card.pictureUrl}
+            width={85}
+          />
+        )}
+        {/* Badge L10 */}
+        <div className="absolute -top-1.5 -right-1.5 flex h-6 w-6 items-center justify-center rounded-full bg-emerald-100 font-bold text-[10px] text-emerald-700 shadow-sm">
+          {card.l10Average?.toFixed(0) ?? "-"}
         </div>
       </div>
+      {/* Info partita */}
+      <MatchInfo nextGame={card.anyPlayer?.nextGame} />
     </div>
   );
 }
@@ -77,14 +132,21 @@ function FormationCard({
   onDelete,
   currentCardsMap,
 }: FormationCardProps) {
-  // Define position order: POR → DIF → CEN → ATT → EXTRA (EX)
+  // Define position order: POR → DIF → DIF1 → DIF2 → CEN → CEN1 → CEN2 → ATT → ATT1 → ATT2 → EXTRA (EX/EXT)
   const positionOrder: Record<string, number> = {
     POR: 0,
     DIF: 1,
-    CEN: 2,
-    ATT: 3,
-    EX: 4,
-    EXTRA: 4, // Handle both EX and EXTRA
+    DIF1: 1,
+    DIF2: 2,
+    CEN: 3,
+    CEN1: 3,
+    CEN2: 4,
+    ATT: 5,
+    ATT1: 5,
+    ATT2: 6,
+    EX: 7,
+    EXT: 7,
+    EXTRA: 7,
   };
 
   // Sort cards based on their position in slots array and merge with fresh data
@@ -103,23 +165,54 @@ function FormationCard({
       return orderA - orderB;
     })
     .map((card) => {
-      // Merge saved card with fresh data to get power and other new fields
+      // Merge saved card with fresh data to get power, l10Average, and nextGame
       const freshData = currentCardsMap.get(card.slug);
       if (freshData) {
-        return { ...card, power: freshData.power as string | undefined };
+        return {
+          ...card,
+          power: freshData.power as string | undefined,
+          l10Average: freshData.l10Average as number | undefined,
+          anyPlayer: freshData.anyPlayer as
+            | {
+                nextGame?: {
+                  date?: string | null;
+                  homeTeam?: { name?: string } | null;
+                  awayTeam?: { name?: string } | null;
+                } | null;
+              }
+            | undefined,
+        };
       }
       return card;
     });
+
+  // Label della modalità
+  const modeLabels: Record<string, string> = {
+    uncapped: "Uncapped",
+    260: "CAP 260",
+    220: "CAP 220",
+    pro_gas: "Pro GAS",
+  };
+  const modeLabel = modeLabels[formation.gameMode] ?? "CAP 260";
+  const modeColor =
+    formation.gameMode === "pro_gas"
+      ? "bg-purple-100 text-purple-700"
+      : "bg-slate-100 text-slate-600";
 
   return (
     <div
       className="space-y-4 rounded-lg border border-slate-200 bg-white p-4 shadow-sm"
       style={{ maxWidth: "480px" }}
     >
-      {/* Nome formazione e lega */}
+      {/* Nome formazione, modalità e lega */}
       <div className="flex items-center justify-between">
         <div>
           <h3 className="font-bold text-slate-800 text-xl">{formation.name}</h3>
+          <span
+            className={`mt-1 inline-block rounded-full px-2 py-0.5 font-medium text-[10px] ${modeColor}`}
+          >
+            {modeLabel} • {formation.slots.length} giocatori
+          </span>
         </div>
       </div>
 
@@ -166,7 +259,11 @@ export function SavedLineups() {
       new Map(
         cards.map((card) => [
           card.slug,
-          { power: card.power } as Record<string, unknown>,
+          {
+            power: card.power,
+            l10Average: card.l10Average,
+            anyPlayer: card.anyPlayer,
+          } as Record<string, unknown>,
         ])
       ),
     [cards]
@@ -284,22 +381,47 @@ export function SavedLineups() {
 
       {/* Modale conferma cancellazione */}
       {deleteConfirm !== null && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
-          <Alert className="max-w-md" variant="destructive">
-            <AlertTitle>Conferma cancellazione</AlertTitle>
-            <AlertDescription>
-              Sei sicuro di voler cancellare questa formazione? Questa azione
-              non può essere annullata.
-            </AlertDescription>
-            <AlertAction className="mt-4 flex gap-2">
-              <Button onClick={() => setDeleteConfirm(null)} variant="outline">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+          <div className="w-full max-w-sm overflow-hidden rounded-xl bg-white shadow-2xl">
+            {/* Header con icona */}
+            <div className="flex flex-col items-center border-b bg-slate-50 px-6 pt-6 pb-4">
+              <div className="mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-red-100">
+                <AlertTriangle className="h-6 w-6 text-red-600" />
+              </div>
+              <h3 className="font-semibold text-lg text-slate-800">
+                Conferma cancellazione
+              </h3>
+            </div>
+
+            {/* Contenuto */}
+            <div className="px-6 py-4">
+              <p className="text-center text-slate-600 text-sm leading-relaxed">
+                Sei sicuro di voler cancellare questa formazione?
+                <br />
+                <span className="text-slate-500">
+                  Questa azione non può essere annullata.
+                </span>
+              </p>
+            </div>
+
+            {/* Azioni */}
+            <div className="flex gap-3 border-t bg-slate-50 px-6 py-4">
+              <Button
+                className="h-10 flex-1"
+                onClick={() => setDeleteConfirm(null)}
+                variant="outline"
+              >
                 Annulla
               </Button>
-              <Button onClick={handleConfirmDelete} variant="destructive">
-                Conferma cancellazione
+              <Button
+                className="h-10 flex-1"
+                onClick={handleConfirmDelete}
+                variant="destructive"
+              >
+                Cancella
               </Button>
-            </AlertAction>
-          </Alert>
+            </div>
+          </div>
         </div>
       )}
     </div>

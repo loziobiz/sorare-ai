@@ -22,6 +22,7 @@ export interface SavedFormation {
   league: string; // "leagueName|countryCode"
   cards: CardData[];
   slots: Array<{ position: string; cardSlug: string }>;
+  gameMode: "uncapped" | 260 | 220 | "pro_gas";
   createdAt: number;
 }
 

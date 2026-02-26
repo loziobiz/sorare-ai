@@ -6,12 +6,12 @@
   "scripts": {
     "dev": "vite dev --port 3000",
     "build": "vite build",
-    "preview": "npm run build && wrangler dev",
-    "deploy": "npm run build && wrangler deploy",
+    "preview": "pnpm build && wrangler dev",
+    "deploy": "pnpm build && wrangler deploy",
     "cf-typegen": "wrangler types",
     "lint": "eslint",
-    "format": "npm exec -- ultracite fix",
-    "check": "npm exec -- ultracite check",
+    "format": "pnpm exec ultracite fix",
+    "check": "pnpm exec ultracite check",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {

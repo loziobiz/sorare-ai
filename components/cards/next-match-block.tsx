@@ -1,5 +1,6 @@
 import { Shield } from "lucide-react";
 import type { CardData } from "@/lib/sorare-api";
+import { cn } from "@/lib/utils";
 
 interface NextMatchBlockProps {
   card: CardData;
@@ -9,7 +10,9 @@ interface NextMatchBlockProps {
  * Estrae i primi 3 caratteri del nome squadra in maiuscolo
  */
 function getTeamAbbreviation(name: string | undefined | null): string {
-  if (!name) return "???";
+  if (!name) {
+    return "???";
+  }
   return name.slice(0, 3).toUpperCase();
 }
 
@@ -21,10 +24,14 @@ function formatMatchDate(dateString: string | undefined | null): {
   day: string;
   time: string;
 } | null {
-  if (!dateString) return null;
+  if (!dateString) {
+    return null;
+  }
 
   const date = new Date(dateString);
-  if (Number.isNaN(date.getTime())) return null;
+  if (Number.isNaN(date.getTime())) {
+    return null;
+  }
 
   const days = ["DOM", "LUN", "MAR", "MER", "GIO", "VEN", "SAB"];
   const day = days[date.getDay()];
@@ -60,8 +67,15 @@ export function NextMatchBlock({ card }: NextMatchBlockProps) {
     );
   }
 
-  const homeTeam = getTeamAbbreviation(nextGame.homeTeam?.name);
-  const awayTeam = getTeamAbbreviation(nextGame.awayTeam?.name);
+  const homeTeamName = nextGame.homeTeam?.name;
+  const awayTeamName = nextGame.awayTeam?.name;
+  const homeTeam = getTeamAbbreviation(homeTeamName);
+  const awayTeam = getTeamAbbreviation(awayTeamName);
+
+  // Determina la squadra del giocatore
+  const playerClubName = card.anyPlayer?.activeClub?.name;
+  const isHomeTeam = playerClubName && homeTeamName && playerClubName === homeTeamName;
+  const isAwayTeam = playerClubName && awayTeamName && playerClubName === awayTeamName;
 
   return (
     <div className="flex flex-col items-center leading-tight">
@@ -74,14 +88,16 @@ export function NextMatchBlock({ card }: NextMatchBlockProps) {
 
       {/* Squadre con icone */}
       <div className="mt-0.5 flex items-center gap-1">
-        <div className="flex items-center gap-0.5">
+        {/* Home team - sfondo grigio se è la squadra del giocatore */}
+        <div className={cn("flex items-center gap-0.5 rounded px-1 py-0.5", isHomeTeam && "bg-slate-200")}>
           <Shield className="h-3 w-3 text-slate-500" />
           <span className="font-semibold text-[10px] text-slate-700">
             {homeTeam}
           </span>
         </div>
         <span className="text-[8px] text-slate-400">vs</span>
-        <div className="flex items-center gap-0.5">
+        {/* Away team - sfondo grigio se è la squadra del giocatore */}
+        <div className={cn("flex items-center gap-0.5 rounded px-1 py-0.5", isAwayTeam && "bg-slate-200")}>
           <Shield className="h-3 w-3 text-slate-500" />
           <span className="font-semibold text-[10px] text-slate-700">
             {awayTeam}

@@ -35,12 +35,12 @@ type RarityFilter = "all" | "limited" | "rare";
 type SortOption = "name" | "team" | "l5" | "l10" | "l15" | "l40";
 
 // Posizioni disponibili nel campo (base 5)
-type SlotPosition5 = "ATT" | "EX" | "DIF" | "CEN" | "POR";
+export type SlotPosition5 = "ATT" | "EX" | "DIF" | "CEN" | "POR";
 // Posizioni disponibili nel campo (Pro GAS 7)
-type SlotPosition7 = "ATT1" | "EXT" | "CEN2" | "DIF1" | "CEN1" | "DIF2" | "POR";
-type SlotPosition = SlotPosition5 | SlotPosition7;
+export type SlotPosition7 = "ATT1" | "EXT" | "CEN2" | "DIF1" | "CEN1" | "DIF2" | "POR";
+export type SlotPosition = SlotPosition5 | SlotPosition7;
 
-interface FormationSlot {
+export interface FormationSlot {
   position: SlotPosition;
   card: CardData | null;
 }
@@ -64,7 +64,7 @@ export const POSITION_MAPPING: Record<SlotPosition, string[]> = {
 };
 
 // Configurazioni formazione per modalità
-type GameMode = "uncapped" | 260 | 220 | "pro_gas";
+export type GameMode = "uncapped" | 260 | 220 | "pro_gas";
 
 export interface GameModeConfig {
   label: string;
@@ -75,7 +75,7 @@ export interface GameModeConfig {
 
 const GAME_MODES: Record<GameMode, GameModeConfig> = {
   uncapped: {
-    label: "Uncapped",
+    label: "ARENA NO CAP",
     slotCount: 5,
     cap: null,
     formation: ["ATT", "EX", "DIF", "CEN", "POR"],
@@ -101,10 +101,10 @@ const GAME_MODES: Record<GameMode, GameModeConfig> = {
 };
 
 const GAME_MODE_OPTIONS: { value: GameMode; label: string }[] = [
-  { value: "uncapped", label: "Uncapped" },
+  { value: "uncapped", label: "ARENA NO CAP" },
   { value: 260, label: "ARENA CAP 260" },
   { value: 220, label: "ARENACAP 220" },
-  { value: "pro_gas", label: "Pro GAS" },
+  { value: "pro_gas", label: "PRO GAS" },
 ];
 
 function getInitialFormation(mode: GameMode): FormationSlot[] {
@@ -349,6 +349,9 @@ export function LineupBuilder() {
           setEditingId(id);
           setFormationName(saved.name);
           setLeagueFilter(saved.league);
+          // Carica il gameMode salvato o usa il default 260 per compatibilità legacy
+          const savedGameMode = saved.gameMode ?? 260;
+          setGameMode(savedGameMode);
           setFormation(loadSavedFormation(saved));
         }
       } catch (err) {
@@ -454,6 +457,7 @@ export function LineupBuilder() {
           league: leagueFilter,
           cards: formationCards,
           slots,
+          gameMode,
         });
         showToast(setToasts, "Formazione aggiornata con successo!", "success");
       } else {
@@ -463,6 +467,7 @@ export function LineupBuilder() {
           league: leagueFilter,
           cards: formationCards,
           slots,
+          gameMode,
           createdAt: Date.now(),
         });
         showToast(setToasts, "Formazione salvata con successo!", "success");
