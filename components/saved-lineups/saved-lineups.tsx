@@ -33,6 +33,28 @@ interface CompactCardProps {
   };
 }
 
+/**
+ * Restituisce il colore del badge L10 in base al valore
+ */
+function getL10BadgeColor(l10: number | undefined): { bg: string; text: string } {
+  if (!l10 || l10 === 0) {
+    return { bg: "bg-slate-100", text: "text-slate-500" };
+  }
+  if (l10 <= 30) {
+    return { bg: "bg-rose-100", text: "text-rose-700" };
+  }
+  if (l10 <= 40) {
+    return { bg: "bg-orange-100", text: "text-orange-700" };
+  }
+  if (l10 <= 59) {
+    return { bg: "bg-lime-100", text: "text-lime-700" };
+  }
+  if (l10 <= 79) {
+    return { bg: "bg-emerald-100", text: "text-emerald-700" };
+  }
+  return { bg: "bg-cyan-100", text: "text-cyan-700" };
+}
+
 function getTeamAbbreviation(
   name: string | undefined | null,
   code: string | undefined | null
@@ -140,10 +162,15 @@ function CompactCard({
             width={85}
           />
         )}
-        {/* Badge L10 */}
-        <div className="absolute -top-1.5 -right-1.5 flex h-6 w-6 items-center justify-center rounded-full bg-emerald-100 font-bold text-[10px] text-emerald-700 shadow-sm">
-          {card.l10Average?.toFixed(0) ?? "-"}
-        </div>
+        {/* Badge L10 con colore dinamico */}
+        {(() => {
+          const colors = getL10BadgeColor(card.l10Average);
+          return (
+            <div className={`absolute -top-1.5 -right-1.5 flex h-8 w-8 items-center justify-center rounded-full ${colors.bg} font-bold text-sm ${colors.text} shadow-sm`}>
+              {card.l10Average?.toFixed(0) ?? "-"}
+            </div>
+          );
+        })()}
       </div>
       {/* Info partita */}
       <MatchInfo nextGame={card.anyPlayer?.nextGame} playerClubName={card.anyPlayer?.activeClub?.name} />
@@ -243,14 +270,43 @@ function FormationCard({
       ? "bg-purple-100 text-purple-700"
       : "bg-slate-100 text-slate-600";
 
+  // Calcolo L10 totale e rapporto CAP
+  const totalL10 = sortedCards.reduce((sum, card) => sum + (card.l10Average ?? 0), 0);
+  const capValue = formation.gameMode === 220 ? 220 : formation.gameMode === 260 ? 260 : null;
+  const capRatio = capValue ? (totalL10 / capValue) : null;
+
   const isCardDragging = (card: CardData) => dragState.activeItem?.card.slug === card.slug;
 
   return (
     <div className="max-w-full min-w-0 space-y-4 rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
-      {/* Nome formazione, modalità e lega */}
+      {/* Nome formazione, L10/CAP e azioni */}
       <div className="flex items-center justify-between">
-        <div>
+        <div className="flex items-center gap-3">
           <h3 className="font-bold text-slate-800 text-xl">{formation.name}</h3>
+          {capRatio !== null && (
+            <span className={`inline-block rounded-full px-2 py-0.5 font-medium text-[10px] ${capRatio > 1 ? "bg-amber-100 text-amber-700" : "bg-emerald-100 text-emerald-700"}`}>
+              {totalL10.toFixed(0)}/{capValue}
+            </span>
+          )}
+        </div>
+        {/* Pulsanti azione - solo icone */}
+        <div className="flex items-center gap-1">
+          <Button
+            className="h-8 w-8 p-0"
+            onClick={() => onEdit(formation)}
+            size="icon"
+            variant="ghost"
+          >
+            <Pencil className="h-4 w-4 text-slate-500" />
+          </Button>
+          <Button
+            className="h-8 w-8 p-0"
+            onClick={() => formation.id && onDelete(formation.id)}
+            size="icon"
+            variant="ghost"
+          >
+            <Trash2 className="h-4 w-4 text-rose-500" />
+          </Button>
         </div>
       </div>
 
@@ -279,25 +335,7 @@ function FormationCard({
         })}
       </div>
 
-      {/* Pulsanti azione */}
-      <div className="flex gap-2">
-        <Button
-          className="h-8 flex-1 px-2 text-xs"
-          onClick={() => onEdit(formation)}
-          variant="outline"
-        >
-          <Pencil className="mr-1 h-3 w-3" />
-          Modifica
-        </Button>
-        <Button
-          className="h-8 flex-1 px-2 text-xs"
-          onClick={() => formation.id && onDelete(formation.id)}
-          variant="destructive"
-        >
-          <Trash2 className="mr-1 h-3 w-3" />
-          Cancella
-        </Button>
-      </div>
+
     </div>
   );
 }
