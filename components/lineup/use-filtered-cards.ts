@@ -100,7 +100,9 @@ export function useFilteredCards(options: UseFilteredCardsOptions): CardData[] {
 
     // Filtra giocatori già utilizzati in altre formazioni salvate
     if (!showUsedCards) {
-      filtered = filtered.filter((card) => !savedFormationsCards.has(card.slug));
+      filtered = filtered.filter(
+        (card) => !savedFormationsCards.has(card.slug)
+      );
     }
 
     // Ordina secondo il criterio selezionato

@@ -2,17 +2,22 @@
 
 import {
   DndContext,
-  DragOverlay,
   type DragEndEvent,
-  type DragOverEvent,
+  DragOverlay,
   type DragStartEvent,
   PointerSensor,
   useSensor,
   useSensors,
 } from "@dnd-kit/core";
-import { createContext, useCallback, useContext, useMemo, useState } from "react";
-import type { CardData } from "@/lib/sorare-api";
+import {
+  createContext,
+  useCallback,
+  useContext,
+  useMemo,
+  useState,
+} from "react";
 import type { SavedFormation } from "@/lib/db";
+import type { CardData } from "@/lib/sorare-api";
 
 export type CompatibilityStatus = "compatible" | "warning" | "incompatible";
 
@@ -39,7 +44,9 @@ const DnDContext = createContext<DnDContextValue | null>(null);
 export function useSavedLineupsDnD() {
   const context = useContext(DnDContext);
   if (!context) {
-    throw new Error("useSavedLineupsDnD must be used within SavedLineupsDnDProvider");
+    throw new Error(
+      "useSavedLineupsDnD must be used within SavedLineupsDnDProvider"
+    );
   }
   return context;
 }
@@ -52,7 +59,10 @@ interface SavedLineupsDnDProviderProps {
   ) => void;
 }
 
-export function SavedLineupsDnDProvider({ children, onSwap }: SavedLineupsDnDProviderProps) {
+export function SavedLineupsDnDProvider({
+  children,
+  onSwap,
+}: SavedLineupsDnDProviderProps) {
   const [dragState, setDragState] = useState<DragState>({
     activeItem: null,
     compatibilityMap: new Map(),
@@ -91,11 +101,18 @@ export function SavedLineupsDnDProvider({ children, onSwap }: SavedLineupsDnDPro
         for (const card of formation.cards) {
           if (card.slug === draggedCard.slug) continue;
 
-          const targetSlot = formation.slots?.find((s) => s.cardSlug === card.slug)?.position ?? "";
-          
+          const targetSlot =
+            formation.slots?.find((s) => s.cardSlug === card.slug)?.position ??
+            "";
+
           // Check 1: Compatibilità ruolo (extra è wild card)
-          const roleCompatible = isRoleCompatible(draggedCard, card, sourceSlot, targetSlot);
-          
+          const roleCompatible = isRoleCompatible(
+            draggedCard,
+            card,
+            sourceSlot,
+            targetSlot
+          );
+
           if (!roleCompatible) {
             map.set(card.slug, "incompatible");
             continue;
@@ -123,45 +140,51 @@ export function SavedLineupsDnDProvider({ children, onSwap }: SavedLineupsDnDPro
     });
   }, []);
 
-  const handleDragStart = useCallback((event: DragStartEvent) => {
-    const { active } = event;
-    const data = active.data.current as DragItem;
-    startDrag(data);
-  }, [startDrag]);
+  const handleDragStart = useCallback(
+    (event: DragStartEvent) => {
+      const { active } = event;
+      const data = active.data.current as DragItem;
+      startDrag(data);
+    },
+    [startDrag]
+  );
 
-  const handleDragEnd = useCallback((event: DragEndEvent) => {
-    const { active, over } = event;
+  const handleDragEnd = useCallback(
+    (event: DragEndEvent) => {
+      const { active, over } = event;
 
-    if (over && active.id !== over.id) {
-      const sourceData = active.data.current as DragItem;
-      const targetData = over.data.current as DragItem;
+      if (over && active.id !== over.id) {
+        const sourceData = active.data.current as DragItem;
+        const targetData = over.data.current as DragItem;
 
-      // Verifica finale prima dello swap
-      const roleCompatible = isRoleCompatible(
-        sourceData.card,
-        targetData.card,
-        sourceData.slotPosition,
-        targetData.slotPosition
-      );
-
-      if (roleCompatible) {
-        onSwap(
-          {
-            formationId: sourceData.formationId,
-            card: sourceData.card,
-            slotPosition: sourceData.slotPosition,
-          },
-          {
-            formationId: targetData.formationId,
-            card: targetData.card,
-            slotPosition: targetData.slotPosition,
-          }
+        // Verifica finale prima dello swap
+        const roleCompatible = isRoleCompatible(
+          sourceData.card,
+          targetData.card,
+          sourceData.slotPosition,
+          targetData.slotPosition
         );
-      }
-    }
 
-    endDrag();
-  }, [onSwap, endDrag]);
+        if (roleCompatible) {
+          onSwap(
+            {
+              formationId: sourceData.formationId,
+              card: sourceData.card,
+              slotPosition: sourceData.slotPosition,
+            },
+            {
+              formationId: targetData.formationId,
+              card: targetData.card,
+              slotPosition: targetData.slotPosition,
+            }
+          );
+        }
+      }
+
+      endDrag();
+    },
+    [onSwap, endDrag]
+  );
 
   const value = useMemo(
     () => ({
@@ -176,12 +199,17 @@ export function SavedLineupsDnDProvider({ children, onSwap }: SavedLineupsDnDPro
   return (
     <DnDContext.Provider value={value}>
       <DndContext
-        sensors={sensors}
-        onDragStart={handleDragStart}
         onDragEnd={handleDragEnd}
+        onDragStart={handleDragStart}
+        sensors={sensors}
       >
         {children}
-        <DragOverlay dropAnimation={{ duration: 150, easing: "cubic-bezier(0.18, 0.67, 0.6, 1.22)" }}>
+        <DragOverlay
+          dropAnimation={{
+            duration: 150,
+            easing: "cubic-bezier(0.18, 0.67, 0.6, 1.22)",
+          }}
+        >
           {dragState.activeItem ? (
             <div className="rotate-3 scale-105 cursor-grabbing opacity-90 shadow-2xl">
               <img
@@ -257,7 +285,9 @@ function cardSupportsPosition(card: CardData, position: string): boolean {
   const requiredPositions = positionMapping[position];
   if (!requiredPositions) return false;
 
-  return card.anyPositions?.some((pos) => requiredPositions.includes(pos)) ?? false;
+  return (
+    card.anyPositions?.some((pos) => requiredPositions.includes(pos)) ?? false
+  );
 }
 
 function isL10Compatible(
@@ -272,7 +302,7 @@ function isL10Compatible(
   const sourceFormation = formations.find((f) => f.id === sourceFormationId);
   const targetFormation = formations.find((f) => f.id === targetFormationId);
 
-  if (!sourceFormation || !targetFormation) return false;
+  if (!(sourceFormation && targetFormation)) return false;
 
   // Helper per calcolare L10 totale di una formazione dopo lo scambio
   const calculateNewL10 = (
@@ -299,11 +329,19 @@ function isL10Compatible(
   };
 
   // Check formazione sorgente: rimuove dragged, aggiunge target
-  const sourceNewL10 = calculateNewL10(sourceFormation, draggedCard, targetCard);
+  const sourceNewL10 = calculateNewL10(
+    sourceFormation,
+    draggedCard,
+    targetCard
+  );
   const sourceCap = getCap(sourceFormation);
 
   // Check formazione target: rimuove target, aggiunge dragged
-  const targetNewL10 = calculateNewL10(targetFormation, targetCard, draggedCard);
+  const targetNewL10 = calculateNewL10(
+    targetFormation,
+    targetCard,
+    draggedCard
+  );
   const targetCap = getCap(targetFormation);
 
   // Se almeno una supera il CAP, return false (warning)

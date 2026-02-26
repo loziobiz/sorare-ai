@@ -6,8 +6,6 @@ import { useEffect, useMemo, useState } from "react";
 import { SorareCard } from "@/components/cards/card";
 import {
   CardsList,
-  COLUMN_WIDTHS,
-  getSortIcon,
   type SortDirection,
   type SortKey,
 } from "@/components/cards/cards-list";
@@ -37,7 +35,14 @@ type SortOption = "name" | "team" | "l5" | "l10" | "l15" | "l40";
 // Posizioni disponibili nel campo (base 5)
 export type SlotPosition5 = "ATT" | "EX" | "DIF" | "CEN" | "POR";
 // Posizioni disponibili nel campo (Pro GAS 7)
-export type SlotPosition7 = "ATT1" | "EXT" | "CEN2" | "DIF1" | "CEN1" | "DIF2" | "POR";
+export type SlotPosition7 =
+  | "ATT1"
+  | "EXT"
+  | "CEN2"
+  | "DIF1"
+  | "CEN1"
+  | "DIF2"
+  | "POR";
 export type SlotPosition = SlotPosition5 | SlotPosition7;
 
 export interface FormationSlot {
@@ -269,10 +274,12 @@ export function LineupBuilder() {
   const [searchQuery, setSearchQuery] = useState("");
   const [leagueFilter, setLeagueFilter] = useState<string>("");
   const [rarityFilter, setRarityFilter] = useState<RarityFilter>("all");
-  const [sortBy, setSortBy] = useState<SortOption>("l5");
+  const [sortBy] = useState<SortOption>("l5");
   const [inSeasonOnly, setInSeasonOnly] = useState(false);
   const [showUsedCards, setShowUsedCards] = useState(false);
-  const [savedFormationsCards, setSavedFormationsCards] = useState<Map<string, string>>(new Map());
+  const [savedFormationsCards, setSavedFormationsCards] = useState<
+    Map<string, string>
+  >(new Map());
   const [formationName, setFormationName] = useState("");
   const [editingId, setEditingId] = useState<number | null>(null);
   const [viewMode, setViewMode] = useState<ViewMode>("list");
@@ -715,128 +722,6 @@ export function LineupBuilder() {
                 />
               </div>
             </div>
-
-            {/* Header tabella sticky - solo in vista lista */}
-            {viewMode === "list" && (
-              <div className="mt-2 overflow-x-auto rounded-t-md border border-b-0 bg-white">
-                <table className="w-full max-w-[1000px] table-fixed text-sm">
-                  <thead>
-                    <tr className="border-b">
-                      <th
-                        className="h-10 cursor-pointer select-none whitespace-nowrap px-2 text-left align-middle font-medium text-foreground hover:bg-muted/80"
-                        onClick={() =>
-                          handleTableSort(
-                            "name",
-                            tableSortKey === "name" &&
-                              tableSortDirection === "asc"
-                              ? "desc"
-                              : "asc"
-                          )
-                        }
-                        style={{ width: COLUMN_WIDTHS.name }}
-                      >
-                        <div className="flex items-center">
-                          Giocatore
-                          {getSortIcon(
-                            "name",
-                            tableSortKey,
-                            tableSortDirection
-                          )}
-                        </div>
-                      </th>
-                      <th
-                        className="h-10 cursor-pointer select-none whitespace-nowrap px-2 text-left align-middle font-medium text-foreground hover:bg-muted/80"
-                        onClick={() =>
-                          handleTableSort(
-                            "team",
-                            tableSortKey === "team" &&
-                              tableSortDirection === "asc"
-                              ? "desc"
-                              : "asc"
-                          )
-                        }
-                        style={{ width: COLUMN_WIDTHS.team }}
-                      >
-                        <div className="flex items-center">
-                          Squadra
-                          {getSortIcon(
-                            "team",
-                            tableSortKey,
-                            tableSortDirection
-                          )}
-                        </div>
-                      </th>
-                      <th
-                        className="h-10 whitespace-nowrap px-2 text-left align-middle font-medium text-foreground"
-                        style={{ width: COLUMN_WIDTHS.match }}
-                      >
-                        <div className="flex items-center">Prossima</div>
-                      </th>
-                      <th
-                        className="h-10 whitespace-nowrap px-2 text-left align-middle font-medium text-foreground"
-                        style={{ width: COLUMN_WIDTHS.forma }}
-                      >
-                        <div className="flex items-center">Forma</div>
-                      </th>
-                      <th
-                        className="h-10 cursor-pointer select-none whitespace-nowrap px-2 text-left align-middle font-medium text-foreground hover:bg-muted/80"
-                        onClick={() =>
-                          handleTableSort(
-                            "l5",
-                            tableSortKey === "l5" &&
-                              tableSortDirection === "asc"
-                              ? "desc"
-                              : "asc"
-                          )
-                        }
-                        style={{ width: COLUMN_WIDTHS.l5 }}
-                      >
-                        <div className="flex items-center">
-                          L5
-                          {getSortIcon("l5", tableSortKey, tableSortDirection)}
-                        </div>
-                      </th>
-                      <th
-                        className="h-10 cursor-pointer select-none whitespace-nowrap px-2 text-left align-middle font-medium text-foreground hover:bg-muted/80"
-                        onClick={() =>
-                          handleTableSort(
-                            "l10",
-                            tableSortKey === "l10" &&
-                              tableSortDirection === "asc"
-                              ? "desc"
-                              : "asc"
-                          )
-                        }
-                        style={{ width: COLUMN_WIDTHS.l10 }}
-                      >
-                        <div className="flex items-center">
-                          L10
-                          {getSortIcon("l10", tableSortKey, tableSortDirection)}
-                        </div>
-                      </th>
-                      <th
-                        className="h-10 cursor-pointer select-none whitespace-nowrap px-2 text-left align-middle font-medium text-foreground hover:bg-muted/80"
-                        onClick={() =>
-                          handleTableSort(
-                            "l40",
-                            tableSortKey === "l40" &&
-                              tableSortDirection === "asc"
-                              ? "desc"
-                              : "asc"
-                          )
-                        }
-                        style={{ width: COLUMN_WIDTHS.l40 }}
-                      >
-                        <div className="flex items-center">
-                          L40
-                          {getSortIcon("l40", tableSortKey, tableSortDirection)}
-                        </div>
-                      </th>
-                    </tr>
-                  </thead>
-                </table>
-              </div>
-            )}
           </div>
 
           {/* Griglia o Tabella carte - scrollabile */}
@@ -879,9 +764,9 @@ export function LineupBuilder() {
                 disabled={!activeSlot}
                 emptyMessage={getEmptyMessage(leagueFilter, activeSlot)}
                 markedCards={showUsedCards ? savedFormationsCards : undefined}
+                mode="lineup"
                 onCardClick={handleCardSelect}
                 onSort={handleTableSort}
-                showHeader={false}
                 sortDirection={tableSortDirection}
                 sortKey={tableSortKey}
               />

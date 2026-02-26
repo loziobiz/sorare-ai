@@ -36,7 +36,10 @@ interface CompactCardProps {
 /**
  * Restituisce il colore del badge L10 in base al valore
  */
-function getL10BadgeColor(l10: number | undefined): { bg: string; text: string } {
+function getL10BadgeColor(l10: number | undefined): {
+  bg: string;
+  text: string;
+} {
   if (!l10 || l10 === 0) {
     return { bg: "bg-slate-100", text: "text-slate-500" };
   }
@@ -118,15 +121,21 @@ function MatchInfo({
   const homeTeam = getTeamAbbreviation(homeTeamName, homeTeamCode);
   const awayTeam = getTeamAbbreviation(awayTeamName, awayTeamCode);
 
-  const isHomeTeam = playerClubName && homeTeamName && playerClubName === homeTeamName;
-  const isAwayTeam = playerClubName && awayTeamName && playerClubName === awayTeamName;
+  const isHomeTeam =
+    playerClubName && homeTeamName && playerClubName === homeTeamName;
+  const isAwayTeam =
+    playerClubName && awayTeamName && playerClubName === awayTeamName;
 
   return (
     <div className="flex flex-col items-center leading-tight">
       <div className="flex items-center gap-1 font-medium text-[11px] text-slate-700">
-        <span className={isHomeTeam ? "rounded bg-slate-200 px-1" : ""}>{homeTeam}</span>
+        <span className={isHomeTeam ? "rounded bg-slate-200 px-1" : ""}>
+          {homeTeam}
+        </span>
         <span className="text-slate-400">vs</span>
-        <span className={isAwayTeam ? "rounded bg-slate-200 px-1" : ""}>{awayTeam}</span>
+        <span className={isAwayTeam ? "rounded bg-slate-200 px-1" : ""}>
+          {awayTeam}
+        </span>
       </div>
       <div className="text-[10px] text-slate-500">
         {formatted.day} · {formatted.time}
@@ -166,14 +175,19 @@ function CompactCard({
         {(() => {
           const colors = getL10BadgeColor(card.l10Average);
           return (
-            <div className={`absolute -top-1.5 -right-1.5 flex h-8 w-8 items-center justify-center rounded-full ${colors.bg} font-bold text-sm ${colors.text} shadow-sm`}>
+            <div
+              className={`absolute -top-1.5 -right-1.5 flex h-8 w-8 items-center justify-center rounded-full ${colors.bg} font-bold text-sm ${colors.text} shadow-sm`}
+            >
               {card.l10Average?.toFixed(0) ?? "-"}
             </div>
           );
         })()}
       </div>
       {/* Info partita */}
-      <MatchInfo nextGame={card.anyPlayer?.nextGame} playerClubName={card.anyPlayer?.activeClub?.name} />
+      <MatchInfo
+        nextGame={card.anyPlayer?.nextGame}
+        playerClubName={card.anyPlayer?.activeClub?.name}
+      />
     </div>
   );
 }
@@ -271,20 +285,27 @@ function FormationCard({
       : "bg-slate-100 text-slate-600";
 
   // Calcolo L10 totale e rapporto CAP
-  const totalL10 = sortedCards.reduce((sum, card) => sum + (card.l10Average ?? 0), 0);
-  const capValue = formation.gameMode === 220 ? 220 : formation.gameMode === 260 ? 260 : null;
-  const capRatio = capValue ? (totalL10 / capValue) : null;
+  const totalL10 = sortedCards.reduce(
+    (sum, card) => sum + (card.l10Average ?? 0),
+    0
+  );
+  const capValue =
+    formation.gameMode === 220 ? 220 : formation.gameMode === 260 ? 260 : null;
+  const capRatio = capValue ? totalL10 / capValue : null;
 
-  const isCardDragging = (card: CardData) => dragState.activeItem?.card.slug === card.slug;
+  const isCardDragging = (card: CardData) =>
+    dragState.activeItem?.card.slug === card.slug;
 
   return (
-    <div className="max-w-full min-w-0 space-y-4 rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
+    <div className="min-w-0 max-w-full space-y-4 rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
       {/* Nome formazione, L10/CAP e azioni */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
           <h3 className="font-bold text-slate-800 text-xl">{formation.name}</h3>
           {capRatio !== null && (
-            <span className={`inline-block rounded-full px-2 py-0.5 font-medium text-[10px] ${capRatio > 1 ? "bg-amber-100 text-amber-700" : "bg-emerald-100 text-emerald-700"}`}>
+            <span
+              className={`inline-block rounded-full px-2 py-0.5 font-medium text-[10px] ${capRatio > 1 ? "bg-amber-100 text-amber-700" : "bg-emerald-100 text-emerald-700"}`}
+            >
               {totalL10.toFixed(0)}/{capValue}
             </span>
           )}
@@ -319,23 +340,21 @@ function FormationCard({
 
           return (
             <DraggableCard
-              key={card.slug}
               card={card}
               formationId={formation.id ?? 0}
+              key={card.slug}
               slotPosition={slotPosition}
             >
               <CompactCard
                 card={card}
                 formationId={formation.id ?? 0}
-                slotPosition={slotPosition}
                 isDragging={isDragging}
+                slotPosition={slotPosition}
               />
             </DraggableCard>
           );
         })}
       </div>
-
-
     </div>
   );
 }
@@ -414,10 +433,14 @@ export function SavedLineups() {
     ) => {
       try {
         // Trova le formazioni coinvolte
-        const sourceFormation = formations.find((f) => f.id === source.formationId);
-        const targetFormation = formations.find((f) => f.id === target.formationId);
+        const sourceFormation = formations.find(
+          (f) => f.id === source.formationId
+        );
+        const targetFormation = formations.find(
+          (f) => f.id === target.formationId
+        );
 
-        if (!sourceFormation || !targetFormation) return;
+        if (!(sourceFormation && targetFormation)) return;
 
         // Crea copie delle formazioni con le carte scambiate
         const updatedSourceCards = sourceFormation.cards.map((c) =>
@@ -457,10 +480,18 @@ export function SavedLineups() {
         setFormations((prev) =>
           prev.map((f) => {
             if (f.id === source.formationId) {
-              return { ...f, cards: updatedSourceCards, slots: updatedSourceSlots };
+              return {
+                ...f,
+                cards: updatedSourceCards,
+                slots: updatedSourceSlots,
+              };
             }
             if (f.id === target.formationId) {
-              return { ...f, cards: updatedTargetCards, slots: updatedTargetSlots };
+              return {
+                ...f,
+                cards: updatedTargetCards,
+                slots: updatedTargetSlots,
+              };
             }
             return f;
           })

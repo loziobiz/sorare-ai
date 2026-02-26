@@ -49,9 +49,7 @@ self.addEventListener("fetch", (event) => {
         })
         .catch(() =>
           // Network fallito, prova a leggere dalla cache
-          caches
-            .open(graphqlCacheName)
-            .then((cache) => cache.match(request))
+          caches.open(graphqlCacheName).then((cache) => cache.match(request))
         )
     );
     return;

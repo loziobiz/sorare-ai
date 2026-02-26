@@ -155,7 +155,6 @@ export async function fetchCardsPage({
       }
     );
 
-
     const pageInfo = result.data.currentUser.cards?.pageInfo;
     const nextCursor = pageInfo?.hasNextPage ? pageInfo?.endCursor : null;
 

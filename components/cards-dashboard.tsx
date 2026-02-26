@@ -5,8 +5,6 @@ import { CardsGrid } from "@/components/cards/card-grid";
 import { CardsFilters } from "@/components/cards/cards-filters";
 import {
   CardsList,
-  COLUMN_WIDTHS_STANDALONE,
-  getSortIcon,
   type SortDirection,
   type SortKey,
 } from "@/components/cards/cards-list";
@@ -115,109 +113,6 @@ export function CardsDashboard() {
           </h2>
           <ViewToggle onViewModeChange={setViewMode} viewMode={viewMode} />
         </div>
-
-        {/* Header tabella sticky - solo in vista lista */}
-        {viewMode === "list" && (
-          <div className="mt-4 rounded-t-md border border-b-0 bg-white">
-            <table className="w-full table-fixed text-sm">
-              <thead>
-                <tr className="border-b">
-                  <th
-                    className="h-10 cursor-pointer select-none whitespace-nowrap px-2 text-left align-middle font-medium text-foreground hover:bg-muted/80"
-                    onClick={() =>
-                      handleTableSort(
-                        "name",
-                        tableSortKey === "name" && tableSortDirection === "asc"
-                          ? "desc"
-                          : "asc"
-                      )
-                    }
-                    style={{ width: COLUMN_WIDTHS_STANDALONE.name }}
-                  >
-                    <div className="flex items-center">
-                      Giocatore
-                      {getSortIcon("name", tableSortKey, tableSortDirection)}
-                    </div>
-                  </th>
-                  <th
-                    className="h-10 cursor-pointer select-none whitespace-nowrap px-2 text-left align-middle font-medium text-foreground hover:bg-muted/80"
-                    onClick={() =>
-                      handleTableSort(
-                        "team",
-                        tableSortKey === "team" && tableSortDirection === "asc"
-                          ? "desc"
-                          : "asc"
-                      )
-                    }
-                    style={{ width: COLUMN_WIDTHS_STANDALONE.team }}
-                  >
-                    <div className="flex items-center">
-                      Squadra
-                      {getSortIcon("team", tableSortKey, tableSortDirection)}
-                    </div>
-                  </th>
-                  <th
-                    className="h-10 whitespace-nowrap px-2 text-left align-middle font-medium text-foreground"
-                    style={{ width: COLUMN_WIDTHS_STANDALONE.forma }}
-                  >
-                    <div className="flex items-center">Forma</div>
-                  </th>
-                  <th
-                    className="h-10 cursor-pointer select-none whitespace-nowrap px-2 text-left align-middle font-medium text-foreground hover:bg-muted/80"
-                    onClick={() =>
-                      handleTableSort(
-                        "l5",
-                        tableSortKey === "l5" && tableSortDirection === "asc"
-                          ? "desc"
-                          : "asc"
-                      )
-                    }
-                    style={{ width: COLUMN_WIDTHS_STANDALONE.l5 }}
-                  >
-                    <div className="flex items-center">
-                      L5
-                      {getSortIcon("l5", tableSortKey, tableSortDirection)}
-                    </div>
-                  </th>
-                  <th
-                    className="h-10 cursor-pointer select-none whitespace-nowrap px-2 text-left align-middle font-medium text-foreground hover:bg-muted/80"
-                    onClick={() =>
-                      handleTableSort(
-                        "l10",
-                        tableSortKey === "l10" && tableSortDirection === "asc"
-                          ? "desc"
-                          : "asc"
-                      )
-                    }
-                    style={{ width: COLUMN_WIDTHS_STANDALONE.l10 }}
-                  >
-                    <div className="flex items-center">
-                      L10
-                      {getSortIcon("l10", tableSortKey, tableSortDirection)}
-                    </div>
-                  </th>
-                  <th
-                    className="h-10 cursor-pointer select-none whitespace-nowrap px-2 text-left align-middle font-medium text-foreground hover:bg-muted/80"
-                    onClick={() =>
-                      handleTableSort(
-                        "l40",
-                        tableSortKey === "l40" && tableSortDirection === "asc"
-                          ? "desc"
-                          : "asc"
-                      )
-                    }
-                    style={{ width: COLUMN_WIDTHS_STANDALONE.l40 }}
-                  >
-                    <div className="flex items-center">
-                      L40
-                      {getSortIcon("l40", tableSortKey, tableSortDirection)}
-                    </div>
-                  </th>
-                </tr>
-              </thead>
-            </table>
-          </div>
-        )}
       </div>
 
       {/* Contenuto scrollabile */}
@@ -233,10 +128,9 @@ export function CardsDashboard() {
         ) : (
           <CardsList
             cards={filteredCards}
-            columnWidths={COLUMN_WIDTHS_STANDALONE}
             emptyMessage="Nessuna carta trovata con i filtri selezionati"
+            mode="dashboard"
             onSort={handleTableSort}
-            showHeader={false}
             sortDirection={tableSortDirection}
             sortKey={tableSortKey}
           />

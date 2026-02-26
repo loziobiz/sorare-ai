@@ -83,8 +83,10 @@ export function NextMatchBlock({ card }: NextMatchBlockProps) {
 
   // Determina la squadra del giocatore
   const playerClubName = card.anyPlayer?.activeClub?.name;
-  const isHomeTeam = playerClubName && homeTeamName && playerClubName === homeTeamName;
-  const isAwayTeam = playerClubName && awayTeamName && playerClubName === awayTeamName;
+  const isHomeTeam =
+    playerClubName && homeTeamName && playerClubName === homeTeamName;
+  const isAwayTeam =
+    playerClubName && awayTeamName && playerClubName === awayTeamName;
 
   return (
     <div className="flex flex-col items-center leading-tight">
@@ -98,7 +100,12 @@ export function NextMatchBlock({ card }: NextMatchBlockProps) {
       {/* Squadre con icone */}
       <div className="mt-0.5 flex items-center gap-1">
         {/* Home team - sfondo grigio se è la squadra del giocatore */}
-        <div className={cn("flex items-center gap-0.5 rounded px-1 py-0.5", isHomeTeam && "bg-slate-200")}>
+        <div
+          className={cn(
+            "flex items-center gap-0.5 rounded px-1 py-0.5",
+            isHomeTeam && "bg-slate-200"
+          )}
+        >
           <Shield className="h-3 w-3 text-slate-500" />
           <span className="font-semibold text-[10px] text-slate-700">
             {homeTeam}
@@ -106,7 +113,12 @@ export function NextMatchBlock({ card }: NextMatchBlockProps) {
         </div>
         <span className="text-[8px] text-slate-400">vs</span>
         {/* Away team - sfondo grigio se è la squadra del giocatore */}
-        <div className={cn("flex items-center gap-0.5 rounded px-1 py-0.5", isAwayTeam && "bg-slate-200")}>
+        <div
+          className={cn(
+            "flex items-center gap-0.5 rounded px-1 py-0.5",
+            isAwayTeam && "bg-slate-200"
+          )}
+        >
           <Shield className="h-3 w-3 text-slate-500" />
           <span className="font-semibold text-[10px] text-slate-700">
             {awayTeam}

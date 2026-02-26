@@ -21,6 +21,11 @@
       "sourceType": "github",
       "computedHash": "50c1b6d9b35b05927fa0c81962d560634385c9567b7b1d66396b171965b33105"
     },
+    "tanstack-table": {
+      "source": "oakoss/agent-skills",
+      "sourceType": "github",
+      "computedHash": "864efa5d25c9db657ccf97658043d3dcedd0e3d71b081ae0a31225e915d04103"
+    },
     "web-design-guidelines": {
       "source": "vercel-labs/agent-skills",
       "sourceType": "github",
