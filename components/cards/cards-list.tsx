@@ -74,6 +74,7 @@ export interface CardsListProps {
   columnWidths?: ColumnWidths; // deprecated, non più usato
   markedCards?: Map<string, string>;
   mode?: "lineup" | "dashboard";
+  l10Remaining?: number;
 }
 
 function convertSortKey(key: SortKey): string {
@@ -113,13 +114,14 @@ export function CardsList({
   onSort,
   markedCards,
   mode = "lineup",
+  l10Remaining,
 }: CardsListProps) {
   const columns = useMemo(() => {
     if (mode === "dashboard") {
       return getDashboardColumns();
     }
-    return getLineupColumns({ markedCards });
-  }, [mode, markedCards]);
+    return getLineupColumns({ markedCards, l10Remaining });
+  }, [mode, markedCards, l10Remaining]);
 
   const sorting = useMemo(
     () => convertSortState(sortKey, sortDirection),

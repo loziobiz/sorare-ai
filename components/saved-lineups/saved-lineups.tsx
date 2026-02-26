@@ -178,14 +178,16 @@ function CompactCard({
         {(() => {
           const colors = getL10BadgeColor(card.l10Average);
           return (
-            <span className={`inline-flex w-10 items-center justify-center gap-0.5 rounded px-1 py-0.5 font-medium text-[9px] ${colors.bg} ${colors.text}`}>
+            <span
+              className={`inline-flex w-10 items-center justify-center gap-0.5 rounded px-1 py-0.5 font-medium text-[9px] ${colors.bg} ${colors.text}`}
+            >
               <span>📊</span>
               {card.l10Average?.toFixed(0) ?? "-"}
             </span>
           );
         })()}
         {/* % Titolarità */}
-        {card.anyPlayer?.nextClassicFixturePlayingStatusOdds && (
+        {card.anyPlayer?.nextClassicFixturePlayingStatusOdds &&
           (() => {
             const starterOdds = Math.round(
               card.anyPlayer.nextClassicFixturePlayingStatusOdds
@@ -200,13 +202,14 @@ function CompactCard({
               colorClass = "bg-emerald-100 text-emerald-700";
             }
             return (
-              <span className={`inline-flex w-10 items-center justify-center gap-0.5 rounded px-1 py-0.5 font-medium text-[9px] ${colorClass}`}>
+              <span
+                className={`inline-flex w-10 items-center justify-center gap-0.5 rounded px-1 py-0.5 font-medium text-[9px] ${colorClass}`}
+              >
                 <span>👕</span>
                 {starterOdds}
               </span>
             );
-          })()
-        )}
+          })()}
       </div>
       {/* Info partita */}
       <MatchInfo
@@ -579,9 +582,6 @@ export function SavedLineups() {
           <div className="space-y-6">
             {Object.entries(groupedFormations).map(([league, items]) => (
               <div key={league}>
-                <h2 className="mb-4 font-bold text-slate-700 text-xl">
-                  {league}
-                </h2>
                 <div className="flex flex-wrap items-start gap-5">
                   {items.map((formation) => (
                     <FormationCard

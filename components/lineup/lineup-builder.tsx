@@ -694,9 +694,7 @@ export function LineupBuilder() {
                   <Checkbox
                     checked={homeOnly}
                     id="home-only-filter"
-                    onCheckedChange={(checked) =>
-                      setHomeOnly(checked === true)
-                    }
+                    onCheckedChange={(checked) => setHomeOnly(checked === true)}
                   />
                   <label
                     className="cursor-pointer font-medium text-sm"
@@ -741,7 +739,10 @@ export function LineupBuilder() {
               {/* L10 Max Filter */}
               <div className="flex flex-col gap-1">
                 <div className="flex items-center gap-2">
-                  <label className="font-medium text-sm" htmlFor="l10-min-filter">
+                  <label
+                    className="font-medium text-sm"
+                    htmlFor="l10-min-filter"
+                  >
                     L10 Max:
                   </label>
                   <Input
@@ -767,28 +768,28 @@ export function LineupBuilder() {
                 </div>
                 <div className="flex justify-center gap-1">
                   <button
-                    className="rounded bg-slate-100 px-2 py-0.5 text-[10px] font-medium text-slate-600 hover:bg-slate-200"
+                    className="rounded bg-slate-100 px-2 py-0.5 font-medium text-[10px] text-slate-600 hover:bg-slate-200"
                     onClick={() => setL10MinFilter("40")}
                     type="button"
                   >
                     40
                   </button>
                   <button
-                    className="rounded bg-slate-100 px-2 py-0.5 text-[10px] font-medium text-slate-600 hover:bg-slate-200"
+                    className="rounded bg-slate-100 px-2 py-0.5 font-medium text-[10px] text-slate-600 hover:bg-slate-200"
                     onClick={() => setL10MinFilter("50")}
                     type="button"
                   >
                     50
                   </button>
                   <button
-                    className="rounded bg-slate-100 px-2 py-0.5 text-[10px] font-medium text-slate-600 hover:bg-slate-200"
+                    className="rounded bg-slate-100 px-2 py-0.5 font-medium text-[10px] text-slate-600 hover:bg-slate-200"
                     onClick={() => setL10MinFilter("60")}
                     type="button"
                   >
                     60
                   </button>
                   <button
-                    className="rounded bg-slate-100 px-2 py-0.5 text-[10px] font-medium text-slate-600 hover:bg-slate-200"
+                    className="rounded bg-slate-100 px-2 py-0.5 font-medium text-[10px] text-slate-600 hover:bg-slate-200"
                     onClick={() => setL10MinFilter("")}
                     type="button"
                   >
@@ -848,6 +849,7 @@ export function LineupBuilder() {
                 cards={filteredCards}
                 disabled={!activeSlot}
                 emptyMessage={getEmptyMessage(leagueFilter, activeSlot)}
+                l10Remaining={l10Remaining}
                 markedCards={showUsedCards ? savedFormationsCards : undefined}
                 mode="lineup"
                 onCardClick={handleCardSelect}

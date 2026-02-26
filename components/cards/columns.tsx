@@ -1,7 +1,7 @@
 "use client";
 
 import type { ColumnDef } from "@tanstack/react-table";
-import { Bookmark } from "lucide-react";
+import { AlertTriangle, Bookmark } from "lucide-react";
 import { getPositionLabel } from "@/lib/cards-utils";
 import { ETH_TO_EUR_RATE } from "@/lib/config";
 import type { CardData } from "@/lib/sorare-api";
@@ -154,6 +154,7 @@ export function ScoreHistogram({
 
 export interface LineupColumnOptions {
   markedCards?: Map<string, string>;
+  l10Remaining?: number;
 }
 
 // Larghezze colonne per lineup-builder
@@ -182,7 +183,7 @@ export const DASHBOARD_COLUMN_WIDTHS = {
 export function getLineupColumns(
   options: LineupColumnOptions = {}
 ): ColumnDef<CardData>[] {
-  const { markedCards } = options;
+  const { markedCards, l10Remaining } = options;
 
   return [
     {
@@ -224,9 +225,9 @@ export function getLineupColumns(
                     .map((pos) => getPositionLabel(pos))
                     .join(", ")}
                   {" • XP "}
-                  {getXP(card) || "-" }
+                  {getXP(card) || "-"}
                   {" % •"}
-                  {card.anyPlayer?.nextClassicFixturePlayingStatusOdds && (
+                  {card.anyPlayer?.nextClassicFixturePlayingStatusOdds &&
                     (() => {
                       const starterOdds = Math.round(
                         card.anyPlayer.nextClassicFixturePlayingStatusOdds
@@ -241,30 +242,31 @@ export function getLineupColumns(
                         colorClass = "bg-emerald-100 text-emerald-700";
                       }
                       return (
-                        <span className={`ml-1.5 inline-flex items-center gap-0.5 rounded px-1 py-0.5 font-medium text-[11px] ${colorClass}`}>
+                        <span
+                          className={`ml-1.5 inline-flex items-center gap-0.5 rounded px-1 py-0.5 font-medium text-[11px] ${colorClass}`}
+                        >
                           <span>👕</span>
                           {starterOdds}%
                         </span>
                       );
-                    })()
-                  )}
+                    })()}
                   {(() => {
                     const clubName = card.anyPlayer?.activeClub?.name;
                     const nextGame = card.anyPlayer?.nextGame;
-                    if (!clubName || !nextGame) return null;
-                    
+                    if (!(clubName && nextGame)) return null;
+
                     const isHomeTeam = nextGame.homeTeam?.name === clubName;
                     const isAwayTeam = nextGame.awayTeam?.name === clubName;
-                    
+
                     let winOdds: number | null | undefined;
                     if (isHomeTeam) {
                       winOdds = nextGame.homeStats?.winOddsBasisPoints;
                     } else if (isAwayTeam) {
                       winOdds = nextGame.awayStats?.winOddsBasisPoints;
                     }
-                    
+
                     if (!winOdds) return null;
-                    
+
                     return (
                       <span className="ml-1.5 inline-flex items-center gap-0.5 text-[11px] text-slate-600">
                         <span>• 🏆 </span>
@@ -303,9 +305,23 @@ export function getLineupColumns(
         } else {
           colorClass = "bg-cyan-100 text-cyan-700";
         }
+        const exceedsCap =
+          l10Remaining !== undefined &&
+          l10Remaining !== null &&
+          l10Value > l10Remaining;
         return (
-          <div className={`inline-flex rounded px-1.5 py-0.5 font-medium ${colorClass}`}>
-            {l10Value}
+          <div className="flex items-center gap-1">
+            <div
+              className={`inline-flex rounded px-1.5 py-0.5 font-medium ${colorClass}`}
+            >
+              {l10Value}
+            </div>
+            {exceedsCap && (
+              <AlertTriangle
+                className="h-4 w-4 shrink-0 text-red-500"
+                title={`L10 (${l10Value}) supera il CAP residuo (${l10Remaining?.toFixed(0)})`}
+              />
+            )}
           </div>
         );
       },
