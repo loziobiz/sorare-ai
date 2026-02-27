@@ -11,7 +11,6 @@ import {
 } from "@/components/cards/cards-list";
 import { type ViewMode, ViewToggle } from "@/components/cards/view-toggle";
 import { LoadingSpinner } from "@/components/loading-spinner";
-import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
@@ -429,6 +428,36 @@ export function LineupBuilder() {
     return filledSlots >= 3 ? 2 : 0;
   }, [formation]);
 
+  // Verifica se la formazione può essere salvata
+  const canSaveFormation = useMemo(() => {
+    const filledSlots = formation.filter((s) => s.card).length;
+    if (filledSlots < gameModeConfig.slotCount) {
+      return false;
+    }
+
+    // Verifica CAP L10
+    if (gameModeConfig.cap !== null) {
+      const totalL10 = formation.reduce((sum, slot) => {
+        return sum + (slot.card?.l10Average ?? 0);
+      }, 0);
+      if (totalL10 > gameModeConfig.cap) {
+        return false;
+      }
+    }
+
+    // Verifica minimo in-season
+    if (gameModeConfig.minInSeasonCount !== null) {
+      const inSeasonCount = formation.filter(
+        (s) => s.card?.inSeasonEligible
+      ).length;
+      if (inSeasonCount < gameModeConfig.minInSeasonCount) {
+        return false;
+      }
+    }
+
+    return true;
+  }, [formation, gameModeConfig]);
+
   // Load formation for editing
   useEffect(() => {
     const editId = searchParams.get("edit");
@@ -651,13 +680,7 @@ export function LineupBuilder() {
               placeholder={`Nome formazione (default: ${gameModeConfig.label})`}
               value={formationName}
             />
-            <div className="flex items-center gap-2">
-              <label
-                className="whitespace-nowrap font-medium text-sm"
-                htmlFor="cap-select"
-              >
-                Modalità:
-              </label>
+            <div className="flex items-center gap-3">
               <select
                 className="flex h-9 flex-1 rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                 id="cap-select"
@@ -683,16 +706,11 @@ export function LineupBuilder() {
                   </option>
                 ))}
               </select>
-            </div>
-            {/* Info CAP L10 */}
-            {gameModeConfig.cap !== null && (
-              <div className="flex items-center justify-between rounded-md bg-slate-100 px-3 py-2">
-                <span className="font-medium text-slate-600 text-sm">
-                  Residuo L10:
-                </span>
+              {/* Residuo L10 allineato a destra */}
+              {gameModeConfig.cap !== null && (
                 <span
                   className={cn(
-                    "font-bold text-sm",
+                    "whitespace-nowrap font-bold text-sm",
                     l10Remaining < 0 && "text-red-600",
                     l10Remaining >= 0 && l10Remaining < 50 && "text-orange-500",
                     l10Remaining >= 50 && "text-emerald-600"
@@ -700,17 +718,12 @@ export function LineupBuilder() {
                 >
                   {l10Remaining.toFixed(0)}/{gameModeConfig.cap}
                 </span>
-              </div>
-            )}
-            {/* Info In-Season */}
-            {gameModeConfig.minInSeasonCount !== null && (
-              <div className="flex items-center justify-between rounded-md bg-slate-100 px-3 py-2">
-                <span className="font-medium text-slate-600 text-sm">
-                  In-Season:
-                </span>
+              )}
+              {/* In-Season counter allineato a destra */}
+              {gameModeConfig.minInSeasonCount !== null && (
                 <span
                   className={cn(
-                    "font-bold text-sm",
+                    "whitespace-nowrap font-bold text-sm",
                     (() => {
                       const inSeasonCount = formation.filter(
                         (s) => s.card?.inSeasonEligible
@@ -729,27 +742,19 @@ export function LineupBuilder() {
                     return `${inSeasonCount}/${gameModeConfig.minInSeasonCount}`;
                   })()}
                 </span>
-              </div>
-            )}
+              )}
+            </div>
           </div>
 
           {/* Bottone conferma */}
           <Button
             className="mb-2 h-9 gap-2 bg-violet-600 font-semibold text-base hover:bg-violet-700"
-            disabled={
-              formation.filter((s) => s.card).length < gameModeConfig.slotCount
-            }
+            disabled={!canSaveFormation}
             onClick={handleConfirmFormation}
           >
             <Check className="h-5 w-5" />
             {editingId ? "Aggiorna formazione" : "Salva formazione"}
           </Button>
-
-          {displayError && (
-            <Alert className="mb-3" variant="destructive">
-              <AlertDescription>{displayError}</AlertDescription>
-            </Alert>
-          )}
 
           {/* Campo di calcio */}
           <PitchField

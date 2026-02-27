@@ -431,12 +431,12 @@ export function SavedLineups() {
   const loadFormations = useCallback(async () => {
     try {
       const all = await db.savedFormations.toArray();
-      // Sort by league, then by createdAt (newest first)
+      // Sort by league, then by createdAt (oldest first)
       const sorted = all.sort((a, b) => {
         if (a.league !== b.league) {
           return a.league.localeCompare(b.league);
         }
-        return b.createdAt - a.createdAt;
+        return a.createdAt - b.createdAt;
       });
       setFormations(sorted);
     } catch (err) {

@@ -157,6 +157,12 @@ export function SavedLineupsDnDProvider({
         const sourceData = active.data.current as DragItem;
         const targetData = over.data.current as DragItem;
 
+        // Non permettere di rilasciare sulla stessa formazione
+        if (sourceData.formationId === targetData.formationId) {
+          endDrag();
+          return;
+        }
+
         // Verifica finale prima dello swap
         const roleCompatible = isRoleCompatible(
           sourceData.card,
