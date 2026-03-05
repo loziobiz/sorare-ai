@@ -7,6 +7,7 @@ import { SIGN_IN_MUTATION } from "./graphql/mutations";
 import type { SignInInput, SignInResponse } from "./types";
 
 const COOKIE_NAME = "sorare_jwt_token";
+const COOKIE_CLI_TOKEN = "sorare_cli_token";
 const COOKIE_OTP_CHALLENGE = "sorare_otp_challenge";
 
 const SORARE_API_BASE = "https://api.sorare.com";
@@ -75,10 +76,12 @@ export async function getOtpChallenge(): Promise<string | undefined> {
 }
 
 /**
- * Imposta il token JWT nei cookies (HTTP-only)
+ * Imposta il token JWT nei cookies (HTTP-only + CLI accessible)
  */
 export async function setAuthToken(token: string): Promise<void> {
   const cookieStore = await cookies();
+  
+  // Main auth token (HTTP-only, secure)
   cookieStore.set({
     name: COOKIE_NAME,
     value: token,
@@ -87,6 +90,17 @@ export async function setAuthToken(token: string): Promise<void> {
     sameSite: "lax",
     path: "/",
     maxAge: 30 * 24 * 60 * 60, // 30 giorni
+  });
+  
+  // CLI token (accessible by JS for export)
+  cookieStore.set({
+    name: COOKIE_CLI_TOKEN,
+    value: token,
+    httpOnly: false, // Accessible by JavaScript
+    secure: process.env.NODE_ENV === "production",
+    sameSite: "lax",
+    path: "/",
+    maxAge: 30 * 24 * 60 * 60,
   });
 }
 
@@ -112,6 +126,7 @@ export async function setOtpChallenge(challenge: string): Promise<void> {
 export async function clearAuthCookies(): Promise<void> {
   const cookieStore = await cookies();
   cookieStore.delete(COOKIE_NAME);
+  cookieStore.delete(COOKIE_CLI_TOKEN);
   cookieStore.delete(COOKIE_OTP_CHALLENGE);
 }
 

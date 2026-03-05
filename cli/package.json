@@ -1,0 +1,42 @@
+{
+  "name": "@sorare-ai/cli",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "tsx",
+    "player:history": "tsx src/commands/player-history.ts",
+    "player:analyze": "tsx src/commands/player-analyze.ts",
+    "extract-mls-players": "tsx src/commands/extract-mls-players.ts",
+    "analyze-mls": "tsx src/commands/analyze-all-mls.ts",
+    "analyze-mls-aa": "tsx src/commands/analyze-mls-aa.ts",
+    "analyze-odds": "tsx src/commands/analyze-odds.ts",
+    "import-token": "tsx src/commands/import-token.ts",
+    "import-kv": "tsx src/commands/import-players-kv.ts",
+    "clear-kv": "tsx src/commands/clear-kv.ts",
+    "worker:dev": "wrangler dev --test-scheduled",
+    "worker:deploy": "wrangler deploy",
+    "worker:deploy:staging": "wrangler deploy -e staging",
+    "worker:tail": "wrangler tail",
+    "kv:create": "wrangler kv namespace create MLS_PLAYERS",
+    "kv:create:preview": "wrangler kv namespace create MLS_PLAYERS --preview",
+    "kv:list": "wrangler kv list --binding=MLS_PLAYERS",
+    "kv:get": "wrangler kv key get --binding=MLS_PLAYERS",
+    "kv:delete": "wrangler kv key delete --binding=MLS_PLAYERS",
+    "kv:bulk-delete": "wrangler kv bulk delete --binding=MLS_PLAYERS",
+    "secret:put": "wrangler secret put SORARE_API_KEY",
+    "secret:delete": "wrangler secret delete SORARE_API_KEY",
+    "secret:list": "wrangler secret list",
+    "whoami": "wrangler whoami"
+  },
+  "dependencies": {
+    "dotenv": "^16.4.5"
+  },
+  "devDependencies": {
+    "@cloudflare/workers-types": "^4.20250214.0",
+    "@types/node": "^20.11.0",
+    "tsx": "^4.7.0",
+    "typescript": "^5.3.3",
+    "wrangler": "^4.70.0"
+  }
+}

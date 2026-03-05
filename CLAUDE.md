@@ -9,7 +9,7 @@ Always refer to the following resources for Sorare API and GraphQL documentation
 - [Sorare GraphQL Schema](./docs/schema.basic.graphql)
 - [Sorare Scoring Rules](./docs/sorare_scoring_rules.md)
 - [Sorare Game Rules and Mechanics](./docs/sorare_rules.md)
-
+- [Routing](./docs/routing.md)
 
 ## Ultracite Code Standards
 

@@ -9,14 +9,26 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as SettingsRouteImport } from './routes/settings'
 import { Route as SavedLineupsRouteImport } from './routes/saved-lineups'
+import { Route as ResultsRouteImport } from './routes/results'
 import { Route as LineupRouteImport } from './routes/lineup'
 import { Route as CardsRouteImport } from './routes/cards'
 import { Route as IndexRouteImport } from './routes/index'
 
+const SettingsRoute = SettingsRouteImport.update({
+  id: '/settings',
+  path: '/settings',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const SavedLineupsRoute = SavedLineupsRouteImport.update({
   id: '/saved-lineups',
   path: '/saved-lineups',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ResultsRoute = ResultsRouteImport.update({
+  id: '/results',
+  path: '/results',
   getParentRoute: () => rootRouteImport,
 } as any)
 const LineupRoute = LineupRouteImport.update({
@@ -39,43 +51,78 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/cards': typeof CardsRoute
   '/lineup': typeof LineupRoute
+  '/results': typeof ResultsRoute
   '/saved-lineups': typeof SavedLineupsRoute
+  '/settings': typeof SettingsRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/cards': typeof CardsRoute
   '/lineup': typeof LineupRoute
+  '/results': typeof ResultsRoute
   '/saved-lineups': typeof SavedLineupsRoute
+  '/settings': typeof SettingsRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/cards': typeof CardsRoute
   '/lineup': typeof LineupRoute
+  '/results': typeof ResultsRoute
   '/saved-lineups': typeof SavedLineupsRoute
+  '/settings': typeof SettingsRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/cards' | '/lineup' | '/saved-lineups'
+  fullPaths:
+    | '/'
+    | '/cards'
+    | '/lineup'
+    | '/results'
+    | '/saved-lineups'
+    | '/settings'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/cards' | '/lineup' | '/saved-lineups'
-  id: '__root__' | '/' | '/cards' | '/lineup' | '/saved-lineups'
+  to: '/' | '/cards' | '/lineup' | '/results' | '/saved-lineups' | '/settings'
+  id:
+    | '__root__'
+    | '/'
+    | '/cards'
+    | '/lineup'
+    | '/results'
+    | '/saved-lineups'
+    | '/settings'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   CardsRoute: typeof CardsRoute
   LineupRoute: typeof LineupRoute
+  ResultsRoute: typeof ResultsRoute
   SavedLineupsRoute: typeof SavedLineupsRoute
+  SettingsRoute: typeof SettingsRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/settings': {
+      id: '/settings'
+      path: '/settings'
+      fullPath: '/settings'
+      preLoaderRoute: typeof SettingsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/saved-lineups': {
       id: '/saved-lineups'
       path: '/saved-lineups'
       fullPath: '/saved-lineups'
       preLoaderRoute: typeof SavedLineupsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/results': {
+      id: '/results'
+      path: '/results'
+      fullPath: '/results'
+      preLoaderRoute: typeof ResultsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/lineup': {
@@ -106,7 +153,9 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   CardsRoute: CardsRoute,
   LineupRoute: LineupRoute,
+  ResultsRoute: ResultsRoute,
   SavedLineupsRoute: SavedLineupsRoute,
+  SettingsRoute: SettingsRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

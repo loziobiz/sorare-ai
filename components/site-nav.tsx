@@ -1,7 +1,7 @@
 "use client";
 
 import { Link, useLocation } from "@tanstack/react-router";
-import { CreditCard, Layers, Save } from "lucide-react";
+import { CreditCard, Layers, Save, Settings, Trophy } from "lucide-react";
 import { useEffect, useState } from "react";
 import { db } from "@/lib/db";
 import { cn } from "@/lib/utils";
@@ -51,6 +51,8 @@ export function SiteNav({ className }: SiteNavProps) {
           : "Formazioni Salvate",
       icon: Save,
     },
+    { href: "/results", label: "Risultati", icon: Trophy },
+    { href: "/settings", label: "Impostazioni", icon: Settings },
   ];
 
   return (

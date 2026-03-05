@@ -1,3 +1,71 @@
+export const GET_SO5_RESULTS_QUERY = `
+  query GetSo5Results($slug: String!) {
+    so5 {
+      so5Fixture(slug: $slug, sport: FOOTBALL) {
+        slug
+        gameWeek
+        displayName
+        startDate
+        endDate
+        mySo5Lineups(draft: false) {
+          id
+          name
+          so5Leaderboard {
+            slug
+            displayName
+            division
+          }
+          so5Appearances {
+            id
+            captain
+            score
+            bonusPoints
+            anyCard {
+              slug
+              name
+              rarityTyped
+              pictureUrl
+            }
+            anyPlayer {
+              ... on Player {
+                displayName
+                slug
+              }
+            }
+          }
+        }
+        mySo5Rankings(first: 50) {
+          ranking
+          score
+          eligibleForReward
+          so5Rewards {
+            id
+            amount {
+              eurCents
+            }
+          }
+        }
+      }
+    }
+  }
+`;
+
+export const GET_SO5_FIXTURES_QUERY = `
+  query GetSo5Fixtures($sport: Sport!, $eventType: So5FixtureEvent!, $last: Int, $future: Boolean) {
+    so5 {
+      allSo5Fixtures(sport: $sport, eventType: $eventType, last: $last, future: $future) {
+        nodes {
+          slug
+          gameWeek
+          displayName
+          startDate
+          endDate
+        }
+      }
+    }
+  }
+`;
+
 export const GET_CARDS_QUERY = `
   query GetCards($after: String) {
     currentUser {

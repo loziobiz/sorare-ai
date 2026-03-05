@@ -1,0 +1,27 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "sorare-mls-sync",
+  "main": "src/worker/index.ts",
+  "compatibility_date": "2025-03-01",
+  "compatibility_flags": ["nodejs_compat"],
+
+  "kv_namespaces": [
+    {
+      "binding": "MLS_PLAYERS",
+      "id": "8437ca2a9ef74cf4a77b8ceaec16c129",
+      "preview_id": "48b72b33237b4fc0bb4cf4f83c360275"
+    }
+  ],
+
+  "triggers": {
+    "crons": ["0 8 * * 2", "0 8 * * 3", "0 8 * * 4", "0 20 * * 5", "0 12 * * 7"]
+  },
+
+  "observability": {
+    "enabled": true,
+    "logs": {
+      "invocation_logs": true,
+      "head_sampling_rate": 1
+    }
+  }
+}
