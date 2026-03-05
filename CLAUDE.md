@@ -2,6 +2,10 @@
 Una dashboard per gestire la propria galleria di carte collezionabili Sorare.
 Gestione collezioni, lineup, tornei, statistiche, ecc.
 
+**IMPORTANT**
+La cartella ./cli fa parte di un modulo backend.
+Non considerare il codice all'interno a meno che non ti venga esplicitamente citato con riferimenti precisi a file nella richiesta utente.
+
 ## Useful resources
 Always refer to the following resources for Sorare API and GraphQL documentation:
 
