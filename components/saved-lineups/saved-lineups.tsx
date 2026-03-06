@@ -333,12 +333,30 @@ function FormationCard({
     260: "CAP 260",
     220: "CAP 220",
     pro_gas: "Pro GAS",
+    mls_arena_260: "MLS ARENA 260",
+    mls_in_season: "MLS IN-SEASON",
+    gas_arena_260: "GAS ARENA 260",
+    gas_arena_220: "GAS ARENA 220",
+    gas_arena_nocap: "GAS ARENA NOCAP",
+    gas_classic: "GAS CLASSIC",
   };
   const modeLabel = modeLabels[formation.gameMode] ?? "CAP 260";
-  const modeColor =
-    formation.gameMode === "pro_gas"
-      ? "bg-purple-100 text-purple-700"
-      : "bg-slate-100 text-slate-600";
+
+  // Determina il colore del badge in base al gameMode
+  let modeColor: string;
+  if (
+    formation.gameMode === "pro_gas" ||
+    formation.gameMode === "gas_classic"
+  ) {
+    modeColor = "bg-purple-100 text-purple-700";
+  } else if (
+    formation.gameMode === "mls_arena_260" ||
+    formation.gameMode === "mls_in_season"
+  ) {
+    modeColor = "bg-gray-100 text-gray-700";
+  } else {
+    modeColor = "bg-slate-100 text-slate-600";
+  }
 
   // Calcolo L10 totale e rapporto CAP
   const totalL10 = sortedCards.reduce(
@@ -361,8 +379,17 @@ function FormationCard({
   return (
     <div className="min-w-0 max-w-full space-y-2 rounded-lg border border-slate-200 bg-white p-2 shadow-sm">
       {/* Nome formazione, L10/CAP e azioni */}
-      <div className="flex items-center justify-between">
-        <h3 className="font-bold text-slate-800 text-xl">{formation.name}</h3>
+      <div className="flex items-start justify-between">
+        <div className="flex flex-col">
+          <h3 className="font-bold text-lg text-slate-800 leading-tight">
+            {formation.name}
+          </h3>
+          <span
+            className={`inline-block w-fit rounded px-1 py-[1px] font-medium text-[10px] ${modeColor}`}
+          >
+            {modeLabel}
+          </span>
+        </div>
         <div className="flex items-center gap-2">
           {/* L10/CAP a sinistra dei pulsanti azione */}
           {capRatio !== null && (
