@@ -346,34 +346,6 @@ export function ResultsView({ initialGameWeek }: ResultsViewProps) {
         </div>
       ) : fixture ? (
         <>
-          {/* Stats summary */}
-          <div className="grid gap-4 sm:grid-cols-3">
-            <div className="rounded-lg border border-white/10 bg-[#1A1B23] p-4 shadow-sm">
-              <div className="text-slate-400 text-sm">Formazioni</div>
-              <div className="flex items-center gap-2 font-bold text-2xl text-slate-100">
-                <Users className="h-5 w-5 text-blue-400" />
-                {fixture.mySo5Lineups.length}
-              </div>
-            </div>
-            <div className="rounded-lg border border-white/10 bg-[#1A1B23] p-4 shadow-sm">
-              <div className="text-slate-400 text-sm">Rankings</div>
-              <div className="flex items-center gap-2 font-bold text-2xl text-slate-100">
-                <Trophy className="h-5 w-5 text-purple-400" />
-                {fixture.mySo5Rankings.length}
-              </div>
-            </div>
-            <div className="rounded-lg border border-white/10 bg-[#1A1B23] p-4 shadow-sm">
-              <div className="text-slate-400 text-sm">Premi</div>
-              <div className="flex items-center gap-2 font-bold text-2xl text-slate-100">
-                <Trophy className="h-5 w-5 text-amber-400" />
-                {
-                  fixture.mySo5Rankings.filter((r) => r.eligibleForReward)
-                    .length
-                }
-              </div>
-            </div>
-          </div>
-
           {/* Lineups - stesso layout saved-lineups */}
           {lineupsWithRankings.length > 0 && (
             <div className="flex flex-wrap items-start gap-5">
