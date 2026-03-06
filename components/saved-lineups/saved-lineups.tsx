@@ -745,7 +745,7 @@ export function SavedLineups() {
             {/* Azioni */}
             <div className="flex gap-3 border-white/10 border-t bg-white/5 px-6 py-4">
               <Button
-                className="h-10 flex-1"
+                className="h-10 flex-1 border-white/10 bg-white/5 text-slate-200 hover:bg-white/10 hover:text-white"
                 onClick={() => setDeleteConfirm(null)}
                 variant="outline"
               >
