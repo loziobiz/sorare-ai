@@ -689,6 +689,12 @@ export function LineupBuilder() {
                     // Se non c'è lega richiesta, resetta il filtro
                     setLeagueFilter("");
                   }
+                  // Attiva filtro in-season per modalità MLS IN-SEASON
+                  if (newMode === "mls_in_season") {
+                    setInSeasonOnly(true);
+                  } else {
+                    setInSeasonOnly(false);
+                  }
                 }}
                 value={gameMode}
               >
