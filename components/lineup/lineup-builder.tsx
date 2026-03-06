@@ -758,7 +758,7 @@ export function LineupBuilder() {
         </div>
 
         {/* Sezione destra - Collezione carte */}
-        <div className="flex max-h-[calc(100vh-6rem)] max-w-[1000px] flex-1 flex-col">
+        <div className="flex max-h-[calc(100vh-6rem)] flex-1 flex-col">
           {/* Header e filtri sticky */}
           <div className="sticky top-0 z-20 bg-transparent pb-2">
             {/* Header selezione */}
@@ -958,10 +958,10 @@ export function LineupBuilder() {
                 </div>
               </div>
               {/* Nome */}
-              <div className="relative min-w-[200px] flex-1">
-                <Search className="absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-slate-400" />
+              <div className="relative min-w-[200px] flex-1 self-start">
+                <Search className="pointer-events-none absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-slate-400" />
                 <Input
-                  className="h-11 rounded-xl border-white/10 bg-white/5 pl-10 text-slate-200 placeholder:text-slate-500"
+                  className="h-9 rounded-md border-white/10 bg-white/5 pl-9 text-slate-200 placeholder:text-slate-400"
                   onChange={(e) => setSearchQuery(e.target.value)}
                   placeholder="Cerca giocatore..."
                   value={searchQuery}

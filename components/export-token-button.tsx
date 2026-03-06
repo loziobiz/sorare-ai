@@ -57,7 +57,7 @@ export function ExportTokenButton() {
   return (
     <div className="flex flex-col items-end gap-2">
       <Button
-        className="gap-2"
+        className="gap-2 border-white/10 bg-white/5 text-slate-200 hover:bg-white/10 hover:text-white"
         onClick={handleExport}
         size="sm"
         variant="outline"

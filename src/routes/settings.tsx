@@ -35,36 +35,38 @@ function SettingsPage() {
 
         <div className="grid gap-6">
           {/* CLI Tools Section */}
-          <Card>
+          <Card className="border-white/10 bg-[#1A1B23] text-slate-200">
             <CardHeader>
               <CardTitle>Strumenti CLI</CardTitle>
-              <CardDescription>
+              <CardDescription className="text-slate-400">
                 Esporta il token JWT per utilizzare gli strumenti da riga di
                 comando.
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
-              <div className="flex items-center justify-between rounded-lg border p-4">
+              <div className="flex items-center justify-between rounded-lg border border-white/10 bg-white/5 p-4">
                 <div className="space-y-0.5">
                   <p className="font-medium">Token JWT</p>
-                  <p className="text-muted-foreground text-sm">
+                  <p className="text-slate-400 text-sm">
                     Copia il token per autenticare il CLI.
                   </p>
                 </div>
                 <ExportTokenButton />
               </div>
 
-              <div className="rounded-md bg-slate-50 p-4 text-sm">
+              <div className="rounded-md bg-white/5 p-4 text-sm">
                 <p className="mb-2 font-medium">Istruzioni:</p>
-                <ol className="list-inside list-decimal space-y-1 text-muted-foreground">
+                <ol className="list-inside list-decimal space-y-1 text-slate-400">
                   <li>Clicca il pulsante per copiare il token</li>
                   <li>
                     Apri il terminale nella cartella{" "}
-                    <code className="rounded bg-slate-200 px-1">cli/</code>
+                    <code className="rounded bg-white/10 px-1 text-slate-200">
+                      cli/
+                    </code>
                   </li>
                   <li>
                     Esegui:{" "}
-                    <code className="rounded bg-slate-200 px-1">
+                    <code className="rounded bg-white/10 px-1 text-slate-200">
                       pnpm import-token &lt;token&gt;
                     </code>
                   </li>
@@ -75,27 +77,25 @@ function SettingsPage() {
           </Card>
 
           {/* API Information */}
-          <Card>
+          <Card className="border-white/10 bg-[#1A1B23] text-slate-200">
             <CardHeader>
               <CardTitle>Informazioni API</CardTitle>
-              <CardDescription>
+              <CardDescription className="text-slate-400">
                 Dettagli sull&apos;accesso alle API Sorare.
               </CardDescription>
             </CardHeader>
             <CardContent>
               <div className="space-y-2 text-sm">
                 <div className="flex justify-between">
-                  <span className="text-muted-foreground">
-                    Endpoint GraphQL:
-                  </span>
-                  <code className="text-xs">
+                  <span className="text-slate-400">Endpoint GraphQL:</span>
+                  <code className="text-slate-200 text-xs">
                     https://api.sorare.com/graphql
                   </code>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-muted-foreground">Documentazione:</span>
+                  <span className="text-slate-400">Documentazione:</span>
                   <a
-                    className="text-blue-600 hover:underline"
+                    className="text-violet-400 hover:underline"
                     href="https://docs.sorare.com/api/introduction"
                     rel="noopener noreferrer"
                     target="_blank"

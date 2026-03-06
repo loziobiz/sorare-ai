@@ -245,7 +245,7 @@ function SearchInput({ value, onChange }: SearchInputProps) {
     <div className="relative min-w-[200px] flex-1">
       <Search className="absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-slate-400" />
       <Input
-        className="h-9 border-white/10 bg-white/5 pl-10 text-slate-200 placeholder:text-slate-500"
+        className="h-9 border-white/10 bg-white/5 pl-10 text-slate-200 placeholder:text-slate-400"
         onChange={(e) => onChange(e.target.value)}
         placeholder="Cerca giocatore o squadra..."
         value={value}

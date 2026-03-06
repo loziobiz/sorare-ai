@@ -273,7 +273,7 @@ export function getLineupColumns(
                     if (!winOdds) return null;
 
                     return (
-                      <span className="ml-1.5 inline-flex items-center gap-0.5 text-[11px] text-slate-600">
+                      <span className="ml-1.5 inline-flex items-center gap-0.5 text-[11px] text-slate-400">
                         <span>• 🏆 </span>
                         {Math.round(winOdds / 100)}%
                       </span>

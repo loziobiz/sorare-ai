@@ -53,19 +53,22 @@ export function LoginForm({ onSuccess, onTwoFactorRequired }: LoginFormProps) {
   };
 
   return (
-    <Card className="mx-auto w-full max-w-md">
+    <Card className="mx-auto w-full max-w-md border-white/10 bg-[#1A1B23] text-slate-200">
       <CardHeader>
         <CardTitle>Accedi</CardTitle>
-        <CardDescription>
+        <CardDescription className="text-slate-400">
           Inserisci la tua email Sorare e la password per accedere
         </CardDescription>
       </CardHeader>
       <CardContent>
         <form className="space-y-4" onSubmit={handleSubmit}>
           <div className="space-y-2">
-            <Label htmlFor="email">Email</Label>
+            <Label className="text-slate-300" htmlFor="email">
+              Email
+            </Label>
             <Input
               autoComplete="email"
+              className="border-white/10 bg-white/5 text-slate-200 placeholder:text-slate-500"
               disabled={isLoading}
               id="email"
               onChange={(e) => setEmail(e.target.value)}
@@ -77,8 +80,11 @@ export function LoginForm({ onSuccess, onTwoFactorRequired }: LoginFormProps) {
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="password">Password</Label>
+            <Label className="text-slate-300" htmlFor="password">
+              Password
+            </Label>
             <Input
+              className="border-white/10 bg-white/5 text-slate-200"
               disabled={isLoading}
               id="password"
               onChange={(e) => setPassword(e.target.value)}
@@ -94,7 +100,11 @@ export function LoginForm({ onSuccess, onTwoFactorRequired }: LoginFormProps) {
             </Alert>
           )}
 
-          <Button className="w-full" disabled={isLoading} type="submit">
+          <Button
+            className="w-full bg-violet-600 hover:bg-violet-700"
+            disabled={isLoading}
+            type="submit"
+          >
             {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
             Accedi
           </Button>

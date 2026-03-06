@@ -38,10 +38,12 @@ function Home() {
   };
 
   return (
-    <main className="flex min-h-screen items-center justify-center bg-gradient-to-br from-slate-50 to-slate-100 p-4 dark:from-slate-900 dark:to-slate-800">
+    <main className="flex min-h-screen items-center justify-center bg-[#131317] p-4">
       <div className="w-full max-w-md space-y-6">
         <div className="space-y-2 text-center">
-          <h1 className="font-bold text-4xl tracking-tight">Sorare AI</h1>
+          <h1 className="font-bold text-4xl text-slate-100 tracking-tight">
+            Sorare AI
+          </h1>
         </div>
 
         {authStep === "login" ? (

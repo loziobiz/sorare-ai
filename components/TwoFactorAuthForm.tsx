@@ -49,22 +49,25 @@ export function TwoFactorAuthForm({
   };
 
   return (
-    <Card className="mx-auto w-full max-w-md">
+    <Card className="mx-auto w-full max-w-md border-white/10 bg-[#1A1B23] text-slate-200">
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
           <Shield className="h-5 w-5" />
           Autenticazione a Due Fattori
         </CardTitle>
-        <CardDescription>
+        <CardDescription className="text-slate-400">
           Inserisci il codice dal tuo autenticatore per completare l'accesso
         </CardDescription>
       </CardHeader>
       <CardContent>
         <form className="space-y-4" onSubmit={handleSubmit}>
           <div className="space-y-2">
-            <Label htmlFor="otp">Codice di verifica</Label>
+            <Label className="text-slate-300" htmlFor="otp">
+              Codice di verifica
+            </Label>
             <Input
               autoComplete="one-time-code"
+              className="border-white/10 bg-white/5 text-slate-200 placeholder:text-slate-500"
               disabled={isLoading}
               id="otp"
               maxLength={6}
@@ -85,14 +88,18 @@ export function TwoFactorAuthForm({
             </Alert>
           )}
 
-          <Button className="w-full" disabled={isLoading} type="submit">
+          <Button
+            className="w-full bg-violet-600 hover:bg-violet-700"
+            disabled={isLoading}
+            type="submit"
+          >
             {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
             Verifica
           </Button>
 
           {onBack && (
             <Button
-              className="w-full"
+              className="w-full border-white/10 bg-white/5 text-slate-200 hover:bg-white/10 hover:text-white"
               disabled={isLoading}
               onClick={onBack}
               type="button"

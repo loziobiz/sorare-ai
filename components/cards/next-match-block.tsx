@@ -95,9 +95,9 @@ export function NextMatchBlock({ card }: NextMatchBlockProps) {
   return (
     <div className="flex flex-col items-center leading-tight">
       {/* Data e ora */}
-      <div className="flex items-center gap-1 font-medium text-[10px] text-slate-600">
+      <div className="flex items-center gap-1 font-medium text-[10px] text-slate-300">
         <span>{formatted.day}</span>
-        <span className="text-slate-400">·</span>
+        <span className="text-slate-500">·</span>
         <span>{formatted.time}</span>
       </div>
 
@@ -107,11 +107,11 @@ export function NextMatchBlock({ card }: NextMatchBlockProps) {
         <div
           className={cn(
             "flex items-center gap-0.5 rounded px-1 py-0.5",
-            isHomeTeam && "bg-slate-200"
+            isHomeTeam && "bg-white/10"
           )}
         >
-          <Shield className="h-3 w-3 text-slate-500" />
-          <span className="font-semibold text-[10px] text-slate-700">
+          <Shield className="h-3 w-3 text-slate-400" />
+          <span className="font-semibold text-[10px] text-slate-200">
             {homeTeam}
           </span>
         </div>
@@ -120,11 +120,11 @@ export function NextMatchBlock({ card }: NextMatchBlockProps) {
         <div
           className={cn(
             "flex items-center gap-0.5 rounded px-1 py-0.5",
-            isAwayTeam && "bg-slate-200"
+            isAwayTeam && "bg-white/10"
           )}
         >
-          <Shield className="h-3 w-3 text-slate-500" />
-          <span className="font-semibold text-[10px] text-slate-700">
+          <Shield className="h-3 w-3 text-slate-400" />
+          <span className="font-semibold text-[10px] text-slate-200">
             {awayTeam}
           </span>
         </div>
