@@ -16,6 +16,7 @@ import type {
 } from "../lib/kv-repository.js";
 import {
   DefaultUpdateStrategy,
+  loadAllPlayersForAnalysis,
   type KVPlayerRepository,
 } from "../lib/kv-repository.js";
 import { GET_PLAYER_ODDS } from "../lib/queries.js";
@@ -203,9 +204,9 @@ export async function analyzeOddsHandler(
   };
 
   try {
-    // Carica tutti i giocatori usando la versione leggera
-    const db = await repository.loadLight();
-    const players = db.players;
+    // Carica tutti i giocatori (MLS + Extra) per l'analisi
+    const kv = (repository as any).kv as KVNamespace;
+    const players = await loadAllPlayersForAnalysis(kv, repository, { maxTotal: 1200 });
 
     console.log(`Found ${players.length} players to analyze`);
 

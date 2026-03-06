@@ -11,6 +11,8 @@
  * - DELETE /api/cards/:key  : Elimina carta
  */
 
+import { createKVRepository, addExtraPlayerSlug } from "../lib/kv-repository.js";
+
 export interface UserCard {
   userId: string;
   clubCode: string;
@@ -34,6 +36,8 @@ export interface CardOperationResult {
   success: boolean;
   key: string;
   error?: string;
+  /** Promise da attendere con waitUntil per operazioni background (es. aggiunta a extra players) */
+  backgroundWork?: Promise<void>;
 }
 
 /**
@@ -98,12 +102,38 @@ function extractCorrectPlayerSlug(
  * Pulisce i dati della carta per la risposta API
  * - Rimuove: activeCompetitions, ownershipHistory
  * - Aggiunge: leagueName (estratto da activeCompetitions[0].name)
+ * - Assicura: name (fallback se mancante)
  * - In so5Scores tiene solo: score, projectedScore, scoreStatus
  */
 function sanitizeCardData(
   cardData: Record<string, unknown>
 ): Record<string, unknown> {
   const sanitized = { ...cardData };
+
+  // Assicura che 'name' sia sempre presente (fallback per compatibilità client)
+  if (!sanitized.name || typeof sanitized.name !== 'string') {
+    // Deriva il nome dallo slug della carta (rimuovendo anno-rarità-seriale)
+    const cardSlug = String(sanitized.slug || '');
+    const playerSlug = String(sanitized.playerSlug || '');
+    
+    if (cardSlug) {
+      // Estrai nome base dallo slug: "marvin-senaya-2023-limited-94" -> "marvin-senaya"
+      const baseName = cardSlug.replace(/-\d{4}-(limited|rare|super_rare|unique)-\d+$/, '');
+      // Converti in formato leggibile: "marvin-senaya" -> "Marvin Senaya"
+      sanitized.name = baseName
+        .split('-')
+        .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+        .join(' ');
+    } else if (playerSlug) {
+      // Fallback al playerSlug
+      sanitized.name = playerSlug
+        .split('-')
+        .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+        .join(' ');
+    } else {
+      sanitized.name = 'Unknown Player';
+    }
+  }
 
   // Estrai nome lega (cerca MLS in activeCompetitions)
   if (Array.isArray(sanitized.activeCompetitions)) {
@@ -214,7 +244,26 @@ export async function saveUserCard(
 
     await kv.put(key, JSON.stringify(value));
 
-    return { success: true, key };
+    // Verifica se il player esiste nel database (MLS o Extra)
+    // Se non esiste, aggiungilo alla lista dei giocatori extra da sincronizzare
+    const playerSlug = card.playerSlug;
+    
+    const backgroundWork = (async () => {
+      try {
+        const repository = createKVRepository(kv);
+        const existingPlayer = await repository.findBySlug(playerSlug);
+        
+        if (!existingPlayer) {
+          // Player non trovato nel database, aggiungi alla lista extra
+          await addExtraPlayerSlug(kv, playerSlug);
+          console.log(`[SaveCard] Added ${playerSlug} to extra players queue`);
+        }
+      } catch (err) {
+        console.error(`[SaveCard] Error adding extra player ${playerSlug}:`, err);
+      }
+    })();
+
+    return { success: true, key, backgroundWork };
   } catch (error) {
     const msg = error instanceof Error ? error.message : String(error);
     return {

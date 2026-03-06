@@ -561,6 +561,134 @@ export class KVPlayerRepository implements PlayerRepository {
 }
 
 /**
+ * Extra Player Slugs Management
+ * Keys:
+ * - SYSTEM:EXTRA_PLAYER_SLUGS → string[] (lista slugs da sincronizzare)
+ * - SYSTEM:EXTRA_PLAYER_SLUGS_SYNCED → string[] (lista slugs già sincronizzati)
+ */
+
+const EXTRA_PLAYER_SLUGS_KEY = "SYSTEM:EXTRA_PLAYER_SLUGS";
+const EXTRA_PLAYER_SLUGS_SYNCED_KEY = "SYSTEM:EXTRA_PLAYER_SLUGS_SYNCED";
+
+/**
+ * Aggiunge uno slug alla lista dei giocatori extra da sincronizzare
+ * Non duplica se già presente
+ */
+export async function addExtraPlayerSlug(
+  kv: KVNamespace,
+  slug: string
+): Promise<void> {
+  const existing = await kv.get(EXTRA_PLAYER_SLUGS_KEY);
+  const slugs: string[] = existing ? JSON.parse(existing) : [];
+  
+  if (!slugs.includes(slug)) {
+    slugs.push(slug);
+    await kv.put(EXTRA_PLAYER_SLUGS_KEY, JSON.stringify(slugs));
+    console.log(`[ExtraPlayer] Added ${slug} to sync queue (${slugs.length} total)`);
+  }
+}
+
+/**
+ * Ottiene la lista dei giocatori extra da sincronizzare
+ */
+export async function getExtraPlayerSlugs(kv: KVNamespace): Promise<string[]> {
+  const value = await kv.get(EXTRA_PLAYER_SLUGS_KEY);
+  return value ? JSON.parse(value) : [];
+}
+
+/**
+ * Rimuove slugs dalla lista da sincronizzare e li marca come sincronizzati
+ */
+export async function markExtraPlayerSlugsAsSynced(
+  kv: KVNamespace,
+  slugs: string[]
+): Promise<void> {
+  const existingQueue = await kv.get(EXTRA_PLAYER_SLUGS_KEY);
+  const queue: string[] = existingQueue ? JSON.parse(existingQueue) : [];
+  
+  // Rimuovi dalla coda
+  const newQueue = queue.filter((s) => !slugs.includes(s));
+  await kv.put(EXTRA_PLAYER_SLUGS_KEY, JSON.stringify(newQueue));
+  
+  // Aggiungi alla lista sincronizzati
+  const existingSynced = await kv.get(EXTRA_PLAYER_SLUGS_SYNCED_KEY);
+  const synced: string[] = existingSynced ? JSON.parse(existingSynced) : [];
+  
+  for (const slug of slugs) {
+    if (!synced.includes(slug)) {
+      synced.push(slug);
+    }
+  }
+  await kv.put(EXTRA_PLAYER_SLUGS_SYNCED_KEY, JSON.stringify(synced));
+  
+  console.log(`[ExtraPlayer] Marked ${slugs.length} as synced, ${newQueue.length} remaining in queue`);
+}
+
+/**
+ * Verifica se uno slug è un giocatore extra (non MLS)
+ * Lo è se è nella lista sincronizzati o nella coda
+ */
+export async function isExtraPlayer(kv: KVNamespace, slug: string): Promise<boolean> {
+  const queue = await getExtraPlayerSlugs(kv);
+  if (queue.includes(slug)) return true;
+  
+  const syncedValue = await kv.get(EXTRA_PLAYER_SLUGS_SYNCED_KEY);
+  if (syncedValue) {
+    const synced: string[] = JSON.parse(syncedValue);
+    return synced.includes(slug);
+  }
+  return false;
+}
+
+/**
+ * Carica tutti i giocatori per l'analisi (MLS + Extra)
+ * Con limite massimo totale (default 1200)
+ * Priorità: tutti i MLS + extra più recenti
+ */
+export async function loadAllPlayersForAnalysis(
+  kv: KVNamespace,
+  repository: KVPlayerRepository,
+  options: { maxTotal?: number } = {}
+): Promise<PlayerRecord[]> {
+  const maxTotal = options.maxTotal ?? 1200;
+  
+  // 1. Carica tutti i giocatori MLS (usando loadLight che è efficiente)
+  const db = await repository.loadLight();
+  const mlsPlayers = db.players;
+  
+  console.log(`[LoadAllPlayers] MLS players: ${mlsPlayers.length}`);
+  
+  // 2. Ottieni la lista extra sincronizzati
+  const syncedValue = await kv.get(EXTRA_PLAYER_SLUGS_SYNCED_KEY);
+  const extraSlugs: string[] = syncedValue ? JSON.parse(syncedValue) : [];
+  
+  console.log(`[LoadAllPlayers] Extra players synced: ${extraSlugs.length}`);
+  
+  // 3. Carica i giocatori extra dal KV
+  const extraPlayers: PlayerRecord[] = [];
+  
+  for (const slug of extraSlugs) {
+    const player = await repository.findBySlug(slug);
+    if (player) {
+      extraPlayers.push(player);
+    }
+  }
+  
+  // 4. Combina e limita
+  const allPlayers = [...mlsPlayers, ...extraPlayers];
+  
+  if (allPlayers.length > maxTotal) {
+    console.log(`[LoadAllPlayers] Limiting from ${allPlayers.length} to ${maxTotal}`);
+    // Priorità: tutti i MLS, poi i migliori extra per qualche criterio
+    // Per ora prendiamo i primi maxTotal
+    return allPlayers.slice(0, maxTotal);
+  }
+  
+  console.log(`[LoadAllPlayers] Total players to analyze: ${allPlayers.length}`);
+  return allPlayers;
+}
+
+/**
  * Factory function per creare il repository
  */
 export function createKVRepository(kv: KVNamespace): KVPlayerRepository {

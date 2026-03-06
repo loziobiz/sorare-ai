@@ -15,6 +15,7 @@ import { analyzeAAHandler } from "./handlers/analyze-aa.js";
 import { analyzeHomeAwayHandler } from "./handlers/analyze-homeaway.js";
 import { analyzeOddsHandler } from "./handlers/analyze-odds.js";
 import { extractPlayersHandler } from "./handlers/extract-players.js";
+import { syncExtraPlayersHandler } from "./handlers/sync-extra-players.js";
 import {
   countUserCards,
   deleteUserCard,
@@ -52,10 +53,12 @@ async function handleCron(cron: string, env: Env): Promise<void> {
   }
 
   switch (cron) {
-    // Martedì 08:00 UTC - Extract players
+    // Martedì 08:00 UTC - Extract players (MLS)
     case "0 8 * * 2":
       console.log("📋 Running extract-players...");
       await extractPlayersHandler(repository, client);
+      console.log("🌐 Running sync-extra-players...");
+      await syncExtraPlayersHandler(repository, client);
       break;
 
     // Mercoledì 08:00 UTC - Analyze home/away + AA
@@ -184,6 +187,7 @@ async function handleFetch(
           job &&
           [
             "extract-players",
+            "sync-extra-players",
             "analyze-homeaway",
             "analyze-aa",
             "analyze-odds",
@@ -193,7 +197,7 @@ async function handleFetch(
         return json(
           {
             error:
-              "Unknown job. Use: extract-players, analyze-homeaway, analyze-aa, analyze-odds",
+              "Unknown job. Use: extract-players, sync-extra-players, analyze-homeaway, analyze-aa, analyze-odds",
           },
           headers,
           400
@@ -208,6 +212,9 @@ async function handleFetch(
       switch (job) {
         case "extract-players":
           result = await extractPlayersHandler(repository, client);
+          break;
+        case "sync-extra-players":
+          result = await syncExtraPlayersHandler(repository, client);
           break;
         case "analyze-homeaway":
           result = await analyzeHomeAwayHandler(repository, client);
@@ -294,6 +301,11 @@ async function handleFetch(
       // Invalida cache per questo utente
       if (result.success) {
         await invalidateUserCache(env.SORARE_AI_DATA, body.userId);
+      }
+
+      // Attendi operazioni background (es. aggiunta a extra players) usando waitUntil
+      if (result.backgroundWork && ctx) {
+        ctx.waitUntil(result.backgroundWork);
       }
 
       return json(result, headers, result.success ? 200 : 500);

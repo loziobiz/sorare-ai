@@ -165,10 +165,11 @@ export interface LineupColumnOptions {
 // Larghezze colonne per lineup-builder
 export const LINEUP_COLUMN_WIDTHS = {
   name: 310,
-  team: 240,
+  team: 160,
   match: 80,
   spacer: 30,
   forma: 100,
+  aa15: 50,
   l5: 40,
   l10: 80,
   l40: 40,
@@ -179,7 +180,8 @@ export const DASHBOARD_COLUMN_WIDTHS = {
   name: 200,
   team: 300,
   forma: 90,
-  price: 400,
+  price: 280,
+  aa15: 50,
   l5: 50,
   l10: 50,
   l40: 50,
@@ -354,6 +356,20 @@ export function getLineupColumns(
       ),
     },
     {
+      id: "aa15",
+      header: "AA15",
+      size: LINEUP_COLUMN_WIDTHS.aa15,
+      accessorFn: (row) => row.playerStats?.aaAnalysis?.AA15 ?? null,
+      cell: ({ row }) => {
+        const aa15 = row.original.playerStats?.aaAnalysis?.AA15;
+        return (
+          <div className="font-medium">
+            {aa15?.toFixed(0) ?? "-"}
+          </div>
+        );
+      },
+    },
+    {
       accessorKey: "l5Average",
       header: "L5",
       size: LINEUP_COLUMN_WIDTHS.l5,
@@ -454,6 +470,20 @@ export function getDashboardColumns(): ColumnDef<Card>[] {
       cell: ({ row }) => (
         <div className="text-xs">{getPriceDisplay(row.original)}</div>
       ),
+    },
+    {
+      id: "aa15",
+      header: "AA15",
+      size: DASHBOARD_COLUMN_WIDTHS.aa15,
+      accessorFn: (row) => row.playerStats?.aaAnalysis?.AA15 ?? null,
+      cell: ({ row }) => {
+        const aa15 = row.original.playerStats?.aaAnalysis?.AA15;
+        return (
+          <div className="font-medium">
+            {aa15?.toFixed(0) ?? "-"}
+          </div>
+        );
+      },
     },
     {
       accessorKey: "l5Average",
