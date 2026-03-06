@@ -17,17 +17,16 @@
 
 import { config } from "dotenv";
 import { existsSync, writeFileSync } from "fs";
-import { resolve } from "path";
-import { SorareClient } from "../lib/sorare-client.js";
 import {
   createPlayerRepository,
+  type NextFixtureOdds,
+  type OddsStats,
   type PlayerRecord,
   type PlayerStats,
-  type OddsStats,
-  type NextFixtureOdds,
   type StartingOdds,
   type WinOdds,
 } from "../lib/repository.js";
+import { SorareClient } from "../lib/sorare-client.js";
 
 config({ path: ".env.local" });
 config({ path: ".env" });
@@ -124,9 +123,9 @@ function parseArgs(): {
 
   for (const arg of args) {
     if (arg.startsWith("--limit=")) {
-      limit = parseInt(arg.split("=")[1], 10);
+      limit = Number.parseInt(arg.split("=")[1], 10);
     } else if (arg.startsWith("--delay=")) {
-      delay = parseInt(arg.split("=")[1], 10);
+      delay = Number.parseInt(arg.split("=")[1], 10);
     } else if (arg === "--dry-run") {
       dryRun = true;
     }
@@ -155,7 +154,9 @@ function saveState(state: State): void {
 /**
  * Converte basis points in percentuale (0-100)
  */
-function basisPointsToPercentage(basisPoints: number | null | undefined): number | null {
+function basisPointsToPercentage(
+  basisPoints: number | null | undefined
+): number | null {
   if (basisPoints == null) return null;
   return Math.round(basisPoints / 100);
 }
@@ -180,7 +181,8 @@ async function analyzePlayerOdds(
     let startingOdds: StartingOdds | null = null;
     if (player.nextClassicFixturePlayingStatusOdds) {
       startingOdds = {
-        starterOddsBasisPoints: player.nextClassicFixturePlayingStatusOdds.starterOddsBasisPoints,
+        starterOddsBasisPoints:
+          player.nextClassicFixturePlayingStatusOdds.starterOddsBasisPoints,
       };
     }
 
@@ -188,11 +190,12 @@ async function analyzePlayerOdds(
     let nextFixture: NextFixtureOdds | null = null;
     if (player.nextGame && clubName) {
       const game = player.nextGame;
-      
+
       // Determina se il giocatore è in casa o in trasferta
       const isHome = game.homeTeam.name === clubName;
       const opponent = isHome ? game.awayTeam.name : game.homeTeam.name;
-      
+      const opponentCode = isHome ? game.awayTeam.code : game.homeTeam.code;
+
       // Prendi le probabilità della squadra corretta
       let teamWinOdds: WinOdds | null = null;
       if (isHome && game.homeStats) {
@@ -212,6 +215,7 @@ async function analyzePlayerOdds(
       nextFixture = {
         fixtureDate: game.date,
         opponent,
+        opponentCode,
         isHome,
         startingOdds,
         teamWinOdds,
@@ -264,7 +268,9 @@ async function main() {
   try {
     db = await repository.load();
   } catch (error) {
-    console.error("❌ Failed to load MLS database. Run: pnpm extract-mls-players");
+    console.error(
+      "❌ Failed to load MLS database. Run: pnpm extract-mls-players"
+    );
     process.exit(1);
   }
 
@@ -283,14 +289,14 @@ async function main() {
 
   // Filter out already analyzed
   const remaining = playersToAnalyze.filter(
-    (p) => !state.completed.includes(p.slug) && !state.failed.includes(p.slug)
+    (p) => !(state.completed.includes(p.slug) || state.failed.includes(p.slug))
   );
 
   console.log(`✅ ${state.completed.length} already analyzed`);
   console.log(`❌ ${state.failed.length} previously failed`);
   console.log(`⏳ ${remaining.length} remaining to analyze`);
   if (dryRun) {
-    console.log(`🏃 Dry run mode - no changes will be saved`);
+    console.log("🏃 Dry run mode - no changes will be saved");
   }
   console.log();
 
@@ -308,7 +314,7 @@ async function main() {
     const odds = await analyzePlayerOdds(client, player.slug);
 
     if (odds === null) {
-      console.log(`   ❌ Failed to fetch odds`);
+      console.log("   ❌ Failed to fetch odds");
       state.failed.push(player.slug);
       errors++;
     } else {
@@ -379,7 +385,8 @@ async function main() {
   const topStarters = withOdds
     .sort(
       (a, b) =>
-        (b.stats!.odds!.nextFixture!.startingOdds!.starterOddsBasisPoints || 0) -
+        (b.stats!.odds!.nextFixture!.startingOdds!.starterOddsBasisPoints ||
+          0) -
         (a.stats!.odds!.nextFixture!.startingOdds!.starterOddsBasisPoints || 0)
     )
     .slice(0, 5);
@@ -389,9 +396,7 @@ async function main() {
   topStarters.forEach((p, i) => {
     const odds = p.stats!.odds!.nextFixture!.startingOdds!;
     const pct = basisPointsToPercentage(odds.starterOddsBasisPoints);
-    console.log(
-      `   ${i + 1}. ${p.name} (${p.clubName}) - ${pct}%`
-    );
+    console.log(`   ${i + 1}. ${p.name} (${p.clubName}) - ${pct}%`);
   });
 }
 

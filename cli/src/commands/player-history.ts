@@ -11,15 +11,15 @@
  */
 
 import { config } from "dotenv";
-import { SorareClient } from "../lib/sorare-client.js";
-import { GET_PLAYER_INFO, GET_PLAYER_GAME_SCORES } from "../lib/queries.js";
-import type { Player, PlayerData } from "../lib/types.js";
+import { GET_PLAYER_GAME_SCORES, GET_PLAYER_INFO } from "../lib/queries.js";
 import {
-  createPlayerRepository,
   createHomeAwayStats,
+  createPlayerRepository,
   type HomeAwayStats,
   type PlayerStats,
 } from "../lib/repository.js";
+import { SorareClient } from "../lib/sorare-client.js";
+import type { Player, PlayerData } from "../lib/types.js";
 
 // Load environment variables
 config({ path: ".env.local" });
@@ -51,7 +51,12 @@ interface AnalysisResult {
   totalGames: number;
 }
 
-function parseArgs(): { slug: string; last: number; save: boolean; dryRun: boolean } {
+function parseArgs(): {
+  slug: string;
+  last: number;
+  save: boolean;
+  dryRun: boolean;
+} {
   const args = process.argv.slice(2);
 
   if (args.length === 0) {
@@ -65,7 +70,7 @@ function parseArgs(): { slug: string; last: number; save: boolean; dryRun: boole
   const filteredArgs = args.filter((a) => a !== "--save" && a !== "--dry-run");
 
   const slug = filteredArgs[0];
-  const last = Math.min(parseInt(filteredArgs[1] || "50", 10), 100);
+  const last = Math.min(Number.parseInt(filteredArgs[1] || "50", 10), 100);
 
   return { slug, last, save, dryRun };
 }
@@ -83,7 +88,7 @@ function analyzeHomeAway(player: Player): AnalysisResult {
 
   for (const score of scores) {
     if (!score?.anyGame) continue;
-    
+
     // Skip null/0 scores (player didn't play or no valid score)
     if (score.score <= 0) continue;
 
@@ -139,10 +144,18 @@ function formatOutput(analysis: AnalysisResult): void {
   console.log("┌─────────────────────────────────────────┐");
   console.log("│         HOME vs AWAY PERFORMANCE        │");
   console.log("├─────────────────────────────────────────┤");
-  console.log(`│  Home Games: ${homeScores.length.toString().padStart(3)}                    │`);
-  console.log(`│  Home Avg:   ${homeAverage.toFixed(2).padStart(6)}                  │`);
-  console.log(`│  Away Games: ${awayScores.length.toString().padStart(3)}                    │`);
-  console.log(`│  Away Avg:   ${awayAverage.toFixed(2).padStart(6)}                  │`);
+  console.log(
+    `│  Home Games: ${homeScores.length.toString().padStart(3)}                    │`
+  );
+  console.log(
+    `│  Home Avg:   ${homeAverage.toFixed(2).padStart(6)}                  │`
+  );
+  console.log(
+    `│  Away Games: ${awayScores.length.toString().padStart(3)}                    │`
+  );
+  console.log(
+    `│  Away Avg:   ${awayAverage.toFixed(2).padStart(6)}                  │`
+  );
   console.log("├─────────────────────────────────────────┤");
   console.log(
     `│  Home Advantage: ${(homeAdvantageFactor * 100).toFixed(1).padStart(5)}%              │`
@@ -157,9 +170,7 @@ function formatOutput(analysis: AnalysisResult): void {
   console.log("└─────────────────────────────────────────┘\n");
 }
 
-async function saveToRepository(
-  analysis: AnalysisResult
-): Promise<boolean> {
+async function saveToRepository(analysis: AnalysisResult): Promise<boolean> {
   const {
     player,
     homeScores,
@@ -174,9 +185,11 @@ async function saveToRepository(
 
   // Verifica se il giocatore esiste nel repository
   const existingPlayer = await repository.findBySlug(player.slug);
-  
+
   if (!existingPlayer) {
-    console.warn(`⚠️  Player ${player.slug} not found in MLS database. Skipping save.`);
+    console.warn(
+      `⚠️  Player ${player.slug} not found in MLS database. Skipping save.`
+    );
     return false;
   }
 
@@ -201,13 +214,15 @@ async function saveToRepository(
 
   // Aggiorna il repository
   const updated = await repository.updatePlayerStats(player.slug, stats);
-  
+
   if (updated) {
-    console.log(`💾 Saved to mls-players.json`);
+    console.log("💾 Saved to mls-players.json");
   } else {
-    console.log(`⏭️  No changes to save (data unchanged or null values preserved)`);
+    console.log(
+      "⏭️  No changes to save (data unchanged or null values preserved)"
+    );
   }
-  
+
   return updated;
 }
 
@@ -220,9 +235,12 @@ async function main() {
     console.log(`Fetching ${last} games for ${slug}...`);
 
     // First, verify the player exists
-    const infoData = await client.query<{ players: Player[] }>(GET_PLAYER_INFO, {
-      slug,
-    });
+    const infoData = await client.query<{ players: Player[] }>(
+      GET_PLAYER_INFO,
+      {
+        slug,
+      }
+    );
 
     if (!infoData.players || infoData.players.length === 0) {
       console.error(`Player not found: ${slug}`);
@@ -246,10 +264,14 @@ async function main() {
     if (save && !dryRun) {
       await saveToRepository(analysis);
     } else if (dryRun) {
-      console.log(`\n🏃 Dry run mode - not saving to repository`);
+      console.log("\n🏃 Dry run mode - not saving to repository");
       console.log(`   Would save data for: ${analysis.player.slug}`);
-      console.log(`   Home avg: ${analysis.homeAverage.toFixed(2)} (${analysis.homeScores.length} games)`);
-      console.log(`   Away avg: ${analysis.awayAverage.toFixed(2)} (${analysis.awayScores.length} games)`);
+      console.log(
+        `   Home avg: ${analysis.homeAverage.toFixed(2)} (${analysis.homeScores.length} games)`
+      );
+      console.log(
+        `   Away avg: ${analysis.awayAverage.toFixed(2)} (${analysis.awayScores.length} games)`
+      );
     }
 
     // Always output JSON to stderr if OUTPUT_JSON is set (for machine parsing)

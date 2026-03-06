@@ -71,8 +71,12 @@ export default {
       // GET /api/search - Search by metadata
       if (path === "/api/search" && request.method === "GET") {
         const params = url.searchParams;
-        const minAdvantage = parseFloat(params.get("min_advantage") || "-999");
-        const maxAdvantage = parseFloat(params.get("max_advantage") || "999");
+        const minAdvantage = Number.parseFloat(
+          params.get("min_advantage") || "-999"
+        );
+        const maxAdvantage = Number.parseFloat(
+          params.get("max_advantage") || "999"
+        );
         const club = params.get("club");
 
         const allKeys = await kv.listPlayers();

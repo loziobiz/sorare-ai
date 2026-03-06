@@ -7,9 +7,8 @@
 
   "kv_namespaces": [
     {
-      "binding": "MLS_PLAYERS",
-      "id": "8437ca2a9ef74cf4a77b8ceaec16c129",
-      "preview_id": "48b72b33237b4fc0bb4cf4f83c360275"
+      "binding": "SORARE_AI_DATA",
+      "id": "3e19646f99ae4a3dbd80505b9a41e938"
     }
   ],
 

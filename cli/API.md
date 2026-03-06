@@ -19,9 +19,11 @@ USR_{USER_ID}:{CLUB_CODE}:{PLAYER_SLUG}
 |----------|--------|-------------|
 | `/api/cards` | POST | Salva singola carta |
 | `/api/cards/batch` | POST | Salva batch (max 500) |
+| `/api/cards/single?key=xxx` | GET | Recupera singola carta per key |
 | `/api/cards?userId=xxx` | GET | Lista carte |
 | `/api/cards/with-players?userId=xxx` | GET | Lista carte + dati giocatore |
 | `/api/cards/count?userId=xxx` | GET | Conta carte |
+| `/api/cache/invalidate?userId=xxx` | POST | Invalida cache utente |
 | `/api/cards/{key}` | DELETE | Elimina carta |
 
 ### Dettaglio Endpoints
@@ -148,7 +150,77 @@ curl -X POST https://sorare-mls-sync.loziobiz.workers.dev/api/cards/batch \
 
 ---
 
-#### 3. Lista carte utente
+#### 3. Recupera singola carta
+
+**GET** `/api/cards/single?key={key}`
+
+Recupera una singola carta tramite la sua chiave KV completa, con dati giocatore innestati.
+
+**Nota sui playerSlug**: Se il `playerSlug` nella carta non corrisponde a quello nel database (es. `andrew-thomas` vs `andrew-thomas-1998-09-01`), il sistema tenta automaticamente di estrarre lo slug corretto dallo slug completo della carta (formato: `{player-slug}-{anno}-{rarity}-{serial}`).
+
+**Query Parameters:**
+| Parametro | Tipo | Obbligatorio | Descrizione |
+|-----------|------|--------------|-------------|
+| `key` | string | Sì | Key KV completa della carta (es: `USR_user123:ATL:adrian-simon-gill`) |
+
+**Response Success (200):**
+```json
+{
+  "success": true,
+  "card": {
+    "key": "USR_user123:SEA:nicolas-dubersarsky",
+    "value": {
+      "rarity": "limited",
+      "serialNumber": 42,
+      "userId": "user123",
+      "clubCode": "SEA",
+      "playerSlug": "nicolas-dubersarsky",
+      "slug": "nicolas-dubersarsky-2025-limited-42",
+      "leagueName": "Major League Soccer",
+      "so5Scores": [
+        {
+          "score": 72.5,
+          "projectedScore": 75.0,
+          "scoreStatus": "SCORED"
+        }
+      ],
+      "savedAt": "2026-03-05T15:44:09.357Z"
+    },
+    "playerData": {
+      "slug": "nicolas-dubersarsky",
+      "name": "Nicolás Dubersarsky",
+      "clubCode": "SEA",
+      "position": "Midfielder",
+      "stats": {
+        "aaAnalysis": {
+          "calculatedAt": "2026-03-05T18:23:45.123Z",
+          "gamesAnalyzed": 25,
+          "AA5": 68.4,
+          "AA15": 71.2,
+          "AA25": 69.8
+        }
+      }
+    }
+  }
+}
+```
+
+**Response Error (404):**
+```json
+{
+  "success": false,
+  "error": "Card not found"
+}
+```
+
+**Esempio:**
+```bash
+curl "https://sorare-mls-sync.loziobiz.workers.dev/api/cards/single?key=USR_user123:ATL:adrian-simon-gill"
+```
+
+---
+
+#### 4. Lista carte utente
 
 **GET** `/api/cards?userId={userId}&[clubCode={clubCode}]&[limit={limit}]&[cursor={cursor}]`
 
@@ -171,13 +243,18 @@ Recupera tutte le carte di un utente, con opzioni di filtro e paginazione.
   "cursor": "...",
   "cards": [
     {
-      "key": "USR_user123:ATL:adrian-simon-gill",
+      "key": "USR_user123:SEA:nicolas-dubersarsky",
       "value": {
         "rarity": "limited",
-        "serialNumber": 42,
+        "serialNumber": 211,
         "userId": "user123",
-        "clubCode": "ATL",
-        "playerSlug": "adrian-simon-gill",
+        "clubCode": "SEA",
+        "playerSlug": "nicolas-dubersarsky",
+        "slug": "nicolas-dubersarsky-2025-limited-211",
+        "leagueName": "Major League Soccer",
+        "so5Scores": [
+          { "score": 72.5, "projectedScore": 75.0, "scoreStatus": "SCORED" }
+        ],
         "savedAt": "2026-03-05T15:44:09.357Z"
       }
     }
@@ -202,7 +279,7 @@ curl "https://sorare-mls-sync.loziobiz.workers.dev/api/cards?userId=user123&limi
 
 ---
 
-#### 3b. Lista carte con dati giocatore
+#### 4b. Lista carte con dati giocatore
 
 **GET** `/api/cards/with-players?userId={userId}&[clubCode={clubCode}]&[limit={limit}]&[cursor={cursor}]`
 
@@ -224,29 +301,34 @@ Recupera tutte le carte di un utente con i dati del giocatore corrispondente inn
   "complete": true,
   "cards": [
     {
-      "key": "USR_user123:ATL:adrian-simon-gill",
+      "key": "USR_user123:SEA:nicolas-dubersarsky",
       "value": {
         "rarity": "limited",
-        "serialNumber": 42,
+        "serialNumber": 211,
         "userId": "user123",
-        "clubCode": "ATL",
-        "playerSlug": "adrian-simon-gill",
+        "clubCode": "SEA",
+        "playerSlug": "nicolas-dubersarsky",
+        "slug": "nicolas-dubersarsky-2025-limited-211",
+        "leagueName": "Major League Soccer",
+        "so5Scores": [
+          { "score": 72.5, "projectedScore": 75.0, "scoreStatus": "SCORED" }
+        ],
         "savedAt": "2026-03-05T16:02:21.547Z"
       },
       "playerData": {
-        "slug": "adrian-simon-gill",
-        "name": "Adrian Gill",
-        "clubSlug": "atlanta-united-atlanta-georgia",
-        "clubName": "Atlanta United",
-        "clubCode": "ATL",
+        "slug": "nicolas-dubersarsky",
+        "name": "Nicolás Dubersarsky",
+        "clubSlug": "seattle-sounders",
+        "clubName": "Seattle Sounders",
+        "clubCode": "SEA",
         "position": "Midfielder",
         "stats": {
-          "homeAwayAnalysis": {
-            "calculatedAt": "2026-03-04T22:17:01.092Z",
-            "gamesAnalyzed": 2,
-            "home": { "games": 0, "average": 0 },
-            "away": { "games": 0, "average": 0 },
-            "homeAdvantageFactor": 0
+          "aaAnalysis": {
+            "calculatedAt": "2026-03-05T18:23:45.123Z",
+            "gamesAnalyzed": 25,
+            "AA5": 68.4,
+            "AA15": 71.2,
+            "AA25": 69.8
           }
         }
       }
@@ -258,6 +340,7 @@ Recupera tutte le carte di un utente con i dati del giocatore corrispondente inn
 **Note:**
 - `playerData` è `null` se il giocatore non è trovato nel KV
 - Ogni carta richiede una lettura aggiuntiva dal KV (limit 100 per performance)
+- I dati carta e giocatore sono sanitizzati (vedi sezione [Struttura Dati](#struttura-dati))
 
 **Esempio:**
 ```bash
@@ -266,7 +349,7 @@ curl "https://sorare-mls-sync.loziobiz.workers.dev/api/cards/with-players?userId
 
 ---
 
-#### 4. Conta carte utente
+#### 5. Conta carte utente
 
 **GET** `/api/cards/count?userId={userId}&[clubCode={clubCode}]`
 
@@ -298,7 +381,7 @@ curl "https://sorare-mls-sync.loziobiz.workers.dev/api/cards/count?userId=user12
 
 ---
 
-#### 5. Elimina carta
+#### 6. Elimina carta
 
 **DELETE** `/api/cards/{key}`
 
@@ -333,11 +416,44 @@ curl -X DELETE "https://sorare-mls-sync.loziobiz.workers.dev/api/cards/USR_user1
 
 ---
 
+#### 7. Invalida cache (manuale)
+
+**POST** `/api/cache/invalidate?userId={userId}`
+
+Invalida manualmente la cache per un utente specifico. Utile quando i dati sono stati modificati direttamente nel KV (es. tramite wrangler CLI) e la cache contiene dati vecchi.
+
+**Query Parameters:**
+| Parametro | Tipo | Obbligatorio | Descrizione |
+|-----------|------|--------------|-------------|
+| `userId` | string | Sì | ID utente |
+
+**Response Success (200):**
+```json
+{
+  "success": true,
+  "message": "Cache invalidated for user: user123",
+  "timestamp": "2026-03-05T16:30:00.000Z"
+}
+```
+
+**Esempio:**
+```bash
+# Invalida tutta la cache per un utente
+curl -X POST "https://sorare-mls-sync.loziobiz.workers.dev/api/cache/invalidate?userId=test_user"
+```
+
+**Note:**
+- Invalida **tutte** le URL GET associate all'utente (`/api/cards`, `/api/cards/with-players`, `/api/cards/count`)
+- La prossima richiesta GET ricostruirà la cache con i dati freschi dal KV
+- Non richiede un body nella richiesta
+
+---
+
 ## Struttura Dati
 
 ### Card Object
 
-Il sistema salva automaticamente i seguenti campi:
+Il sistema salva automaticamente i seguenti campi. I dati vengono **sanitizzati** in output:
 
 ```typescript
 interface CardData {
@@ -353,10 +469,26 @@ interface CardData {
   purchasedAt?: string;
   power?: number;
   
+  // Campi API Sorare (se presenti)
+  slug?: string;                    // Slug completo della carta
+  leagueName?: string;              // Nome lega (estratto da activeCompetitions)
+  so5Scores?: So5Score[];           // Ultimi punteggi (filtrati)
+  
   // Campi automatici (aggiunti dal sistema)
-  savedAt: string;  // ISO timestamp
+  savedAt: string;                  // ISO timestamp
+}
+
+interface So5Score {
+  score: number;
+  projectedScore: number;
+  scoreStatus: string;              // "SCORED", "DNP", ecc.
 }
 ```
+
+**Note sulla sanitizzazione:**
+- `activeCompetitions` → rimosso, estratto solo `leagueName` (MLS)
+- `ownershipHistory` → rimosso
+- `so5Scores` → solo `score`, `projectedScore`, `scoreStatus`
 
 ### Key Format
 
@@ -367,6 +499,65 @@ Esempi:
 - USR_user123:ATL:adrian-simon-gill
 - USR_user456:MIA:lionel-messi
 - USR_user789:LAFC:denis-bouanga
+```
+
+---
+
+### Player Stats - AA Analysis
+
+Quando si usa l'endpoint `/api/cards/with-players` o `/api/cards/single`, il campo `playerData.stats.aaAnalysis` contiene:
+
+```typescript
+{
+  calculatedAt: string;        // ISO timestamp
+  gamesAnalyzed: number;       // Partite analizzate
+  AA5: number | null;          // Media AA ultime 5 partite
+  AA15: number | null;         // Media AA ultime 15 partite  
+  AA25: number | null;         // Media AA ultime 25 partite
+}
+```
+
+**Nota:** Il campo `validScores` (array dei punteggi grezzi) viene rimosso dalla risposta per ridurre la dimensione.
+
+---
+
+### Player Stats - nextFixture
+
+Quando si usa l'endpoint `/api/cards/with-players`, il campo `playerData.stats.odds.nextFixture` contiene:
+
+```typescript
+{
+  fixtureDate: string;        // Data partita ISO
+  opponent: string;           // Nome squadra avversaria
+  opponentCode: string;       // Codice 3 lettere avversario (es: "MIA")
+  isHome: boolean;            // True se il giocatore gioca in casa
+  startingOdds: {
+    starterOddsBasisPoints: number;  // Probabilità titolarità (basis points)
+  };
+  teamWinOdds: {
+    winOddsBasisPoints: number;
+    drawOddsBasisPoints: number;
+    loseOddsBasisPoints: number;
+  };
+}
+```
+
+**Esempio:**
+```json
+{
+  "fixtureDate": "2024-03-15T20:00:00Z",
+  "opponent": "Inter Miami CF",
+  "opponentCode": "MIA",
+  "isHome": true,
+  "startingOdds": {
+    "starterOddsBasisPoints": 7500
+  },
+  "teamWinOdds": {
+    "winOddsBasisPoints": 5500,
+    "drawOddsBasisPoints": 2500,
+    "loseOddsBasisPoints": 2000
+  }
+}
 ```
 
 ---

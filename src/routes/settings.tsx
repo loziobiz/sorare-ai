@@ -1,8 +1,14 @@
 import { createFileRoute, redirect } from "@tanstack/react-router";
-import { PageLayout } from "@/components/layout/page-layout";
 import { ExportTokenButton } from "@/components/export-token-button";
+import { PageLayout } from "@/components/layout/page-layout";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { isAuthenticated } from "@/lib/auth-server";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 
 export const Route = createFileRoute("/settings")({
   component: SettingsPage,
@@ -33,7 +39,8 @@ function SettingsPage() {
             <CardHeader>
               <CardTitle>Strumenti CLI</CardTitle>
               <CardDescription>
-                Esporta il token JWT per utilizzare gli strumenti da riga di comando.
+                Esporta il token JWT per utilizzare gli strumenti da riga di
+                comando.
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
@@ -48,11 +55,19 @@ function SettingsPage() {
               </div>
 
               <div className="rounded-md bg-slate-50 p-4 text-sm">
-                <p className="font-medium mb-2">Istruzioni:</p>
-                <ol className="list-decimal list-inside space-y-1 text-muted-foreground">
+                <p className="mb-2 font-medium">Istruzioni:</p>
+                <ol className="list-inside list-decimal space-y-1 text-muted-foreground">
                   <li>Clicca il pulsante per copiare il token</li>
-                  <li>Apri il terminale nella cartella <code className="bg-slate-200 px-1 rounded">cli/</code></li>
-                  <li>Esegui: <code className="bg-slate-200 px-1 rounded">pnpm import-token &lt;token&gt;</code></li>
+                  <li>
+                    Apri il terminale nella cartella{" "}
+                    <code className="rounded bg-slate-200 px-1">cli/</code>
+                  </li>
+                  <li>
+                    Esegui:{" "}
+                    <code className="rounded bg-slate-200 px-1">
+                      pnpm import-token &lt;token&gt;
+                    </code>
+                  </li>
                   <li>Ora puoi usare i comandi CLI</li>
                 </ol>
               </div>
@@ -70,16 +85,20 @@ function SettingsPage() {
             <CardContent>
               <div className="space-y-2 text-sm">
                 <div className="flex justify-between">
-                  <span className="text-muted-foreground">Endpoint GraphQL:</span>
-                  <code className="text-xs">https://api.sorare.com/graphql</code>
+                  <span className="text-muted-foreground">
+                    Endpoint GraphQL:
+                  </span>
+                  <code className="text-xs">
+                    https://api.sorare.com/graphql
+                  </code>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-muted-foreground">Documentazione:</span>
-                  <a 
-                    href="https://docs.sorare.com/api/introduction" 
-                    target="_blank" 
-                    rel="noopener noreferrer"
+                  <a
                     className="text-blue-600 hover:underline"
+                    href="https://docs.sorare.com/api/introduction"
+                    rel="noopener noreferrer"
+                    target="_blank"
                   >
                     docs.sorare.com
                   </a>

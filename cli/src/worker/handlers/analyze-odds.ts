@@ -1,22 +1,25 @@
 /**
  * Analyze Odds Handler
- * 
+ *
  * Eseguito da giovedì a domenica ogni 4 ore.
  * - Fetcha probabilità di titolarità e vittoria per ogni giocatore
  * - Non sovrascrive mai odds esistenti con valori nulli
  * - Aggiorna il campo stats.odds nel KV
  */
 
-import { KVPlayerRepository, DefaultUpdateStrategy } from "../lib/kv-repository.js";
-import { SorareWorkerClient } from "../lib/sorare-client.js";
-import { GET_PLAYER_ODDS } from "../lib/queries.js";
 import type {
-  PlayerRecord,
-  OddsStats,
   NextFixtureOdds,
+  OddsStats,
+  PlayerRecord,
   StartingOdds,
   WinOdds,
 } from "../lib/kv-repository.js";
+import {
+  DefaultUpdateStrategy,
+  type KVPlayerRepository,
+} from "../lib/kv-repository.js";
+import { GET_PLAYER_ODDS } from "../lib/queries.js";
+import type { SorareWorkerClient } from "../lib/sorare-client.js";
 
 interface GraphQLPlayerOdds {
   slug: string;
@@ -60,7 +63,9 @@ const DELAY_MS = 50; // 50ms per processare velocemente ~900 giocatori entro i l
 /**
  * Converte basis points in percentuale
  */
-function basisPointsToPercentage(basisPoints: number | null | undefined): number | null {
+function basisPointsToPercentage(
+  basisPoints: number | null | undefined
+): number | null {
   if (basisPoints == null) return null;
   return Math.round(basisPoints / 100);
 }
@@ -73,8 +78,8 @@ async function fetchPlayersOddsBatch(
   playersBatch: PlayerRecord[]
 ): Promise<Map<string, OddsStats | null>> {
   const resultMap = new Map<string, OddsStats | null>();
-  const slugs = playersBatch.map(p => p.slug);
-  
+  const slugs = playersBatch.map((p) => p.slug);
+
   // Inizializza tutto a null
   for (const slug of slugs) {
     resultMap.set(slug, null);
@@ -90,7 +95,7 @@ async function fetchPlayersOddsBatch(
     }
 
     // Crea un lookup per i player records usando lo slug
-    const playerLookup = new Map(playersBatch.map(p => [p.slug, p]));
+    const playerLookup = new Map(playersBatch.map((p) => [p.slug, p]));
 
     for (const playerData of data.players) {
       const record = playerLookup.get(playerData.slug);
@@ -102,7 +107,9 @@ async function fetchPlayersOddsBatch(
       let startingOdds: StartingOdds | null = null;
       if (playerData.nextClassicFixturePlayingStatusOdds) {
         startingOdds = {
-          starterOddsBasisPoints: playerData.nextClassicFixturePlayingStatusOdds.starterOddsBasisPoints,
+          starterOddsBasisPoints:
+            playerData.nextClassicFixturePlayingStatusOdds
+              .starterOddsBasisPoints,
         };
       }
 
@@ -110,11 +117,12 @@ async function fetchPlayersOddsBatch(
       let nextFixture: NextFixtureOdds | null = null;
       if (playerData.nextGame && clubName) {
         const game = playerData.nextGame;
-        
+
         // Determina se il giocatore è in casa o in trasferta
         const isHome = game.homeTeam.name === clubName;
         const opponent = isHome ? game.awayTeam.name : game.homeTeam.name;
-        
+        const opponentCode = isHome ? game.awayTeam.code : game.homeTeam.code;
+
         // Prendi le probabilità della squadra corretta
         let teamWinOdds: WinOdds | null = null;
         if (isHome && game.homeStats) {
@@ -134,6 +142,7 @@ async function fetchPlayersOddsBatch(
         nextFixture = {
           fixtureDate: game.date,
           opponent,
+          opponentCode,
           isHome,
           startingOdds,
           teamWinOdds,
@@ -148,7 +157,7 @@ async function fetchPlayersOddsBatch(
 
     return resultMap;
   } catch (error) {
-    console.warn(`Error fetching odds for batch:`, error);
+    console.warn("Error fetching odds for batch:", error);
     return resultMap;
   }
 }
@@ -199,13 +208,15 @@ export async function analyzeOddsHandler(
     const players = db.players;
 
     console.log(`Found ${players.length} players to analyze`);
-    
+
     // Processa in batch per evitare rate limits (max 1000 subrequests per worker)
     const BATCH_SIZE = 50;
-    
+
     for (let i = 0; i < players.length; i += BATCH_SIZE) {
       const batch = players.slice(i, i + BATCH_SIZE);
-      console.log(`[Batch ${Math.floor(i / BATCH_SIZE) + 1}/${Math.ceil(players.length / BATCH_SIZE)}] Analyzing ${batch.length} players...`);
+      console.log(
+        `[Batch ${Math.floor(i / BATCH_SIZE) + 1}/${Math.ceil(players.length / BATCH_SIZE)}] Analyzing ${batch.length} players...`
+      );
 
       const batchOddsMap = await fetchPlayersOddsBatch(client, batch);
 
@@ -214,14 +225,11 @@ export async function analyzeOddsHandler(
 
         if (odds) {
           // --- LOGICA DI ESCLUSIONE (Risparmio scritture KV) ---
-          const startingOddsBP = odds.nextFixture?.startingOdds?.starterOddsBasisPoints;
+          const startingOddsBP =
+            odds.nextFixture?.startingOdds?.starterOddsBasisPoints;
           const hasNextGame = !!odds.nextFixture?.fixtureDate;
-          
-          if (
-            !startingOddsBP ||
-            startingOddsBP < 1000 ||
-            !hasNextGame
-          ) {
+
+          if (!startingOddsBP || startingOddsBP < 1000 || !hasNextGame) {
             result.skipped++;
             result.processed++;
             continue;
@@ -229,7 +237,7 @@ export async function analyzeOddsHandler(
 
           try {
             const strategy = new DefaultUpdateStrategy();
-            
+
             const updated = await repository.updatePlayerStats(
               player.slug,
               { odds },
@@ -266,7 +274,7 @@ export async function analyzeOddsHandler(
       }
     }
 
-    console.log(`\n✅ Odds analysis complete:`);
+    console.log("\n✅ Odds analysis complete:");
     console.log(`   Processed: ${result.processed}`);
     console.log(`   Updated: ${result.updated}`);
     console.log(`   Skipped (preserved): ${result.skipped}`);
@@ -276,7 +284,7 @@ export async function analyzeOddsHandler(
 
     return result;
   } catch (error) {
-    console.error(`Odds analysis failed:`, error);
+    console.error("Odds analysis failed:", error);
     return result;
   }
 }

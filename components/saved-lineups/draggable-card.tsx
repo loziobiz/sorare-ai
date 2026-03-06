@@ -2,12 +2,16 @@
 
 import { useDraggable, useDroppable } from "@dnd-kit/core";
 import { CSS } from "@dnd-kit/utilities";
+import type { UnifiedCard } from "@/lib/kv-types";
 import type { CardData } from "@/lib/sorare-api";
+
+type Card = CardData | UnifiedCard;
+
 import { cn } from "@/lib/utils";
 import { type CompatibilityStatus, useSavedLineupsDnD } from "./dnd-context";
 
 interface DraggableCardProps {
-  card: CardData;
+  card: Card;
   formationId: number;
   slotPosition: string;
   children: React.ReactNode;

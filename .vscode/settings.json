@@ -13,7 +13,7 @@
     "editor.defaultFormatter": "biomejs.biome"
   },
   "[json]": {
-    "editor.defaultFormatter": "biomejs.biome"
+    "editor.defaultFormatter": "oliversturm.fix-json"
   },
   "[jsonc]": {
     "editor.defaultFormatter": "biomejs.biome"

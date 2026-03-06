@@ -1,5 +1,5 @@
-import fs from "fs";
 import { execSync } from "child_process";
+import fs from "fs";
 import path from "path";
 
 // Tipo per i dati del giocatore da importare
@@ -32,7 +32,7 @@ async function main() {
   console.log("📖 Reading local database...");
   const rawData = fs.readFileSync(DATA_FILE, "utf-8");
   let db: LocalDatabase;
-  
+
   try {
     db = JSON.parse(rawData);
   } catch (e) {
@@ -42,7 +42,7 @@ async function main() {
 
   // FILTRO A MONTE: Solo giocatori con statistiche AA (All-Around)
   const allPlayers = db.players || [];
-  const players = allPlayers.filter(player => {
+  const players = allPlayers.filter((player) => {
     return !!(
       player.stats?.aaAnalysis?.AA5 != null ||
       player.stats?.aaAnalysis?.AA15 != null ||
@@ -50,7 +50,9 @@ async function main() {
     );
   });
 
-  console.log(`📊 Found ${allPlayers.length} total players. Filtered to ${players.length} "alive" players (with AA stats).`);
+  console.log(
+    `📊 Found ${allPlayers.length} total players. Filtered to ${players.length} "alive" players (with AA stats).`
+  );
 
   if (players.length === 0) {
     console.log("⚠️ No players to import.");
@@ -59,18 +61,20 @@ async function main() {
 
   let successCount = 0;
   let errorCount = 0;
-  
+
   // Dividiamo i giocatori in chunks per l'importazione
   for (let i = 0; i < players.length; i += CHUNK_SIZE) {
     const chunk = players.slice(i, i + CHUNK_SIZE);
-    console.log(`\n⏳ Processing chunk ${Math.floor(i / CHUNK_SIZE) + 1}/${Math.ceil(players.length / CHUNK_SIZE)} (Players ${i + 1}-${Math.min(i + CHUNK_SIZE, players.length)})...`);
-    
+    console.log(
+      `\n⏳ Processing chunk ${Math.floor(i / CHUNK_SIZE) + 1}/${Math.ceil(players.length / CHUNK_SIZE)} (Players ${i + 1}-${Math.min(i + CHUNK_SIZE, players.length)})...`
+    );
+
     // Creiamo un file JSON temporaneo per il comando bulk
-    const bulkData = chunk.map(player => {
+    const bulkData = chunk.map((player) => {
       // Usa "UNK" come clubCode di fallback se non è presente, esattamente come fa il Worker
       const clubCode = player.clubCode || "UNK";
       const keyName = `${clubCode}:${player.slug}`;
-      
+
       // Calcola se ha dati AA
       const hasAA = !!(
         player.stats?.aaAnalysis?.AA5 != null ||
@@ -85,22 +89,28 @@ async function main() {
           name: player.name,
           clubSlug: player.clubSlug,
           position: player.position,
-          hasAA
-        }
+          hasAA,
+        },
       };
     });
 
-    const tempFile = path.join(process.cwd(), `temp-kv-bulk-${Date.now()}.json`);
+    const tempFile = path.join(
+      process.cwd(),
+      `temp-kv-bulk-${Date.now()}.json`
+    );
     fs.writeFileSync(tempFile, JSON.stringify(bulkData));
 
     try {
       // Eseguiamo wrangler kv bulk put
       console.log(`   Uploading ${chunk.length} keys to KV...`);
-      execSync(`npx wrangler kv bulk put ${tempFile} --binding=MLS_PLAYERS --preview false`, { stdio: 'inherit' });
+      execSync(
+        `npx wrangler kv bulk put ${tempFile} --binding=SORARE_AI_DATA --preview false`,
+        { stdio: "inherit" }
+      );
       successCount += chunk.length;
-      console.log(`   ✅ Chunk processed successfully.`);
+      console.log("   ✅ Chunk processed successfully.");
     } catch (e) {
-      console.error(`   ❌ Error executing bulk put:`, e);
+      console.error("   ❌ Error executing bulk put:", e);
       errorCount += chunk.length;
     } finally {
       // Puliamo il file temporaneo
@@ -110,7 +120,7 @@ async function main() {
     }
   }
 
-  console.log(`\n🎉 Import Complete!`);
+  console.log("\n🎉 Import Complete!");
   console.log(`   ✅ Successfully imported: ${successCount} players`);
   if (errorCount > 0) {
     console.log(`   ❌ Failed to import: ${errorCount} players`);

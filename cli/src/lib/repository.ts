@@ -76,6 +76,7 @@ export interface WinOdds {
 export interface NextFixtureOdds {
   fixtureDate: string;
   opponent: string;
+  opponentCode?: string; // Codice club avversario (3 lettere)
   isHome: boolean;
   startingOdds: StartingOdds | null;
   teamWinOdds: WinOdds | null;

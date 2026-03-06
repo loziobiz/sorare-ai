@@ -1,10 +1,10 @@
 /**
  * KV Repository - Implementazione PlayerRepository per Cloudflare KV
- * 
+ *
  * Ogni giocatore è salvato come record KV con:
  * - Key: {clubCode}:{playerSlug} (es: "ATL:adrian-simon-gill")
  * - Value: PlayerRecord completo (JSON)
- * 
+ *
  * Vantaggi:
  * - Accesso diretto per club + slug
  * - List filtrabile per clubCode (prefix)
@@ -12,9 +12,9 @@
  */
 
 import type {
-  PlayerRepository,
   MlsPlayersDatabase,
   PlayerRecord,
+  PlayerRepository,
   PlayerStats,
   UpdateStrategy,
 } from "../../lib/repository.js";
@@ -22,20 +22,23 @@ import { DefaultUpdateStrategy } from "../../lib/repository.js";
 
 // Re-export types from repository
 export type {
+  AAStats,
+  HomeAwayStats,
+  MlsPlayersDatabase,
+  NextFixtureOdds,
+  OddsStats,
+  PlayerBaseData,
   PlayerRecord,
   PlayerStats,
-  PlayerBaseData,
-  HomeAwayStats,
-  AAStats,
-  OddsStats,
-  NextFixtureOdds,
   StartingOdds,
-  WinOdds,
-  MlsPlayersDatabase,
   UpdateStrategy,
+  WinOdds,
 } from "../../lib/repository.js";
 
-export { DefaultUpdateStrategy, ForceUpdateStrategy } from "../../lib/repository.js";
+export {
+  DefaultUpdateStrategy,
+  ForceUpdateStrategy,
+} from "../../lib/repository.js";
 
 /**
  * Implementazione PlayerRepository usando Cloudflare KV
@@ -52,30 +55,36 @@ export class KVPlayerRepository implements PlayerRepository {
   /**
    * Ottiene tutte le chiavi dal KV e le cacha per la durata dell'istanza
    */
-  private async getKeysMap(): Promise<Map<string, { keyName: string; metadata?: any }>> {
+  private async getKeysMap(): Promise<
+    Map<string, { keyName: string; metadata?: any }>
+  > {
     const map = new Map<string, { keyName: string; metadata?: any }>();
     let cursor: string | undefined;
-    
+
     do {
-      const listResult = await this.kv.list({ cursor, limit: 1000, metadata: true } as any);
+      const listResult = await this.kv.list({
+        cursor,
+        limit: 1000,
+        metadata: true,
+      } as any);
       for (const key of listResult.keys) {
         // I metadati in Cloudflare Workers sono direttamente nell'oggetto key della lista
         const metadata = (key as any).metadata;
-        
+
         const parsed = KVPlayerRepository.parseKey(key.name);
         if (parsed) {
           if (!this.keyCache) this.keyCache = new Map();
           this.keyCache.set(parsed.playerSlug, key.name);
-          
-          map.set(parsed.playerSlug, { 
-            keyName: key.name, 
-            metadata: metadata 
+
+          map.set(parsed.playerSlug, {
+            keyName: key.name,
+            metadata,
           });
         }
       }
       cursor = listResult.list_complete ? undefined : listResult.cursor;
     } while (cursor);
-    
+
     return map;
   }
 
@@ -90,7 +99,9 @@ export class KVPlayerRepository implements PlayerRepository {
   /**
    * Parse una key KV
    */
-  static parseKey(key: string): { clubCode: string; playerSlug: string } | null {
+  static parseKey(
+    key: string
+  ): { clubCode: string; playerSlug: string } | null {
     const parts = key.split(":");
     if (parts.length !== 2) return null;
     return { clubCode: parts[0], playerSlug: parts[1] };
@@ -99,7 +110,9 @@ export class KVPlayerRepository implements PlayerRepository {
   /**
    * Ottiene la mappa completa di chiavi e metadati (utile per sync)
    */
-  async getKeysAndMetadata(): Promise<Map<string, { keyName: string; metadata?: any }>> {
+  async getKeysAndMetadata(): Promise<
+    Map<string, { keyName: string; metadata?: any }>
+  > {
     return this.getKeysMap();
   }
 
@@ -114,12 +127,13 @@ export class KVPlayerRepository implements PlayerRepository {
         // 1. Se metadata è presente, usiamo il flag
         // 2. Se metadata è totalmente ASSENTE (null/undefined), mettiamo true come fallback
         //    per non rischiare di analizzare 0 giocatori se il list() fa i capricci.
-        let hasAA = true; 
-        
+        let hasAA = true;
+
         if (info.metadata) {
-          hasAA = info.metadata.hasAA === true || info.metadata.hasAA === "true";
+          hasAA =
+            info.metadata.hasAA === true || info.metadata.hasAA === "true";
         }
-        
+
         players.push({
           slug,
           name: info.metadata?.name || slug,
@@ -129,14 +143,16 @@ export class KVPlayerRepository implements PlayerRepository {
           clubCode: parsed.clubCode,
           // Flag per il filtering (usiamo una struttura stats minima)
           stats: {
-            aaAnalysis: hasAA ? { 
-              calculatedAt: "", 
-              gamesAnalyzed: 0,
-              AA5: 1, 
-              AA15: 1,
-              AA25: 1
-            } : undefined
-          } as PlayerStats
+            aaAnalysis: hasAA
+              ? {
+                  calculatedAt: "",
+                  gamesAnalyzed: 0,
+                  AA5: 1,
+                  AA15: 1,
+                  AA25: 1,
+                }
+              : undefined,
+          } as PlayerStats,
         });
       }
     }
@@ -170,10 +186,14 @@ export class KVPlayerRepository implements PlayerRepository {
   async load(): Promise<MlsPlayersDatabase> {
     const players: PlayerRecord[] = [];
     let cursor: string | undefined;
-    
+
     do {
-      const listResult = await this.kv.list({ cursor, limit: 1000, metadata: true } as any);
-      
+      const listResult = await this.kv.list({
+        cursor,
+        limit: 1000,
+        metadata: true,
+      } as any);
+
       // Batch per non sfondare le call contemporanee in memoria (ma consuma comunque le quote API)
       const batches = [];
       for (let i = 0; i < listResult.keys.length; i += 50) {
@@ -181,9 +201,9 @@ export class KVPlayerRepository implements PlayerRepository {
       }
 
       for (const batch of batches) {
-        const promises = batch.map(key => this.kv.get(key.name));
+        const promises = batch.map((key) => this.kv.get(key.name));
         const values = await Promise.all(promises);
-        
+
         for (const value of values) {
           if (value) {
             try {
@@ -191,12 +211,12 @@ export class KVPlayerRepository implements PlayerRepository {
               players.push(player);
               this.valueCache.set(player.slug, player); // Popola la cache
             } catch (e) {
-              console.error(`Failed to parse player data:`, e);
+              console.error("Failed to parse player data:", e);
             }
           }
         }
       }
-      
+
       cursor = listResult.list_complete ? undefined : listResult.cursor;
     } while (cursor);
 
@@ -256,7 +276,7 @@ export class KVPlayerRepository implements PlayerRepository {
       await this.getKeysMap(); // Inizializza la cache se non esiste
     }
     const keyName = this.keyCache?.get(slug);
-    
+
     if (keyName) {
       const value = await this.kv.get(keyName);
       if (value) {
@@ -319,7 +339,7 @@ export class KVPlayerRepository implements PlayerRepository {
         merged.clubCode || existing.clubCode || "UNK",
         merged.slug
       );
-      
+
       // Calcola se ha dati AA per i metadati
       const hasAA = !!(
         merged.stats?.aaAnalysis?.AA5 != null ||
@@ -332,8 +352,8 @@ export class KVPlayerRepository implements PlayerRepository {
           name: merged.name,
           clubSlug: merged.clubSlug,
           position: merged.position,
-          hasAA
-        }
+          hasAA,
+        },
       });
       // IMPORTANTISSIMO: Aggiorna la cache dei valori dopo il salvataggio
       this.valueCache.set(slug, merged);
@@ -395,7 +415,7 @@ export class KVPlayerRepository implements PlayerRepository {
       player.clubCode || "UNK",
       player.slug
     );
-    
+
     // Verifica se esiste già (usa cache se disponibile)
     const existing = await this.findBySlug(player.slug);
     if (existing) {
@@ -413,8 +433,8 @@ export class KVPlayerRepository implements PlayerRepository {
         name: player.name,
         clubSlug: player.clubSlug,
         position: player.position,
-        hasAA
-      }
+        hasAA,
+      },
     });
     this.valueCache.set(player.slug, player);
     return true;
@@ -440,7 +460,10 @@ export class KVPlayerRepository implements PlayerRepository {
           try {
             players.push(JSON.parse(value) as PlayerRecord);
           } catch (e) {
-            console.error(`Failed to parse player data for key ${key.name}:`, e);
+            console.error(
+              `Failed to parse player data for key ${key.name}:`,
+              e
+            );
           }
         }
       }
@@ -459,7 +482,11 @@ export class KVPlayerRepository implements PlayerRepository {
     let cursor: string | undefined;
 
     do {
-      const listResult = await this.kv.list({ cursor, limit: 1000, metadata: true } as any);
+      const listResult = await this.kv.list({
+        cursor,
+        limit: 1000,
+        metadata: true,
+      } as any);
       count += listResult.keys.length;
       cursor = listResult.list_complete ? undefined : listResult.cursor;
     } while (cursor);

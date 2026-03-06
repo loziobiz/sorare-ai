@@ -35,8 +35,12 @@ export function LoginForm({ onSuccess, onTwoFactorRequired }: LoginFormProps) {
       const result = await login({ data: { email, password } });
 
       if (result.success) {
+        // Salva email per identificare l'utente nelle chiamate KV
+        localStorage.setItem("sorare_user_email", email.toLowerCase().trim());
         onSuccess?.();
       } else if (result.requiresTwoFactor) {
+        // Salva email anche per il flusso 2FA
+        localStorage.setItem("sorare_user_email", email.toLowerCase().trim());
         onTwoFactorRequired?.();
       } else {
         setError(result.error || "Login failed");

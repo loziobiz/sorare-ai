@@ -19,8 +19,7 @@ export class SorareClient {
   constructor(config: SorareConfig = {}) {
     this.apiKey = config.apiKey || process.env.SORARE_API_KEY;
     this.jwtToken = config.jwtToken || process.env.SORARE_JWT_TOKEN;
-    this.baseUrl =
-      config.baseUrl || "https://api.sorare.com/graphql";
+    this.baseUrl = config.baseUrl || "https://api.sorare.com/graphql";
   }
 
   async query<T = unknown>(

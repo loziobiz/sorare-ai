@@ -1,16 +1,19 @@
 /**
  * Analyze Home/Away Handler
- * 
+ *
  * Eseguito ogni mercoledì mattina.
  * - Analizza le performance home/away per tutti i giocatori
  * - Calcola home advantage factor
  * - Aggiorna il campo stats.homeAwayAnalysis nel KV
  */
 
-import { KVPlayerRepository, DefaultUpdateStrategy } from "../lib/kv-repository.js";
-import { SorareWorkerClient } from "../lib/sorare-client.js";
+import type { HomeAwayStats, PlayerRecord } from "../lib/kv-repository.js";
+import {
+  DefaultUpdateStrategy,
+  type KVPlayerRepository,
+} from "../lib/kv-repository.js";
 import { GET_PLAYERS_GAME_SCORES } from "../lib/queries.js";
-import type { PlayerRecord, HomeAwayStats, PlayerStats } from "../lib/kv-repository.js";
+import type { SorareWorkerClient } from "../lib/sorare-client.js";
 
 interface GameScore {
   score: number;
@@ -61,27 +64,31 @@ async function fetchPlayersHomeAwayBatch(
   playersBatch: PlayerRecord[]
 ): Promise<Map<string, HomeAwayStats | null>> {
   const resultMap = new Map<string, HomeAwayStats | null>();
-  const slugs = playersBatch.map(p => p.slug);
-  
+  const slugs = playersBatch.map((p) => p.slug);
+
   for (const slug of slugs) resultMap.set(slug, null);
 
   try {
-    const data = await client.query<GraphQLHomeAwayResponse>(GET_PLAYERS_GAME_SCORES, {
-      slugs,
-      last: GAMES_COUNT,
-    });
+    const data = await client.query<GraphQLHomeAwayResponse>(
+      GET_PLAYERS_GAME_SCORES,
+      {
+        slugs,
+        last: GAMES_COUNT,
+      }
+    );
 
     if (!data.players) return resultMap;
 
     // Crea un lookup per i player records usando lo slug per avere il clubName di fallback
-    const playerLookup = new Map(playersBatch.map(p => [p.slug, p]));
+    const playerLookup = new Map(playersBatch.map((p) => [p.slug, p]));
 
     for (const playerData of data.players) {
       const record = playerLookup.get(playerData.slug);
       if (!record) continue;
 
       const clubName = playerData.activeClub?.name || record.clubName;
-      const scores = playerData.allPlayerGameScores?.edges?.map((e) => e.node) || [];
+      const scores =
+        playerData.allPlayerGameScores?.edges?.map((e) => e.node) || [];
 
       const homeScores: number[] = [];
       const awayScores: number[] = [];
@@ -97,9 +104,16 @@ async function fetchPlayersHomeAwayBatch(
         else if (isAway) awayScores.push(score.score);
       }
 
-      const homeAverage = homeScores.length > 0 ? homeScores.reduce((a, b) => a + b, 0) / homeScores.length : 0;
-      const awayAverage = awayScores.length > 0 ? awayScores.reduce((a, b) => a + b, 0) / awayScores.length : 0;
-      const homeAdvantageFactor = awayAverage > 0 ? (homeAverage - awayAverage) / awayAverage : 0;
+      const homeAverage =
+        homeScores.length > 0
+          ? homeScores.reduce((a, b) => a + b, 0) / homeScores.length
+          : 0;
+      const awayAverage =
+        awayScores.length > 0
+          ? awayScores.reduce((a, b) => a + b, 0) / awayScores.length
+          : 0;
+      const homeAdvantageFactor =
+        awayAverage > 0 ? (homeAverage - awayAverage) / awayAverage : 0;
 
       resultMap.set(playerData.slug, {
         calculatedAt: new Date().toISOString(),
@@ -118,7 +132,7 @@ async function fetchPlayersHomeAwayBatch(
 
     return resultMap;
   } catch (error) {
-    console.warn(`Error fetching HomeAway batch:`, error);
+    console.warn("Error fetching HomeAway batch:", error);
     return resultMap;
   }
 }
@@ -149,7 +163,9 @@ export async function analyzeHomeAwayHandler(
     const BATCH_SIZE = 50;
     for (let i = 0; i < players.length; i += BATCH_SIZE) {
       const batch = players.slice(i, i + BATCH_SIZE);
-      console.log(`[Batch ${Math.floor(i / BATCH_SIZE) + 1}/${Math.ceil(players.length / BATCH_SIZE)}] Analyzing ${batch.length} players...`);
+      console.log(
+        `[Batch ${Math.floor(i / BATCH_SIZE) + 1}/${Math.ceil(players.length / BATCH_SIZE)}] Analyzing ${batch.length} players...`
+      );
 
       const batchHomeAwayMap = await fetchPlayersHomeAwayBatch(client, batch);
 
@@ -158,7 +174,7 @@ export async function analyzeHomeAwayHandler(
 
         if (stats) {
           const strategy = new DefaultUpdateStrategy();
-          
+
           try {
             const updated = await repository.updatePlayerStats(
               player.slug,
@@ -196,14 +212,14 @@ export async function analyzeHomeAwayHandler(
       }
     }
 
-    console.log(`\n✅ Home/Away analysis complete:`);
+    console.log("\n✅ Home/Away analysis complete:");
     console.log(`   Processed: ${result.processed}`);
     console.log(`   Updated: ${result.updated}`);
     console.log(`   Errors: ${result.errors}`);
 
     return result;
   } catch (error) {
-    console.error(`Home/Away analysis failed:`, error);
+    console.error("Home/Away analysis failed:", error);
     return result;
   }
 }

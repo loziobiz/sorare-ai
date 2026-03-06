@@ -11,7 +11,10 @@ import {
   type SealedFilter,
   type SortOption,
 } from "@/lib/cards-utils";
+import type { UnifiedCard } from "@/lib/kv-types";
 import type { CardData } from "@/lib/sorare-api";
+
+type Card = CardData | UnifiedCard;
 
 interface UseCardFiltersReturn {
   filters: CardFilters;
@@ -23,10 +26,10 @@ interface UseCardFiltersReturn {
   setSealed: (sealed: SealedFilter) => void;
   setSearchQuery: (searchQuery: string) => void;
   leagues: LeagueOption[];
-  filteredCards: CardData[];
+  filteredCards: Card[];
 }
 
-export function useCardFilters(cards: CardData[]): UseCardFiltersReturn {
+export function useCardFilters(cards: Card[]): UseCardFiltersReturn {
   const [rarity, setRarity] = useState<RarityFilter>("all");
   const [position, setPosition] = useState<PositionFilter>("all");
   const [league, setLeague] = useState<string>("all");

@@ -80,7 +80,7 @@ export async function getOtpChallenge(): Promise<string | undefined> {
  */
 export async function setAuthToken(token: string): Promise<void> {
   const cookieStore = await cookies();
-  
+
   // Main auth token (HTTP-only, secure)
   cookieStore.set({
     name: COOKIE_NAME,
@@ -91,7 +91,7 @@ export async function setAuthToken(token: string): Promise<void> {
     path: "/",
     maxAge: 30 * 24 * 60 * 60, // 30 giorni
   });
-  
+
   // CLI token (accessible by JS for export)
   cookieStore.set({
     name: COOKIE_CLI_TOKEN,

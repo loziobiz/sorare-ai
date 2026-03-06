@@ -4,24 +4,29 @@ import type { ColumnDef } from "@tanstack/react-table";
 import { AlertTriangle, Bookmark } from "lucide-react";
 import { getPositionLabel } from "@/lib/cards-utils";
 import { ETH_TO_EUR_RATE } from "@/lib/config";
+import type { UnifiedCard } from "@/lib/kv-types";
 import type { CardData } from "@/lib/sorare-api";
+
+// Tipo unione per supportare sia CardData che UnifiedCard
+type Card = CardData | UnifiedCard;
+
 import { CardThumbnail } from "./card-thumbnail";
 import { NextMatchBlock } from "./next-match-block";
 
 // Regex per estrarre solo il nome del giocatore (rimuove anno e info carta)
 const PLAYER_NAME_REGEX = /^(.+?)\s+\d{4}-\d{2}/;
 
-export function getPlayerName(card: CardData): string {
+export function getPlayerName(card: Card): string {
   const name = card.name;
   const match = name.match(PLAYER_NAME_REGEX);
   return match ? match[1] : name;
 }
 
-export function getTeamName(card: CardData): string {
+export function getTeamName(card: Card): string {
   return card.anyPlayer?.activeClub?.name ?? "-";
 }
 
-export function getLeagueName(card: CardData): string {
+export function getLeagueName(card: Card): string {
   if (!card.anyPlayer?.activeClub?.activeCompetitions) {
     return "-";
   }
@@ -33,7 +38,7 @@ export function getLeagueName(card: CardData): string {
   );
 }
 
-export function getXP(card: CardData): number {
+export function getXP(card: Card): number {
   if (!card.power) {
     return 0;
   }
@@ -60,7 +65,7 @@ function convertWeiToEur(weiString: string | null | undefined): number | null {
   return eurCents;
 }
 
-export function getPriceDisplay(card: CardData): string {
+export function getPriceDisplay(card: Card): string {
   const parts: string[] = [];
 
   const marketPriceCents = convertWeiToEur(card.priceRange?.min);
@@ -182,7 +187,7 @@ export const DASHBOARD_COLUMN_WIDTHS = {
 
 export function getLineupColumns(
   options: LineupColumnOptions = {}
-): ColumnDef<CardData>[] {
+): ColumnDef<Card>[] {
   const { markedCards, l10Remaining } = options;
 
   return [
@@ -387,7 +392,7 @@ export function getLineupColumns(
   ];
 }
 
-export function getDashboardColumns(): ColumnDef<CardData>[] {
+export function getDashboardColumns(): ColumnDef<Card>[] {
   return [
     {
       accessorKey: "name",

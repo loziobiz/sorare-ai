@@ -1,7 +1,11 @@
 "use client";
 
 import { Plus, X } from "lucide-react";
+import type { UnifiedCard } from "@/lib/kv-types";
 import type { CardData } from "@/lib/sorare-api";
+
+type Card = CardData | UnifiedCard;
+
 import { cn } from "@/lib/utils";
 
 /**
@@ -31,7 +35,7 @@ function getL10BadgeColor(l10: number | undefined): {
 
 interface PitchSlotProps {
   label: string;
-  card: CardData | null;
+  card: Card | null;
   isActive: boolean;
   onClick: () => void;
 }

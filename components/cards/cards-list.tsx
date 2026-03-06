@@ -3,7 +3,11 @@
 import type { SortingState, Updater } from "@tanstack/react-table";
 import { useMemo } from "react";
 import { Card, CardContent } from "@/components/ui/card";
+import type { UnifiedCard } from "@/lib/kv-types";
 import type { CardData } from "@/lib/sorare-api";
+
+type Card = CardData | UnifiedCard;
+
 import { getDashboardColumns, getLineupColumns } from "./columns";
 import { DataTable } from "./data-table";
 
@@ -62,10 +66,10 @@ export type SortKey = "name" | "team" | "l5" | "l10" | "l40";
 export type SortDirection = "asc" | "desc";
 
 export interface CardsListProps {
-  cards: CardData[];
+  cards: Card[];
   showEmptyMessage?: boolean;
   emptyMessage?: string;
-  onCardClick?: (card: CardData) => void;
+  onCardClick?: (card: Card) => void;
   disabled?: boolean;
   showHeader?: boolean;
   sortKey?: SortKey;

@@ -1,8 +1,8 @@
 "use client";
 
+import { Check, Copy } from "lucide-react";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Copy, Check } from "lucide-react";
 
 export function ExportTokenButton() {
   const [copied, setCopied] = useState(false);
@@ -44,7 +44,7 @@ export function ExportTokenButton() {
       }
     }
 
-    if (!token || !token.startsWith("eyJ")) {
+    if (!(token && token.startsWith("eyJ"))) {
       setError("Token not found. Please logout and login again.");
       return;
     }
@@ -57,10 +57,10 @@ export function ExportTokenButton() {
   return (
     <div className="flex flex-col items-end gap-2">
       <Button
-        variant="outline"
-        size="sm"
-        onClick={handleExport}
         className="gap-2"
+        onClick={handleExport}
+        size="sm"
+        variant="outline"
       >
         {copied ? (
           <>
@@ -74,7 +74,7 @@ export function ExportTokenButton() {
           </>
         )}
       </Button>
-      {error && <span className="text-xs text-red-500">{error}</span>}
+      {error && <span className="text-red-500 text-xs">{error}</span>}
     </div>
   );
 }

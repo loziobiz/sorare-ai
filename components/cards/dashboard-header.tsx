@@ -1,36 +1,36 @@
 "use client";
 
 import { useRouter } from "@tanstack/react-router";
-import { LogOut, RefreshCw, Trash2 } from "lucide-react";
+import { LogOut, RefreshCw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { logout } from "@/lib/auth-server";
 import { formatLastUpdate } from "@/lib/cards-utils";
+import { clearUserEmail } from "@/lib/user-id";
 
 interface DashboardHeaderProps {
   userSlug: string;
   lastUpdate: Date | null;
   isLoading: boolean;
-  isRefreshing: boolean;
-  onRefresh: () => void;
-  onClearCache: () => void;
+  isSyncing: boolean;
+  onSync: () => void;
 }
 
 export function DashboardHeader({
   userSlug,
   lastUpdate,
   isLoading,
-  isRefreshing,
-  onRefresh,
-  onClearCache,
+  isSyncing,
+  onSync,
 }: DashboardHeaderProps) {
   const router = useRouter();
 
   const handleLogout = async () => {
     await logout();
+    clearUserEmail();
     router.navigate({ to: "/" });
   };
 
-  const isDisabled = isRefreshing || isLoading;
+  const isDisabled = isSyncing || isLoading;
 
   return (
     <div className="flex items-center justify-between">
@@ -46,15 +46,11 @@ export function DashboardHeader({
         </p>
       </div>
       <div className="flex gap-2">
-        <Button disabled={isDisabled} onClick={onRefresh} variant="outline">
+        <Button disabled={isDisabled} onClick={onSync} variant="outline">
           <RefreshCw
-            className={`mr-2 h-4 w-4 ${isRefreshing ? "animate-spin" : ""}`}
+            className={`mr-2 h-4 w-4 ${isSyncing ? "animate-spin" : ""}`}
           />
           Aggiorna carte
-        </Button>
-        <Button disabled={isDisabled} onClick={onClearCache} variant="outline">
-          <Trash2 className="mr-2 h-4 w-4" />
-          Pulisci cache
         </Button>
         <Button onClick={handleLogout} variant="outline">
           <LogOut className="mr-2 h-4 w-4" />

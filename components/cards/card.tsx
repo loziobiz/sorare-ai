@@ -1,5 +1,8 @@
 import { Card, CardContent } from "@/components/ui/card";
+import type { UnifiedCard } from "@/lib/kv-types";
 import type { CardData } from "@/lib/sorare-api";
+
+type Card = CardData | UnifiedCard;
 
 interface CardImageProps {
   src: string;
@@ -22,7 +25,7 @@ export function CardImage({ src, alt }: CardImageProps) {
 }
 
 interface SorareCardProps {
-  card: CardData;
+  card: Card;
   showPositions?: boolean;
   showAverages?: boolean;
 }

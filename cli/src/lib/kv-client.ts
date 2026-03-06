@@ -63,7 +63,9 @@ export class KVClient {
   // Get player stats
   async getPlayer(slug: string): Promise<PlayerStatsData | null> {
     if (!this.isWorker()) {
-      throw new Error("Direct KV read not available in CLI mode. Use: wrangler kv key get --binding=PLAYER_STATS");
+      throw new Error(
+        "Direct KV read not available in CLI mode. Use: wrangler kv key get --binding=PLAYER_STATS"
+      );
     }
 
     const data = await this.kv!.get(slug);
@@ -71,9 +73,13 @@ export class KVClient {
   }
 
   // List all keys (with optional prefix)
-  async listPlayers(prefix?: string): Promise<{ slug: string; metadata?: Record<string, unknown> }[]> {
+  async listPlayers(
+    prefix?: string
+  ): Promise<{ slug: string; metadata?: Record<string, unknown> }[]> {
     if (!this.isWorker()) {
-      throw new Error("KV list not available in CLI mode. Use: wrangler kv list --binding=PLAYER_STATS");
+      throw new Error(
+        "KV list not available in CLI mode. Use: wrangler kv list --binding=PLAYER_STATS"
+      );
     }
 
     const list = await this.kv!.list({ prefix });

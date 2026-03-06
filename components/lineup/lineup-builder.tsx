@@ -15,10 +15,18 @@ import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { showToast, ToastContainer } from "@/components/ui/toast";
-import { useCards } from "@/hooks/use-cards";
-import { ACTIVE_LEAGUES, SHOW_ONLY_ACTIVE_LEAGUES } from "@/lib/config";
+import { useKvCards } from "@/hooks/use-kv-cards";
 import { db } from "@/lib/db";
+import type { UnifiedCard } from "@/lib/kv-types";
 import type { CardData } from "@/lib/sorare-api";
+
+type Card = CardData | UnifiedCard;
+
+// Type guard per UnifiedCard
+function isUnifiedCard(card: Card): card is UnifiedCard {
+  return "clubName" in card && "clubCode" in card;
+}
+
 import { cn } from "@/lib/utils";
 import { PitchField } from "./pitch-field";
 import { useFilteredCards } from "./use-filtered-cards";
@@ -46,7 +54,7 @@ export type SlotPosition = SlotPosition5 | SlotPosition7;
 
 export interface FormationSlot {
   position: SlotPosition;
-  card: CardData | null;
+  card: Card | null;
 }
 
 // Posizioni Sorare mappate alle slot
@@ -173,40 +181,23 @@ function getEmptyMessage(
   return "Nessuna carta disponibile per questa posizione";
 }
 
-function isLeagueAllowed(uniqueKey: string): boolean {
-  return !SHOW_ONLY_ACTIVE_LEAGUES || Object.hasOwn(ACTIVE_LEAGUES, uniqueKey);
-}
-
-function getLeagueDisplayName(uniqueKey: string): string {
-  const customName = ACTIVE_LEAGUES[uniqueKey];
-  return customName ?? uniqueKey;
-}
-
-function buildLeagueMap(cards: CardData[]): Map<string, string> {
-  const leagueMap = new Map<string, string>();
-  for (const card of cards) {
-    for (const competition of card.anyPlayer?.activeClub?.activeCompetitions ??
-      []) {
-      if (competition.name === "NBA") {
-        leagueMap.set("NBA", "NBA");
-      } else if (
-        competition.format === "DOMESTIC_LEAGUE" &&
-        competition.country
-      ) {
-        const uniqueKey = `${competition.name}|${competition.country.code}`;
-        if (isLeagueAllowed(uniqueKey)) {
-          leagueMap.set(uniqueKey, getLeagueDisplayName(uniqueKey));
-        }
-      }
-    }
+/**
+ * Verifica se una carta è della MLS
+ */
+function isMlsCard(card: Card): boolean {
+  // Usa leagueName se disponibile (dal KV)
+  if ("leagueName" in card && card.leagueName) {
+    return card.leagueName === "MLS";
   }
-  return leagueMap;
+  // Fallback su activeCompetitions (retrocompatibilità)
+  const competitions = card.anyPlayer?.activeClub?.activeCompetitions ?? [];
+  return competitions.some((c) => c.name === "MLS");
 }
 
 interface SavedFormationWithSlots {
   name: string;
   league: string;
-  cards: CardData[];
+  cards: Card[];
   slots?: Array<{ position: string; cardSlug: string }>;
 }
 
@@ -253,7 +244,7 @@ function restoreFormationLegacy(
   const newFormation = GAME_MODES["gas_arena_260"].formation.map(
     (pos: SlotPosition) => ({
       position: pos,
-      card: null as CardData | null,
+      card: null as Card | null,
     })
   );
   for (const savedCard of saved.cards) {
@@ -276,7 +267,7 @@ function loadSavedFormation(saved: SavedFormationWithSlots): FormationSlot[] {
 }
 
 // Helper to determine slot position from card positions
-function getPositionForCard(card: CardData): SlotPosition | null {
+function getPositionForCard(card: Card): SlotPosition | null {
   if (!card.anyPositions || card.anyPositions.length === 0) {
     return null;
   }
@@ -301,7 +292,7 @@ function getPositionForCard(card: CardData): SlotPosition | null {
 /**
  * Trova il valore della lega MLS dalle carte disponibili
  */
-function findMlsLeagueValue(cards: CardData[]): string | null {
+function findMlsLeagueValue(cards: Card[]): string | null {
   for (const card of cards) {
     for (const competition of card.anyPlayer?.activeClub?.activeCompetitions ??
       []) {
@@ -322,7 +313,7 @@ export function LineupBuilder() {
     error: cardsError,
     isLoading: isCardsLoading,
     isRefreshing: isCardsRefreshing,
-  } = useCards();
+  } = useKvCards();
   const [error, setError] = useState("");
   const [gameMode, setGameMode] = useState<GameMode>("gas_arena_260");
   const [formation, setFormation] = useState<FormationSlot[]>(
@@ -360,13 +351,14 @@ export function LineupBuilder() {
     setTableSortDirection(direction);
   };
 
-  // Get unique leagues from cards
-  const leagues = useMemo((): LeagueOption[] => {
-    const leagueMap = buildLeagueMap(cards);
-    return Array.from(leagueMap.entries())
-      .map(([value, label]) => ({ value, label }))
-      .sort((a, b) => a.label.localeCompare(b.label));
-  }, [cards]);
+  // Opzioni lega semplificate: solo TUTTE e MLS
+  const leagues = useMemo(
+    (): LeagueOption[] => [
+      { value: "", label: "Tutte le leghe" },
+      { value: "MLS", label: "MLS" },
+    ],
+    []
+  );
 
   // Carica le formazioni salvate per identificare giocatori già utilizzati
   useEffect(() => {
@@ -520,7 +512,7 @@ export function LineupBuilder() {
     }
   };
 
-  const handleCardSelect = (card: CardData) => {
+  const handleCardSelect = (card: Card) => {
     if (!activeSlot) {
       return;
     }
@@ -608,7 +600,7 @@ export function LineupBuilder() {
     try {
       const formationCards = formation
         .map((s) => s.card)
-        .filter((c): c is CardData => c !== null);
+        .filter((c): c is Card => c !== null);
 
       // Save slot positions to preserve formation layout
       const slots = formation

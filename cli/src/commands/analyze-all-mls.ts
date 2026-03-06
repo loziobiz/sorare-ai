@@ -15,17 +15,16 @@
  */
 
 import { config } from "dotenv";
-import { readFileSync, writeFileSync, existsSync, unlinkSync } from "fs";
-import { resolve } from "path";
-import { SorareClient } from "../lib/sorare-client.js";
-import { GET_PLAYER_INFO, GET_PLAYER_GAME_SCORES } from "../lib/queries.js";
-import type { Player, PlayerData } from "../lib/types.js";
+import { existsSync, readFileSync, unlinkSync, writeFileSync } from "fs";
+import { GET_PLAYER_GAME_SCORES, GET_PLAYER_INFO } from "../lib/queries.js";
 import {
-  createPlayerRepository,
   createHomeAwayStats,
+  createPlayerRepository,
   type PlayerRecord,
   type PlayerStats,
 } from "../lib/repository.js";
+import { SorareClient } from "../lib/sorare-client.js";
+import type { Player, PlayerData } from "../lib/types.js";
 
 config({ path: ".env.local" });
 config({ path: ".env" });
@@ -71,13 +70,13 @@ function parseArgs() {
 
   for (const arg of args) {
     if (arg.startsWith("--delay=")) {
-      delay = parseInt(arg.split("=")[1], 10);
+      delay = Number.parseInt(arg.split("=")[1], 10);
     } else if (arg.startsWith("--limit=")) {
-      limit = parseInt(arg.split("=")[1], 10);
+      limit = Number.parseInt(arg.split("=")[1], 10);
     } else if (arg.startsWith("--position=")) {
       position = arg.split("=")[1];
     } else if (arg.startsWith("--games=")) {
-      gamesCount = parseInt(arg.split("=")[1], 10);
+      gamesCount = Number.parseInt(arg.split("=")[1], 10);
     } else if (arg === "--resume") {
       resume = true;
     } else if (arg === "--dry-run") {
@@ -106,9 +105,12 @@ async function analyzePlayer(
 ): Promise<PlayerAnalysis | null> {
   try {
     // Fetch player info
-    const infoData = await client.query<{ players: Player[] }>(GET_PLAYER_INFO, {
-      slug,
-    });
+    const infoData = await client.query<{ players: Player[] }>(
+      GET_PLAYER_INFO,
+      {
+        slug,
+      }
+    );
 
     if (!infoData.players || infoData.players.length === 0) {
       return null;
@@ -135,7 +137,7 @@ async function analyzePlayer(
 
     for (const score of scores) {
       if (!score?.anyGame) continue;
-      
+
       // Skip null/0 scores (player didn't play or no valid score)
       if (score.score <= 0) continue;
 
@@ -200,11 +202,13 @@ async function main() {
 
   const repository = createPlayerRepository();
   let db;
-  
+
   try {
     db = await repository.load();
   } catch (error) {
-    console.error("❌ Failed to load MLS database. Run: pnpm extract-mls-players");
+    console.error(
+      "❌ Failed to load MLS database. Run: pnpm extract-mls-players"
+    );
     process.exit(1);
   }
 
@@ -222,21 +226,23 @@ async function main() {
     console.log(`🔍 Limited to first ${players.length} players`);
   }
 
-  const state = resume ? loadState() : { lastIndex: 0, completedSlugs: [], failedSlugs: [] };
-  
+  const state = resume
+    ? loadState()
+    : { lastIndex: 0, completedSlugs: [], failedSlugs: [] };
+
   // Track which players have already been analyzed (based on existing stats)
   const analyzedSlugs = new Set(
     players
-      .filter(p => p.stats?.homeAwayAnalysis !== undefined)
-      .map(p => p.slug)
+      .filter((p) => p.stats?.homeAwayAnalysis !== undefined)
+      .map((p) => p.slug)
   );
 
   console.log(`📊 Analyzing ${players.length} MLS players`);
   console.log(`⏱️  Delay between requests: ${delay}ms`);
   console.log(`🎮 Games per player: ${gamesCount}`);
-  console.log(`💾 Results will be saved to: mls-players.json`);
+  console.log("💾 Results will be saved to: mls-players.json");
   if (dryRun) {
-    console.log(`🏃 Dry run mode - no changes will be saved`);
+    console.log("🏃 Dry run mode - no changes will be saved");
   }
   if (resume) {
     console.log(`🔄 Resuming from index ${state.lastIndex}`);
@@ -245,23 +251,27 @@ async function main() {
 
   const client = new SorareClient();
   const startIndex = resume ? state.lastIndex : 0;
-  
+
   // Colleziona tutti gli aggiornamenti da fare
   const updates: Array<{ slug: string; data: Partial<PlayerRecord> }> = [];
   const analyses: PlayerAnalysis[] = [];
 
   for (let i = startIndex; i < players.length; i++) {
     const player = players[i];
-    
+
     // Skip if already analyzed and not in resume mode with explicit flag
     if (analyzedSlugs.has(player.slug) && !resume) {
-      console.log(`[${i + 1}/${players.length}] ⏭️  ${player.name} - already analyzed`);
+      console.log(
+        `[${i + 1}/${players.length}] ⏭️  ${player.name} - already analyzed`
+      );
       state.lastIndex = i + 1;
       saveState(state);
       continue;
     }
 
-    console.log(`[${i + 1}/${players.length}] 🔍 Analyzing ${player.name} (${player.position || 'Unknown'})...`);
+    console.log(
+      `[${i + 1}/${players.length}] 🔍 Analyzing ${player.name} (${player.position || "Unknown"})...`
+    );
 
     const result = await analyzePlayer(client, player.slug, gamesCount);
 
@@ -275,8 +285,10 @@ async function main() {
         console.log(`     ❌ Error: ${result.error}`);
         state.failedSlugs.push(player.slug);
       } else {
-        console.log(`     ✅ Home: ${result.home.average.toFixed(1)} (${result.home.games} games) | Away: ${result.away.average.toFixed(1)} (${result.away.games} games) | HA: ${(result.homeAdvantageFactor * 100).toFixed(1)}%`);
-        
+        console.log(
+          `     ✅ Home: ${result.home.average.toFixed(1)} (${result.home.games} games) | Away: ${result.away.average.toFixed(1)} (${result.away.games} games) | HA: ${(result.homeAdvantageFactor * 100).toFixed(1)}%`
+        );
+
         // Prepara l'aggiornamento per il repository
         const stats: PlayerStats = {
           homeAwayAnalysis: createHomeAwayStats({
@@ -287,12 +299,12 @@ async function main() {
             homeAdvantageFactor: result.homeAdvantageFactor,
           }),
         };
-        
+
         updates.push({
           slug: player.slug,
           data: { stats },
         });
-        
+
         analyses.push(result);
         state.completedSlugs.push(player.slug);
       }
@@ -303,7 +315,9 @@ async function main() {
 
     // Save progress every 10 players (se non è dry-run)
     if (!dryRun && updates.length > 0 && updates.length % 10 === 0) {
-      console.log(`     💾 Saving batch of ${updates.length} players to repository...`);
+      console.log(
+        `     💾 Saving batch of ${updates.length} players to repository...`
+      );
       await repository.updateMany(updates);
       updates.length = 0; // Clear the array
     }
@@ -316,31 +330,40 @@ async function main() {
 
   // Save remaining updates
   if (!dryRun && updates.length > 0) {
-    console.log(`\n💾 Saving final batch of ${updates.length} players to repository...`);
+    console.log(
+      `\n💾 Saving final batch of ${updates.length} players to repository...`
+    );
     await repository.updateMany(updates);
   } else if (dryRun && updates.length > 0) {
     console.log(`\n🏃 Dry run - would save ${updates.length} players:`);
-    updates.forEach(u => console.log(`   - ${u.slug}`));
+    updates.forEach((u) => console.log(`   - ${u.slug}`));
   }
 
   // Print summary
   const successful = analyses.filter((r) => !r.error);
-  const byPosition = successful.reduce((acc, r) => {
-    const pos = r.position || "Unknown";
-    if (!acc[pos]) acc[pos] = { count: 0, avgHA: 0 };
-    acc[pos].count++;
-    acc[pos].avgHA += r.homeAdvantageFactor;
-    return acc;
-  }, {} as Record<string, { count: number; avgHA: number }>);
+  const byPosition = successful.reduce(
+    (acc, r) => {
+      const pos = r.position || "Unknown";
+      if (!acc[pos]) acc[pos] = { count: 0, avgHA: 0 };
+      acc[pos].count++;
+      acc[pos].avgHA += r.homeAdvantageFactor;
+      return acc;
+    },
+    {} as Record<string, { count: number; avgHA: number }>
+  );
 
   console.log("\n📊 Summary:");
-  console.log(`  Total analyzed this run: ${successful.length}/${players.length - startIndex}`);
+  console.log(
+    `  Total analyzed this run: ${successful.length}/${players.length - startIndex}`
+  );
   console.log(`  Failed: ${state.failedSlugs.length}`);
-  
+
   if (successful.length > 0) {
     console.log("\n  By Position:");
     for (const [pos, data] of Object.entries(byPosition)) {
-      console.log(`    ${pos}: ${data.count} players, avg HA: ${((data.avgHA / data.count) * 100).toFixed(1)}%`);
+      console.log(
+        `    ${pos}: ${data.count} players, avg HA: ${((data.avgHA / data.count) * 100).toFixed(1)}%`
+      );
     }
   }
 

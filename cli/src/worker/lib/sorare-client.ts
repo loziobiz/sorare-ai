@@ -1,6 +1,6 @@
 /**
  * Sorare API Client per Cloudflare Workers
- * 
+ *
  * Versione adattata per l'ambiente Worker:
  * - Usa env.SORARE_API_KEY invece di process.env
  * - Usa fetch nativo del runtime Worker
@@ -36,30 +36,32 @@ export class SorareWorkerClient {
     options: { retries?: number; retryDelay?: number } = {}
   ): Promise<T> {
     const { retries = 3, retryDelay = 1000 } = options;
-    
+
     let lastError: Error | undefined;
-    
+
     for (let attempt = 0; attempt <= retries; attempt++) {
       try {
         return await this.executeQuery<T>(query, variables);
       } catch (error) {
         lastError = error instanceof Error ? error : new Error(String(error));
-        
+
         // Non retry su errori 4xx (client errors)
-        if (lastError.message.includes("401") || 
-            lastError.message.includes("403") ||
-            lastError.message.includes("404")) {
+        if (
+          lastError.message.includes("401") ||
+          lastError.message.includes("403") ||
+          lastError.message.includes("404")
+        ) {
           throw lastError;
         }
-        
+
         if (attempt < retries) {
-          const delay = retryDelay * Math.pow(2, attempt);
+          const delay = retryDelay * 2 ** attempt;
           console.log(`Retry ${attempt + 1}/${retries} after ${delay}ms...`);
           await this.sleep(delay);
         }
       }
     }
-    
+
     throw lastError;
   }
 
@@ -122,7 +124,7 @@ export function createSorareClient(env: {
   SORARE_API_KEY?: string;
 }): SorareWorkerClient {
   return new SorareWorkerClient({
-    jwtToken: env.SORARE_API_KEY,  // Usa come JWT (Authorization: Bearer)
+    jwtToken: env.SORARE_API_KEY, // Usa come JWT (Authorization: Bearer)
     jwtAud: "sorare-ai",
   });
 }

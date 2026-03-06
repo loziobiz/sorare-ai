@@ -14,14 +14,13 @@
 
 import { config } from "dotenv";
 import { existsSync, readFileSync, writeFileSync } from "fs";
-import { resolve } from "path";
-import { SorareClient } from "../lib/sorare-client.js";
 import { getEnv } from "../lib/env.js";
 import {
   createPlayerRepository,
   type PlayerRecord,
   type PlayerStats,
 } from "../lib/repository.js";
+import { SorareClient } from "../lib/sorare-client.js";
 
 config({ path: ".env.local" });
 config({ path: ".env" });
@@ -94,9 +93,9 @@ function parseArgs(): {
 
   for (const arg of args) {
     if (arg.startsWith("--limit=")) {
-      limit = parseInt(arg.split("=")[1], 10);
+      limit = Number.parseInt(arg.split("=")[1], 10);
     } else if (arg.startsWith("--delay=")) {
-      delay = parseInt(arg.split("=")[1], 10);
+      delay = Number.parseInt(arg.split("=")[1], 10);
     } else if (arg === "--dry-run") {
       dryRun = true;
     } else if (!arg.startsWith("--")) {
@@ -154,9 +153,9 @@ async function analyzePlayerAA(
     const AA5 =
       validAAScores.length >= 5
         ? Number(
-            (
-              validAAScores.slice(0, 5).reduce((a, b) => a + b, 0) / 5
-            ).toFixed(2)
+            (validAAScores.slice(0, 5).reduce((a, b) => a + b, 0) / 5).toFixed(
+              2
+            )
           )
         : null;
 
@@ -172,7 +171,9 @@ async function analyzePlayerAA(
     const AA25 =
       validAAScores.length >= 25
         ? Number(
-            (validAAScores.reduce((a, b) => a + b, 0) / validAAScores.length).toFixed(2)
+            (
+              validAAScores.reduce((a, b) => a + b, 0) / validAAScores.length
+            ).toFixed(2)
           )
         : null;
 
@@ -192,7 +193,8 @@ async function analyzePlayerAA(
       position: playerInfo.position,
       calculatedAt: new Date().toISOString(),
       aaAnalysis,
-      error: validAAScores.length === 0 ? "No valid AA scores found" : undefined,
+      error:
+        validAAScores.length === 0 ? "No valid AA scores found" : undefined,
     };
   } catch (error) {
     const message = error instanceof Error ? error.message : "Unknown error";
@@ -238,7 +240,9 @@ async function main() {
   try {
     db = await repository.load();
   } catch (error) {
-    console.error("❌ Failed to load MLS database. Run: pnpm extract-mls-players");
+    console.error(
+      "❌ Failed to load MLS database. Run: pnpm extract-mls-players"
+    );
     process.exit(1);
   }
 
@@ -264,14 +268,14 @@ async function main() {
 
   // Filter out already analyzed (check if aaAnalysis exists in stats)
   const remaining = playersToAnalyze.filter(
-    (p) => !state.completed.includes(p.slug) && !state.failed.includes(p.slug)
+    (p) => !(state.completed.includes(p.slug) || state.failed.includes(p.slug))
   );
 
   console.log(`✅ ${state.completed.length} already analyzed`);
   console.log(`❌ ${state.failed.length} previously failed`);
   console.log(`⏳ ${remaining.length} remaining to analyze`);
   if (dryRun) {
-    console.log(`🏃 Dry run mode - no changes will be saved`);
+    console.log("🏃 Dry run mode - no changes will be saved");
   }
   console.log();
 
@@ -298,9 +302,15 @@ async function main() {
       errors++;
     } else {
       const aaDisplay = [
-        result.aaAnalysis.AA5 !== null ? `AA5:${result.aaAnalysis.AA5}` : "AA5:-",
-        result.aaAnalysis.AA15 !== null ? `AA15:${result.aaAnalysis.AA15}` : "AA15:-",
-        result.aaAnalysis.AA25 !== null ? `AA25:${result.aaAnalysis.AA25}` : "AA25:-",
+        result.aaAnalysis.AA5 !== null
+          ? `AA5:${result.aaAnalysis.AA5}`
+          : "AA5:-",
+        result.aaAnalysis.AA15 !== null
+          ? `AA15:${result.aaAnalysis.AA15}`
+          : "AA15:-",
+        result.aaAnalysis.AA25 !== null
+          ? `AA25:${result.aaAnalysis.AA25}`
+          : "AA25:-",
       ].join(" | ");
       console.log(`   ✅ ${aaDisplay}`);
       state.completed.push(player.slug);
@@ -353,10 +363,15 @@ async function main() {
   // Show top 10 by AA5 from database
   const updatedDb = dryRun ? db : await repository.load();
   const withAA = updatedDb.players.filter(
-    (p) => p.stats?.aaAnalysis?.AA5 !== null && p.stats?.aaAnalysis?.AA5 !== undefined
+    (p) =>
+      p.stats?.aaAnalysis?.AA5 !== null &&
+      p.stats?.aaAnalysis?.AA5 !== undefined
   );
   const sortedByAA5 = withAA
-    .sort((a, b) => (b.stats!.aaAnalysis!.AA5 || 0) - (a.stats!.aaAnalysis!.AA5 || 0))
+    .sort(
+      (a, b) =>
+        (b.stats!.aaAnalysis!.AA5 || 0) - (a.stats!.aaAnalysis!.AA5 || 0)
+    )
     .slice(0, 10);
 
   console.log();

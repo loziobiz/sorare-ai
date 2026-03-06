@@ -6,11 +6,15 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { LoadingSpinner } from "@/components/loading-spinner";
 
 import { Button } from "@/components/ui/button";
-import { useCards } from "@/hooks/use-cards";
+import { useKvCards } from "@/hooks/use-kv-cards";
 import { ACTIVE_LEAGUES } from "@/lib/config";
 import type { SavedFormation } from "@/lib/db";
 import { db } from "@/lib/db";
+import type { UnifiedCard } from "@/lib/kv-types";
 import type { CardData } from "@/lib/sorare-api";
+
+type Card = CardData | UnifiedCard;
+
 import { SavedLineupsDnDProvider, useSavedLineupsDnD } from "./dnd-context";
 import { DraggableCard, PlaceholderSlot } from "./draggable-card";
 
@@ -280,24 +284,41 @@ function FormationCard({
       // Merge saved card with fresh data to get power, l10Average, activeClub, and nextGame
       const freshData = currentCardsMap.get(card.slug);
       if (freshData) {
+        const freshAnyPlayer = freshData.anyPlayer as
+          | {
+              activeClub?: { name: string; code?: string } | null;
+              nextGame?: {
+                date?: string | null;
+                homeTeam?: { name?: string; code?: string } | null;
+                awayTeam?: { name?: string; code?: string } | null;
+              } | null;
+              nextClassicFixturePlayingStatusOdds?: {
+                starterOddsBasisPoints: number;
+              } | null;
+            }
+          | undefined;
+        const cardAnyPlayer = card.anyPlayer;
+
+        // Deep merge di anyPlayer per preservare dati come nextClassicFixturePlayingStatusOdds
+        const mergedAnyPlayer = {
+          ...cardAnyPlayer,
+          ...freshAnyPlayer,
+          // Preserva nextClassicFixturePlayingStatusOdds se i dati freschi non lo hanno
+          nextClassicFixturePlayingStatusOdds:
+            freshAnyPlayer?.nextClassicFixturePlayingStatusOdds ??
+            cardAnyPlayer?.nextClassicFixturePlayingStatusOdds,
+        };
         return {
           ...card,
-          power: freshData.power as string | undefined,
-          l10Average: freshData.l10Average as number | undefined,
-          anyPlayer: freshData.anyPlayer as
-            | {
-                activeClub?: { name: string; code?: string } | null;
-                nextGame?: {
-                  date?: string | null;
-                  homeTeam?: { name?: string; code?: string } | null;
-                  awayTeam?: { name?: string; code?: string } | null;
-                } | null;
-              }
-            | undefined,
+          power: (freshData.power as string | undefined) ?? card.power,
+          l10Average:
+            (freshData.l10Average as number | undefined) ?? card.l10Average,
+          anyPlayer: mergedAnyPlayer,
         };
       }
       return card;
-    });
+    })
+    .map((card) => card as Card);
 
   // Aggiorna compatibilità quando inizia il drag
   useEffect(() => {
@@ -324,19 +345,26 @@ function FormationCard({
     (sum, card) => sum + (card.l10Average ?? 0),
     0
   );
-  const capValue =
-    formation.gameMode === 220 ? 220 : formation.gameMode === 260 ? 260 : null;
+  // Estrai CAP dal gameMode (gestisce sia numeri che stringhe come "mls_arena_260")
+  const gameModeStr = String(formation.gameMode ?? "");
+  let capValue: number | null = null;
+  if (gameModeStr.includes("260")) {
+    capValue = 260;
+  } else if (gameModeStr.includes("220")) {
+    capValue = 220;
+  }
   const capRatio = capValue ? totalL10 / capValue : null;
 
-  const isCardDragging = (card: CardData) =>
+  const isCardDragging = (card: Card) =>
     dragState.activeItem?.card.slug === card.slug;
 
   return (
     <div className="min-w-0 max-w-full space-y-2 rounded-lg border border-slate-200 bg-white p-2 shadow-sm">
       {/* Nome formazione, L10/CAP e azioni */}
       <div className="flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <h3 className="font-bold text-slate-800 text-xl">{formation.name}</h3>
+        <h3 className="font-bold text-slate-800 text-xl">{formation.name}</h3>
+        <div className="flex items-center gap-2">
+          {/* L10/CAP a sinistra dei pulsanti azione */}
           {capRatio !== null && (
             <span
               className={`inline-block rounded-full px-2 py-0.5 font-medium text-[12px] ${capRatio > 1 ? "bg-amber-100 text-amber-700" : "bg-emerald-100 text-emerald-700"}`}
@@ -344,25 +372,25 @@ function FormationCard({
               {totalL10.toFixed(0)}/{capValue}
             </span>
           )}
-        </div>
-        {/* Pulsanti azione - solo icone */}
-        <div className="flex items-center gap-1">
-          <Button
-            className="h-8 w-8 p-0"
-            onClick={() => onEdit(formation)}
-            size="icon"
-            variant="ghost"
-          >
-            <Pencil className="h-4 w-4 text-slate-500" />
-          </Button>
-          <Button
-            className="h-8 w-8 p-0"
-            onClick={() => formation.id && onDelete(formation.id)}
-            size="icon"
-            variant="ghost"
-          >
-            <Trash2 className="h-4 w-4 text-rose-500" />
-          </Button>
+          {/* Pulsanti azione - solo icone */}
+          <div className="flex items-center gap-1">
+            <Button
+              className="h-8 w-8 p-0"
+              onClick={() => onEdit(formation)}
+              size="icon"
+              variant="ghost"
+            >
+              <Pencil className="h-4 w-4 text-slate-500" />
+            </Button>
+            <Button
+              className="h-8 w-8 p-0"
+              onClick={() => formation.id && onDelete(formation.id)}
+              size="icon"
+              variant="ghost"
+            >
+              <Trash2 className="h-4 w-4 text-rose-500" />
+            </Button>
+          </div>
         </div>
       </div>
 
@@ -407,7 +435,7 @@ function FormationCard({
 
 export function SavedLineups() {
   const router = useRouter();
-  const { cards } = useCards();
+  const { cards } = useKvCards();
   const [isLoading, setIsLoading] = useState(true);
   const [formations, setFormations] = useState<SavedFormation[]>([]);
   const [deleteConfirm, setDeleteConfirm] = useState<number | null>(null);
@@ -474,8 +502,8 @@ export function SavedLineups() {
 
   const handleSwapCards = useCallback(
     async (
-      source: { formationId: number; card: CardData; slotPosition: string },
-      target: { formationId: number; card: CardData; slotPosition: string }
+      source: { formationId: number; card: Card; slotPosition: string },
+      target: { formationId: number; card: Card; slotPosition: string }
     ) => {
       try {
         // Trova le formazioni coinvolte

@@ -1,9 +1,13 @@
 import { Card, CardContent } from "@/components/ui/card";
+import type { UnifiedCard } from "@/lib/kv-types";
 import type { CardData } from "@/lib/sorare-api";
+
+type Card = CardData | UnifiedCard;
+
 import { SorareCard } from "./card";
 
 export interface CardsGridProps {
-  cards: CardData[];
+  cards: Card[];
   columns?: {
     mobile?: number;
     md?: number;

@@ -95,6 +95,7 @@ Each "alive" player is stored as a comprehensive JSON object:
       "nextFixture": {
         "fixtureDate": "2026-03-08T20:00:00Z",
         "opponent": "Real Salt Lake",
+        "opponentCode": "RSL",
         "isHome": true,
         "startingOdds": { "starterOddsBasisPoints": 8500 },
         "teamWinOdds": {

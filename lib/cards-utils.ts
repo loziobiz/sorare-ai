@@ -1,5 +1,9 @@
 import { ACTIVE_LEAGUES, SHOW_ONLY_ACTIVE_LEAGUES } from "@/lib/config";
+import type { UnifiedCard } from "@/lib/kv-types";
 import type { CardData } from "@/lib/sorare-api";
+
+// Supporta sia CardData (Sorare) che UnifiedCard (KV)
+type Card = CardData | UnifiedCard;
 
 /**
  * Filter types for cards dashboard
@@ -57,7 +61,7 @@ export function getPositionLabel(position: string): string {
 /**
  * Extract unique domestic leagues from cards
  */
-export function extractLeagues(cards: CardData[]): LeagueOption[] {
+export function extractLeagues(cards: Card[]): LeagueOption[] {
   const leagueMap = new Map<string, string>();
 
   for (const card of cards) {
@@ -86,7 +90,7 @@ export function extractLeagues(cards: CardData[]): LeagueOption[] {
 /**
  * Filter cards by rarity
  */
-function filterByRarity(cards: CardData[], rarity: RarityFilter): CardData[] {
+function filterByRarity(cards: Card[], rarity: RarityFilter): Card[] {
   if (rarity === "all") {
     return cards;
   }
@@ -96,10 +100,7 @@ function filterByRarity(cards: CardData[], rarity: RarityFilter): CardData[] {
 /**
  * Filter cards by position
  */
-function filterByPosition(
-  cards: CardData[],
-  position: PositionFilter
-): CardData[] {
+function filterByPosition(cards: Card[], position: PositionFilter): Card[] {
   if (position === "all") {
     return cards;
   }
@@ -109,7 +110,7 @@ function filterByPosition(
 /**
  * Filter cards by league
  */
-function filterByLeague(cards: CardData[], leagueFilter: string): CardData[] {
+function filterByLeague(cards: Card[], leagueFilter: string): Card[] {
   if (leagueFilter === "all") {
     return cards;
   }
@@ -128,10 +129,7 @@ function filterByLeague(cards: CardData[], leagueFilter: string): CardData[] {
 /**
  * Filter cards by in-season eligibility
  */
-function filterByInSeason(
-  cards: CardData[],
-  inSeasonOnly: boolean
-): CardData[] {
+function filterByInSeason(cards: Card[], inSeasonOnly: boolean): Card[] {
   if (!inSeasonOnly) {
     return cards;
   }
@@ -141,7 +139,7 @@ function filterByInSeason(
 /**
  * Filter cards by sealed status
  */
-function filterBySealed(cards: CardData[], sealed: SealedFilter): CardData[] {
+function filterBySealed(cards: Card[], sealed: SealedFilter): Card[] {
   if (sealed === "all") {
     return cards;
   }
@@ -151,7 +149,7 @@ function filterBySealed(cards: CardData[], sealed: SealedFilter): CardData[] {
 /**
  * Filter cards by search query (name and team)
  */
-function filterBySearch(cards: CardData[], searchQuery: string): CardData[] {
+function filterBySearch(cards: Card[], searchQuery: string): Card[] {
   if (!searchQuery.trim()) {
     return cards;
   }
@@ -167,7 +165,7 @@ function filterBySearch(cards: CardData[], searchQuery: string): CardData[] {
 /**
  * Sort cards by the specified option
  */
-function sortCards(cards: CardData[], sortBy: SortOption): CardData[] {
+function sortCards(cards: Card[], sortBy: SortOption): Card[] {
   return [...cards].sort((a, b) => {
     switch (sortBy) {
       case "name":
@@ -204,9 +202,9 @@ export interface CardFilters {
  * Apply all filters and sorting to cards
  */
 export function filterAndSortCards(
-  cards: CardData[],
+  cards: Card[],
   filters: CardFilters
-): CardData[] {
+): Card[] {
   let result = filterByRarity(cards, filters.rarity);
   result = filterByPosition(result, filters.position);
   result = filterByLeague(result, filters.league);

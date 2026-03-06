@@ -17,12 +17,15 @@ import {
   useState,
 } from "react";
 import type { SavedFormation } from "@/lib/db";
+import type { UnifiedCard } from "@/lib/kv-types";
 import type { CardData } from "@/lib/sorare-api";
+
+type Card = CardData | UnifiedCard;
 
 export type CompatibilityStatus = "compatible" | "warning" | "incompatible";
 
 interface DragItem {
-  card: CardData;
+  card: Card;
   formationId: number;
   slotPosition: string;
 }
@@ -54,8 +57,8 @@ export function useSavedLineupsDnD() {
 interface SavedLineupsDnDProviderProps {
   children: React.ReactNode;
   onSwap: (
-    source: { formationId: number; card: CardData; slotPosition: string },
-    target: { formationId: number; card: CardData; slotPosition: string }
+    source: { formationId: number; card: Card; slotPosition: string },
+    target: { formationId: number; card: Card; slotPosition: string }
   ) => void;
 }
 
@@ -234,17 +237,21 @@ export function SavedLineupsDnDProvider({
 // ========== Utility Functions ==========
 
 function isRoleCompatible(
-  draggedCard: CardData,
-  targetCard: CardData,
+  draggedCard: Card,
+  targetCard: Card,
   sourceSlot: string,
   targetSlot: string
 ): boolean {
   // Stessa posizione = compatibile
   if (sourceSlot === targetSlot) return true;
 
-  // Extra (EX/EXT) è wild card completo
+  // Extra (EX/EXT) è wild card completo per chi esce
   if (sourceSlot === "EX" || sourceSlot === "EXT") return true;
-  if (targetSlot === "EX" || targetSlot === "EXT") return true;
+
+  // Extra (EX/EXT) accetta tutti tranne i portieri
+  if (targetSlot === "EX" || targetSlot === "EXT") {
+    return !(draggedCard.anyPositions?.includes("Goalkeeper") ?? false);
+  }
 
   // Gruppi di posizioni compatibili
   const positionGroups: Record<string, string[]> = {
@@ -272,7 +279,7 @@ function isRoleCompatible(
   );
 }
 
-function cardSupportsPosition(card: CardData, position: string): boolean {
+function cardSupportsPosition(card: Card, position: string): boolean {
   // Mappatura posizioni Sorare alle posizioni generiche
   const positionMapping: Record<string, string[]> = {
     POR: ["Goalkeeper"],
@@ -297,8 +304,8 @@ function cardSupportsPosition(card: CardData, position: string): boolean {
 }
 
 function isL10Compatible(
-  draggedCard: CardData,
-  targetCard: CardData,
+  draggedCard: Card,
+  targetCard: Card,
   sourceSlot: string,
   targetSlot: string,
   sourceFormationId: number,
@@ -313,8 +320,8 @@ function isL10Compatible(
   // Helper per calcolare L10 totale di una formazione dopo lo scambio
   const calculateNewL10 = (
     formation: SavedFormation,
-    outCard: CardData,
-    inCard: CardData
+    outCard: Card,
+    inCard: Card
   ): number => {
     const currentL10 = formation.cards.reduce(
       (sum, c) => sum + (c.l10Average ?? 0),

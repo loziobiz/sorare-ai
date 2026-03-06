@@ -26,7 +26,7 @@ interface MlsPlayersData {
 export function loadMlsPlayers(): MlsPlayer[] {
   try {
     const data = JSON.parse(
-      readFileSync(resolve(DATA_DIR, "mls-players.json"), "utf-8"),
+      readFileSync(resolve(DATA_DIR, "mls-players.json"), "utf-8")
     ) as MlsPlayersData;
     return data.players;
   } catch (error) {

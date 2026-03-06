@@ -5,7 +5,12 @@ import { useEffect, useMemo, useState } from "react";
 import { LoadingSpinner } from "@/components/loading-spinner";
 import { graphqlProxy } from "@/lib/api-server";
 import { GET_SO5_FIXTURES_QUERY, GET_SO5_RESULTS_QUERY } from "@/lib/queries";
-import type { So5Appearance, So5Fixture, So5Lineup, So5Ranking } from "@/lib/types";
+import type {
+  So5Appearance,
+  So5Fixture,
+  So5Lineup,
+  So5Ranking,
+} from "@/lib/types";
 
 interface ResultsViewProps {
   initialGameWeek?: number;
@@ -118,7 +123,7 @@ function PlayerCard({ appearance }: { appearance: So5Appearance }) {
           </div>
         )}
         {appearance.captain && (
-          <div className="absolute -right-1 -top-1 rounded-full bg-amber-400 p-1">
+          <div className="absolute -top-1 -right-1 rounded-full bg-amber-400 p-1">
             <Star className="h-3 w-3 fill-white text-white" />
           </div>
         )}
@@ -134,12 +139,21 @@ function PlayerCard({ appearance }: { appearance: So5Appearance }) {
   );
 }
 
-function LineupRow({ lineup, ranking }: { lineup: So5Lineup; ranking?: So5Ranking }) {
+function LineupRow({
+  lineup,
+  ranking,
+}: {
+  lineup: So5Lineup;
+  ranking?: So5Ranking;
+}) {
   const sortedAppearances = [...lineup.so5Appearances].sort((a, b) => {
     return (b.score ?? 0) - (a.score ?? 0);
   });
 
-  const totalScore = sortedAppearances.reduce((sum, a) => sum + (a.score ?? 0), 0);
+  const totalScore = sortedAppearances.reduce(
+    (sum, a) => sum + (a.score ?? 0),
+    0
+  );
 
   return (
     <div className="space-y-2 rounded-lg border border-slate-200 bg-white p-2 shadow-sm">
@@ -153,7 +167,9 @@ function LineupRow({ lineup, ranking }: { lineup: So5Lineup; ranking?: So5Rankin
         </div>
         <div className="flex items-center gap-2">
           {ranking && (
-            <span className={`font-bold text-lg ${getRankColorClass(ranking.ranking)}`}>
+            <span
+              className={`font-bold text-lg ${getRankColorClass(ranking.ranking)}`}
+            >
               #{ranking.ranking}
             </span>
           )}
@@ -175,7 +191,7 @@ function LineupRow({ lineup, ranking }: { lineup: So5Lineup; ranking?: So5Rankin
         }}
       >
         {sortedAppearances.map((appearance) => (
-          <PlayerCard key={appearance.id} appearance={appearance} />
+          <PlayerCard appearance={appearance} key={appearance.id} />
         ))}
       </div>
       <style>{`
@@ -239,9 +255,7 @@ export function ResultsView({ initialGameWeek }: ResultsViewProps) {
         ranking: fixture.mySo5Rankings[idx],
       }))
       .sort((a, b) =>
-        b.lineup.so5Leaderboard.slug.localeCompare(
-          a.lineup.so5Leaderboard.slug
-        )
+        b.lineup.so5Leaderboard.slug.localeCompare(a.lineup.so5Leaderboard.slug)
       );
   }, [fixture]);
 
@@ -291,11 +305,7 @@ export function ResultsView({ initialGameWeek }: ResultsViewProps) {
         <div className="flex h-64 items-center justify-center">
           <LoadingSpinner />
         </div>
-      ) : !fixture ? (
-        <div className="rounded-lg border p-8 text-center text-muted-foreground">
-          Nessun dato disponibile per questa Game Week
-        </div>
-      ) : (
+      ) : fixture ? (
         <>
           {/* Stats summary */}
           <div className="grid gap-4 sm:grid-cols-3">
@@ -317,7 +327,10 @@ export function ResultsView({ initialGameWeek }: ResultsViewProps) {
               <div className="text-muted-foreground text-sm">Premi</div>
               <div className="flex items-center gap-2 font-bold text-2xl">
                 <Trophy className="h-5 w-5 text-amber-500" />
-                {fixture.mySo5Rankings.filter((r) => r.eligibleForReward).length}
+                {
+                  fixture.mySo5Rankings.filter((r) => r.eligibleForReward)
+                    .length
+                }
               </div>
             </div>
           </div>
@@ -331,6 +344,10 @@ export function ResultsView({ initialGameWeek }: ResultsViewProps) {
             </div>
           )}
         </>
+      ) : (
+        <div className="rounded-lg border p-8 text-center text-muted-foreground">
+          Nessun dato disponibile per questa Game Week
+        </div>
       )}
     </div>
   );

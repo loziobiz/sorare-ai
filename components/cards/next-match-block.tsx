@@ -1,9 +1,13 @@
 import { Shield } from "lucide-react";
+import type { UnifiedCard } from "@/lib/kv-types";
 import type { CardData } from "@/lib/sorare-api";
+
+type Card = CardData | UnifiedCard;
+
 import { cn } from "@/lib/utils";
 
 interface NextMatchBlockProps {
-  card: CardData;
+  card: Card;
 }
 
 /**

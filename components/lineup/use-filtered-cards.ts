@@ -1,11 +1,14 @@
 "use client";
 
 import { useMemo } from "react";
+import type { UnifiedCard } from "@/lib/kv-types";
 import type { CardData } from "@/lib/sorare-api";
 import type { SlotPosition } from "./lineup-builder";
 
+type Card = CardData | UnifiedCard;
+
 interface UseFilteredCardsOptions {
-  cards: CardData[];
+  cards: Card[];
   usedCardSlugs: Set<string | undefined>;
   leagueFilter: string;
   rarityFilter: "all" | "limited" | "rare";
@@ -23,7 +26,20 @@ interface UseFilteredCardsOptions {
   showUsedCards: boolean;
 }
 
-export function useFilteredCards(options: UseFilteredCardsOptions): CardData[] {
+/**
+ * Verifica se una carta è della MLS
+ */
+function isMlsCard(card: Card): boolean {
+  // Usa leagueName se disponibile (UnifiedCard dal KV)
+  if ("leagueName" in card && card.leagueName) {
+    return card.leagueName === "MLS";
+  }
+  // Fallback su activeCompetitions (CardData da Sorare)
+  const competitions = card.anyPlayer?.activeClub?.activeCompetitions ?? [];
+  return competitions.some((c) => c.name === "MLS");
+}
+
+export function useFilteredCards(options: UseFilteredCardsOptions): Card[] {
   const {
     cards,
     usedCardSlugs,
@@ -54,25 +70,9 @@ export function useFilteredCards(options: UseFilteredCardsOptions): CardData[] {
     // Filtra le carte in cassaforte (mostra solo carte libere)
     filtered = filtered.filter((card) => card.sealed !== true);
 
-    // Filtra per lega se selezionata
-    if (leagueFilter) {
-      const pipeIndex = leagueFilter.indexOf("|");
-      const hasCountryCode = pipeIndex !== -1;
-      const leagueName = hasCountryCode
-        ? leagueFilter.slice(0, pipeIndex)
-        : leagueFilter;
-      const countryCode = hasCountryCode
-        ? leagueFilter.slice(pipeIndex + 1)
-        : null;
-
-      filtered = filtered.filter((card) =>
-        card.anyPlayer?.activeClub?.activeCompetitions?.some(
-          (c) =>
-            c.format === "DOMESTIC_LEAGUE" &&
-            c.name === leagueName &&
-            (countryCode === null || c.country?.code === countryCode)
-        )
-      );
+    // Filtra per lega se selezionata (solo MLS supportata)
+    if (leagueFilter === "MLS") {
+      filtered = filtered.filter(isMlsCard);
     }
 
     // Filtra per rarità

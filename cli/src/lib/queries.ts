@@ -46,5 +46,3 @@ export const GET_PLAYER_GAME_SCORES = `
     }
   }
 `;
-
-

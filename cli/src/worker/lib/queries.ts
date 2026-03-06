@@ -105,17 +105,21 @@ export const GET_PLAYERS_GAME_SCORES = `
 // AA ANALYSIS QUERIES
 // ============================================================================
 
-export const GET_PLAYERS_AA_SCORES = `
-  query GetPlayersAAScores($slugs: [String!]!, $last: Int!) {
-    players(slugs: $slugs) {
-      ... on Player {
-        slug
-        allPlayerGameScores(first: $last) {
-          edges {
-            node {
-              ... on PlayerGameScore {
-                allAroundScore
-                scoreStatus
+// Query per singolo giocatore - usa football.player (non players)
+// allPlayerGameScores richiede query su singolo player, non su lista
+export const GET_PLAYER_AA_SCORES = `
+  query GetPlayerAAScores($slug: String!, $last: Int!) {
+    football {
+      player(slug: $slug) {
+        ... on Player {
+          slug
+          allPlayerGameScores(first: $last) {
+            edges {
+              node {
+                ... on PlayerGameScore {
+                  allAroundScore
+                  scoreStatus
+                }
               }
             }
           }

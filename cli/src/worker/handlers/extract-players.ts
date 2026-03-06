@@ -1,6 +1,6 @@
 /**
  * Extract Players Handler
- * 
+ *
  * Eseguito ogni martedì mattina.
  * - Fetcha tutti i club MLS e i loro giocatori
  * - Aggiunge nuovi giocatori al KV se non esistono
@@ -8,10 +8,10 @@
  * - Non elimina giocatori (operazione manuale se necessario)
  */
 
-import { KVPlayerRepository } from "../lib/kv-repository.js";
-import { SorareWorkerClient } from "../lib/sorare-client.js";
-import { GET_MLS_COMPETITION, GET_CLUB_PLAYERS } from "../lib/queries.js";
 import type { PlayerRecord } from "../lib/kv-repository.js";
+import { KVPlayerRepository } from "../lib/kv-repository.js";
+import { GET_CLUB_PLAYERS, GET_MLS_COMPETITION } from "../lib/queries.js";
+import type { SorareWorkerClient } from "../lib/sorare-client.js";
 
 interface GraphQLPlayer {
   slug: string;
@@ -97,12 +97,14 @@ export async function extractPlayersHandler(
 
     for (let i = 0; i < clubEdges.length; i++) {
       const clubNode = clubEdges[i].node;
-      console.log(`[${i + 1}/${clubEdges.length}] Fetching ${clubNode.name}...`);
+      console.log(
+        `[${i + 1}/${clubEdges.length}] Fetching ${clubNode.name}...`
+      );
 
       // Retry con exponential backoff
       let retries = 3;
       let success = false;
-      
+
       while (retries > 0 && !success) {
         try {
           const clubData = await client.query<ClubData>(GET_CLUB_PLAYERS, {
@@ -112,13 +114,17 @@ export async function extractPlayersHandler(
           if (clubData.football?.club) {
             allClubs.push(clubData.football.club);
             success = true;
-            console.log(`  ✅ ${clubNode.name}: ${clubData.football.club.activePlayers?.edges.length || 0} players`);
+            console.log(
+              `  ✅ ${clubNode.name}: ${clubData.football.club.activePlayers?.edges.length || 0} players`
+            );
           }
         } catch (err) {
           retries--;
           if (retries > 0) {
             const delay = (4 - retries) * 1000; // 1s, 2s, 3s
-            console.warn(`  ⚠️ Retry ${clubNode.name} in ${delay}ms... (${retries} left)`);
+            console.warn(
+              `  ⚠️ Retry ${clubNode.name} in ${delay}ms... (${retries} left)`
+            );
             await new Promise((resolve) => setTimeout(resolve, delay));
           } else {
             const msg = err instanceof Error ? err.message : String(err);
@@ -158,30 +164,30 @@ export async function extractPlayersHandler(
 
         try {
           const existingInfo = existingKeysMap.get(player.slug);
-          
+
           if (existingInfo) {
             const { keyName, metadata } = existingInfo;
-            
+
             // Possiamo verificare i cambiamenti senza fare KV get se abbiamo i metadati!
             let hasChanges = false;
-            
+
             if (metadata) {
-              hasChanges = 
+              hasChanges =
                 metadata.name !== player.displayName ||
                 metadata.clubSlug !== club.slug ||
                 metadata.position !== position;
             } else {
               // Non abbiamo metadati (vecchia versione), dobbiamo fare fetch
-              hasChanges = true; 
+              hasChanges = true;
             }
 
             if (hasChanges) {
               // Dobbiamo fare fetch per non perdere le statistiche (se esistono)
               // findBySlug utilizzerà la cache interna se disponibile
               const existingPlayer = await repository.findBySlug(player.slug);
-              
+
               if (existingPlayer) {
-                 const updates: Partial<PlayerRecord> = {
+                const updates: Partial<PlayerRecord> = {
                   name: player.displayName,
                   clubSlug: club.slug,
                   clubName: club.name,
@@ -192,11 +198,16 @@ export async function extractPlayersHandler(
                 // Se il club è cambiato, eliminiamo la vecchia chiave
                 if (keyName !== newKey) {
                   await (repository as any).kv.delete(keyName);
-                  console.log(`Club changed for ${player.displayName}: deleted old key ${keyName}`);
+                  console.log(
+                    `Club changed for ${player.displayName}: deleted old key ${keyName}`
+                  );
                 }
 
                 // updatePlayer gestisce correttamente i metadati e la cache
-                const updated = await repository.updatePlayer(player.slug, updates);
+                const updated = await repository.updatePlayer(
+                  player.slug,
+                  updates
+                );
                 if (updated) {
                   result.updated++;
                   console.log(`Updated: ${player.displayName} (${club.name})`);
@@ -234,7 +245,7 @@ export async function extractPlayersHandler(
     }
 
     result.total = seenSlugs.size;
-    console.log(`\n✅ Extract complete:`);
+    console.log("\n✅ Extract complete:");
     console.log(`   Added: ${result.added}`);
     console.log(`   Updated: ${result.updated}`);
     console.log(`   Unchanged: ${result.unchanged}`);

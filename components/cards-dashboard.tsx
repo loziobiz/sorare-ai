@@ -1,5 +1,6 @@
 "use client";
 
+import { RefreshCw } from "lucide-react";
 import { useState } from "react";
 import { CardsGrid } from "@/components/cards/card-grid";
 import { CardsFilters } from "@/components/cards/cards-filters";
@@ -12,8 +13,9 @@ import { DashboardHeader } from "@/components/cards/dashboard-header";
 import { type ViewMode, ViewToggle } from "@/components/cards/view-toggle";
 import { LoadingSpinner } from "@/components/loading-spinner";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Button } from "@/components/ui/button";
 import { useCardFilters } from "@/hooks/use-card-filters";
-import { useCards } from "@/hooks/use-cards";
+import { useKvCards } from "@/hooks/use-kv-cards";
 
 export function CardsDashboard() {
   const [viewMode, setViewMode] = useState<ViewMode>("list");
@@ -22,15 +24,15 @@ export function CardsDashboard() {
     useState<SortDirection>("asc");
   const {
     cards,
-    userSlug,
+    userId,
     isLoading,
     isRefreshing,
+    isSyncing,
     error,
     loadingProgress,
     lastUpdate,
-    refresh,
-    clearCache,
-  } = useCards();
+    syncWithSorare,
+  } = useKvCards();
 
   const {
     filters,
@@ -58,7 +60,7 @@ export function CardsDashboard() {
     );
   }
 
-  if (isRefreshing) {
+  if (isRefreshing || isSyncing) {
     return (
       <div className="space-y-6">
         <LoadingSpinner icon="refresh" message={loadingProgress} />
@@ -73,11 +75,10 @@ export function CardsDashboard() {
         <div className="mt-6">
           <DashboardHeader
             isLoading={isLoading}
-            isRefreshing={isRefreshing}
+            isSyncing={isSyncing}
             lastUpdate={lastUpdate}
-            onClearCache={clearCache}
-            onRefresh={refresh}
-            userSlug={userSlug}
+            onSync={syncWithSorare}
+            userSlug={userId}
           />
         </div>
 
@@ -103,7 +104,18 @@ export function CardsDashboard() {
 
         {error && (
           <Alert className="mt-4" variant="destructive">
-            <AlertDescription>{error}</AlertDescription>
+            <AlertDescription className="flex items-center justify-between">
+              <span>{error}</span>
+              <Button
+                className="ml-4 shrink-0"
+                onClick={syncWithSorare}
+                size="sm"
+                variant="outline"
+              >
+                <RefreshCw className="mr-2 h-4 w-4" />
+                Riprova
+              </Button>
+            </AlertDescription>
           </Alert>
         )}
 

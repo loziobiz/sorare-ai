@@ -1,6 +1,15 @@
 var __defProp = Object.defineProperty;
-var __defNormalProp = (obj, key, value) => key in obj ? __defProp(obj, key, { enumerable: true, configurable: true, writable: true, value }) : obj[key] = value;
-var __name = (target, value) => __defProp(target, "name", { value, configurable: true });
+var __defNormalProp = (obj, key, value) =>
+  key in obj
+    ? __defProp(obj, key, {
+        enumerable: true,
+        configurable: true,
+        writable: true,
+        value,
+      })
+    : (obj[key] = value);
+var __name = (target, value) =>
+  __defProp(target, "name", { value, configurable: true });
 var __publicField = (obj, key, value) => {
   __defNormalProp(obj, typeof key !== "symbol" ? key + "" : key, value);
   return value;
@@ -16,9 +25,9 @@ __name(stripCfConnectingIPHeader, "stripCfConnectingIPHeader");
 globalThis.fetch = new Proxy(globalThis.fetch, {
   apply(target, thisArg, argArray) {
     return Reflect.apply(target, thisArg, [
-      stripCfConnectingIPHeader.apply(null, argArray)
+      stripCfConnectingIPHeader.apply(null, argArray),
     ]);
-  }
+  },
 });
 
 // node_modules/.pnpm/unenv@2.0.0-rc.14/node_modules/unenv/dist/runtime/_internal/utils.mjs
@@ -45,7 +54,9 @@ __name(notImplementedClass, "notImplementedClass");
 
 // node_modules/.pnpm/unenv@2.0.0-rc.14/node_modules/unenv/dist/runtime/node/internal/perf_hooks/performance.mjs
 var _timeOrigin = globalThis.performance?.timeOrigin ?? Date.now();
-var _performanceNow = globalThis.performance?.now ? globalThis.performance.now.bind(globalThis.performance) : () => Date.now() - _timeOrigin;
+var _performanceNow = globalThis.performance?.now
+  ? globalThis.performance.now.bind(globalThis.performance)
+  : () => Date.now() - _timeOrigin;
 var nodeTiming = {
   name: "node",
   entryType: "node",
@@ -61,12 +72,12 @@ var nodeTiming = {
   uvMetricsInfo: {
     loopCount: 0,
     events: 0,
-    eventsWaiting: 0
+    eventsWaiting: 0,
   },
   detail: void 0,
   toJSON() {
     return this;
-  }
+  },
 };
 var PerformanceEntry = class {
   __unenv__ = true;
@@ -88,20 +99,23 @@ var PerformanceEntry = class {
       entryType: this.entryType,
       startTime: this.startTime,
       duration: this.duration,
-      detail: this.detail
+      detail: this.detail,
     };
   }
 };
 __name(PerformanceEntry, "PerformanceEntry");
-var PerformanceMark = /* @__PURE__ */ __name(class PerformanceMark2 extends PerformanceEntry {
-  entryType = "mark";
-  constructor() {
-    super(...arguments);
-  }
-  get duration() {
-    return 0;
-  }
-}, "PerformanceMark");
+var PerformanceMark = /* @__PURE__ */ __name(
+  class PerformanceMark2 extends PerformanceEntry {
+    entryType = "mark";
+    constructor() {
+      super(...arguments);
+    }
+    get duration() {
+      return 0;
+    }
+  },
+  "PerformanceMark"
+);
 var PerformanceMeasure = class extends PerformanceEntry {
   entryType = "measure";
 };
@@ -172,19 +186,27 @@ var Performance = class {
     return Date.now() - this.timeOrigin;
   }
   clearMarks(markName) {
-    this._entries = markName ? this._entries.filter((e) => e.name !== markName) : this._entries.filter((e) => e.entryType !== "mark");
+    this._entries = markName
+      ? this._entries.filter((e) => e.name !== markName)
+      : this._entries.filter((e) => e.entryType !== "mark");
   }
   clearMeasures(measureName) {
-    this._entries = measureName ? this._entries.filter((e) => e.name !== measureName) : this._entries.filter((e) => e.entryType !== "measure");
+    this._entries = measureName
+      ? this._entries.filter((e) => e.name !== measureName)
+      : this._entries.filter((e) => e.entryType !== "measure");
   }
   clearResourceTimings() {
-    this._entries = this._entries.filter((e) => e.entryType !== "resource" || e.entryType !== "navigation");
+    this._entries = this._entries.filter(
+      (e) => e.entryType !== "resource" || e.entryType !== "navigation"
+    );
   }
   getEntries() {
     return this._entries;
   }
   getEntriesByName(name, type) {
-    return this._entries.filter((e) => e.name === name && (!type || e.entryType === type));
+    return this._entries.filter(
+      (e) => e.name === name && (!type || e.entryType === type)
+    );
   }
   getEntriesByType(type) {
     return this._entries.filter((e) => e.entryType === type);
@@ -198,7 +220,8 @@ var Performance = class {
     let start;
     let end;
     if (typeof startOrMeasureOptions === "string") {
-      start = this.getEntriesByName(startOrMeasureOptions, "mark")[0]?.startTime;
+      start = this.getEntriesByName(startOrMeasureOptions, "mark")[0]
+        ?.startTime;
       end = this.getEntriesByName(endMark, "mark")[0]?.startTime;
     } else {
       start = Number.parseFloat(startOrMeasureOptions?.start) || this.now();
@@ -208,8 +231,8 @@ var Performance = class {
       startTime: start,
       detail: {
         start,
-        end
-      }
+        end,
+      },
     });
     this._entries.push(entry);
     return entry;
@@ -264,7 +287,10 @@ var PerformanceObserver = class {
 };
 __name(PerformanceObserver, "PerformanceObserver");
 __publicField(PerformanceObserver, "supportedEntryTypes", []);
-var performance = globalThis.performance && "addEventListener" in globalThis.performance ? globalThis.performance : new Performance();
+var performance =
+  globalThis.performance && "addEventListener" in globalThis.performance
+    ? globalThis.performance
+    : new Performance();
 
 // node_modules/.pnpm/@cloudflare+unenv-preset@2.0.2_unenv@2.0.0-rc.14_workerd@1.20250718.0/node_modules/@cloudflare/unenv-preset/dist/runtime/polyfill/performance.mjs
 globalThis.performance = performance;
@@ -280,8 +306,7 @@ globalThis.PerformanceResourceTiming = PerformanceResourceTiming;
 import { Writable } from "node:stream";
 
 // node_modules/.pnpm/unenv@2.0.0-rc.14/node_modules/unenv/dist/runtime/mock/noop.mjs
-var noop_default = Object.assign(() => {
-}, { __unenv__: true });
+var noop_default = Object.assign(() => {}, { __unenv__: true });
 
 // node_modules/.pnpm/unenv@2.0.0-rc.14/node_modules/unenv/dist/runtime/node/console.mjs
 var _console = globalThis.console;
@@ -295,7 +320,8 @@ var debug = _console?.debug ?? log;
 var table = _console?.table ?? log;
 var error = _console?.error ?? log;
 var warn = _console?.warn ?? error;
-var createTask = _console?.createTask ?? /* @__PURE__ */ notImplemented("console.createTask");
+var createTask =
+  _console?.createTask ?? /* @__PURE__ */ notImplemented("console.createTask");
 var clear = _console?.clear ?? noop_default;
 var count = _console?.count ?? noop_default;
 var countReset = _console?.countReset ?? noop_default;
@@ -310,7 +336,8 @@ var time = _console?.time ?? noop_default;
 var timeEnd = _console?.timeEnd ?? noop_default;
 var timeLog = _console?.timeLog ?? noop_default;
 var timeStamp = _console?.timeStamp ?? noop_default;
-var Console = _console?.Console ?? /* @__PURE__ */ notImplementedClass("console.Console");
+var Console =
+  _console?.Console ?? /* @__PURE__ */ notImplementedClass("console.Console");
 var _times = /* @__PURE__ */ new Map();
 var _stdoutErrorHandler = noop_default;
 var _stderrErrorHandler = noop_default;
@@ -343,7 +370,7 @@ var {
   timeLog: timeLog2,
   timeStamp: timeStamp2,
   trace: trace2,
-  warn: warn2
+  warn: warn2,
 } = workerdConsole;
 Object.assign(workerdConsole, {
   Console,
@@ -352,7 +379,7 @@ Object.assign(workerdConsole, {
   _stderrErrorHandler,
   _stdout,
   _stdoutErrorHandler,
-  _times
+  _times,
 });
 var console_default = workerdConsole;
 
@@ -360,29 +387,35 @@ var console_default = workerdConsole;
 globalThis.console = console_default;
 
 // node_modules/.pnpm/unenv@2.0.0-rc.14/node_modules/unenv/dist/runtime/node/internal/process/hrtime.mjs
-var hrtime = /* @__PURE__ */ Object.assign(/* @__PURE__ */ __name(function hrtime2(startTime) {
-  const now = Date.now();
-  const seconds = Math.trunc(now / 1e3);
-  const nanos = now % 1e3 * 1e6;
-  if (startTime) {
-    let diffSeconds = seconds - startTime[0];
-    let diffNanos = nanos - startTime[0];
-    if (diffNanos < 0) {
-      diffSeconds = diffSeconds - 1;
-      diffNanos = 1e9 + diffNanos;
+var hrtime = /* @__PURE__ */ Object.assign(
+  /* @__PURE__ */ __name(function hrtime2(startTime) {
+    const now = Date.now();
+    const seconds = Math.trunc(now / 1e3);
+    const nanos = (now % 1e3) * 1e6;
+    if (startTime) {
+      let diffSeconds = seconds - startTime[0];
+      let diffNanos = nanos - startTime[0];
+      if (diffNanos < 0) {
+        diffSeconds = diffSeconds - 1;
+        diffNanos = 1e9 + diffNanos;
+      }
+      return [diffSeconds, diffNanos];
     }
-    return [diffSeconds, diffNanos];
+    return [seconds, nanos];
+  }, "hrtime"),
+  {
+    bigint: /* @__PURE__ */ __name(function bigint() {
+      return BigInt(Date.now() * 1e6);
+    }, "bigint"),
   }
-  return [seconds, nanos];
-}, "hrtime"), { bigint: /* @__PURE__ */ __name(function bigint() {
-  return BigInt(Date.now() * 1e6);
-}, "bigint") });
+);
 
 // node_modules/.pnpm/unenv@2.0.0-rc.14/node_modules/unenv/dist/runtime/node/internal/process/process.mjs
 import { EventEmitter } from "node:events";
 
 // node_modules/.pnpm/unenv@2.0.0-rc.14/node_modules/unenv/dist/runtime/node/internal/tty/read-stream.mjs
 import { Socket } from "node:net";
+
 var ReadStream = class extends Socket {
   fd;
   constructor(fd) {
@@ -400,6 +433,7 @@ __name(ReadStream, "ReadStream");
 
 // node_modules/.pnpm/unenv@2.0.0-rc.14/node_modules/unenv/dist/runtime/node/internal/tty/write-stream.mjs
 import { Socket as Socket2 } from "node:net";
+
 var WriteStream = class extends Socket2 {
   fd;
   constructor(fd) {
@@ -447,7 +481,10 @@ var Process = class extends EventEmitter {
     this.env = impl.env;
     this.hrtime = impl.hrtime;
     this.nextTick = impl.nextTick;
-    for (const prop of [...Object.getOwnPropertyNames(Process.prototype), ...Object.getOwnPropertyNames(EventEmitter.prototype)]) {
+    for (const prop of [
+      ...Object.getOwnPropertyNames(Process.prototype),
+      ...Object.getOwnPropertyNames(EventEmitter.prototype),
+    ]) {
       const value = this[prop];
       if (typeof value === "function") {
         this[prop] = value.bind(this);
@@ -455,7 +492,9 @@ var Process = class extends EventEmitter {
     }
   }
   emitWarning(warning, type, code) {
-    console.warn(`${code ? `[${code}] ` : ""}${type ? `${type}: ` : ""}${warning}`);
+    console.warn(
+      `${code ? `[${code}] ` : ""}${type ? `${type}: ` : ""}${warning}`
+    );
   }
   emit(...args) {
     return super.emit(...args);
@@ -467,13 +506,13 @@ var Process = class extends EventEmitter {
   #stdout;
   #stderr;
   get stdin() {
-    return this.#stdin ??= new ReadStream(0);
+    return (this.#stdin ??= new ReadStream(0));
   }
   get stdout() {
-    return this.#stdout ??= new WriteStream(1);
+    return (this.#stdout ??= new WriteStream(1));
   }
   get stderr() {
-    return this.#stderr ??= new WriteStream(2);
+    return (this.#stderr ??= new WriteStream(2));
   }
   #cwd = "/";
   chdir(cwd2) {
@@ -539,10 +578,8 @@ var Process = class extends EventEmitter {
   resourceUsage() {
     return {};
   }
-  ref() {
-  }
-  unref() {
-  }
+  ref() {}
+  unref() {}
   umask() {
     throw createNotImplementedError("process.umask");
   }
@@ -580,10 +617,14 @@ var Process = class extends EventEmitter {
     throw createNotImplementedError("process.cpuUsage");
   }
   setUncaughtExceptionCaptureCallback() {
-    throw createNotImplementedError("process.setUncaughtExceptionCaptureCallback");
+    throw createNotImplementedError(
+      "process.setUncaughtExceptionCaptureCallback"
+    );
   }
   hasUncaughtExceptionCaptureCallback() {
-    throw createNotImplementedError("process.hasUncaughtExceptionCaptureCallback");
+    throw createNotImplementedError(
+      "process.hasUncaughtExceptionCaptureCallback"
+    );
   }
   initgroups() {
     throw createNotImplementedError("process.initgroups");
@@ -597,7 +638,9 @@ var Process = class extends EventEmitter {
   binding() {
     throw createNotImplementedError("process.binding");
   }
-  permission = { has: /* @__PURE__ */ notImplemented("process.permission.has") };
+  permission = {
+    has: /* @__PURE__ */ notImplemented("process.permission.has"),
+  };
   report = {
     directory: "",
     filename: "",
@@ -607,20 +650,27 @@ var Process = class extends EventEmitter {
     reportOnSignal: false,
     reportOnUncaughtException: false,
     getReport: /* @__PURE__ */ notImplemented("process.report.getReport"),
-    writeReport: /* @__PURE__ */ notImplemented("process.report.writeReport")
+    writeReport: /* @__PURE__ */ notImplemented("process.report.writeReport"),
   };
   finalization = {
     register: /* @__PURE__ */ notImplemented("process.finalization.register"),
-    unregister: /* @__PURE__ */ notImplemented("process.finalization.unregister"),
-    registerBeforeExit: /* @__PURE__ */ notImplemented("process.finalization.registerBeforeExit")
+    unregister: /* @__PURE__ */ notImplemented(
+      "process.finalization.unregister"
+    ),
+    registerBeforeExit: /* @__PURE__ */ notImplemented(
+      "process.finalization.registerBeforeExit"
+    ),
   };
-  memoryUsage = Object.assign(() => ({
-    arrayBuffers: 0,
-    rss: 0,
-    external: 0,
-    heapTotal: 0,
-    heapUsed: 0
-  }), { rss: () => 0 });
+  memoryUsage = Object.assign(
+    () => ({
+      arrayBuffers: 0,
+      rss: 0,
+      external: 0,
+      heapTotal: 0,
+      heapUsed: 0,
+    }),
+    { rss: () => 0 }
+  );
   mainModule = void 0;
   domain = void 0;
   send = void 0;
@@ -663,13 +713,11 @@ __name(Process, "Process");
 // node_modules/.pnpm/@cloudflare+unenv-preset@2.0.2_unenv@2.0.0-rc.14_workerd@1.20250718.0/node_modules/@cloudflare/unenv-preset/dist/runtime/node/process.mjs
 var globalProcess = globalThis["process"];
 var getBuiltinModule = globalProcess.getBuiltinModule;
-var { exit, platform, nextTick } = getBuiltinModule(
-  "node:process"
-);
+var { exit, platform, nextTick } = getBuiltinModule("node:process");
 var unenvProcess = new Process({
   env: globalProcess.env,
   hrtime,
-  nextTick
+  nextTick,
 });
 var {
   abort,
@@ -774,7 +822,7 @@ var {
   _pendingMessage,
   _channel,
   _send,
-  _linkedBinding
+  _linkedBinding,
 } = unenvProcess;
 var _process = {
   abort,
@@ -884,15 +932,13 @@ var _process = {
   _pendingMessage,
   _channel,
   _send,
-  _linkedBinding
+  _linkedBinding,
 };
 var process_default = _process;
 
 // node_modules/.pnpm/wrangler@3.114.17_@cloudflare+workers-types@4.20260226.1/node_modules/wrangler/_virtual_unenv_global_polyfill-@cloudflare-unenv-preset-node-process
 globalThis.process = process_default;
 
-// src/lib/repository.ts
-import { resolve } from "path";
 var DefaultUpdateStrategy = class {
   shouldUpdate(currentValue, newValue, _fieldPath) {
     if (newValue === null || newValue === void 0) {
@@ -924,17 +970,20 @@ var KVPlayerRepository = class {
     const map = /* @__PURE__ */ new Map();
     let cursor;
     do {
-      const listResult = await this.kv.list({ cursor, limit: 1e3, metadata: true });
+      const listResult = await this.kv.list({
+        cursor,
+        limit: 1e3,
+        metadata: true,
+      });
       for (const key of listResult.keys) {
         const metadata = key.metadata;
         const parsed = KVPlayerRepository.parseKey(key.name);
         if (parsed) {
-          if (!this.keyCache)
-            this.keyCache = /* @__PURE__ */ new Map();
+          if (!this.keyCache) this.keyCache = /* @__PURE__ */ new Map();
           this.keyCache.set(parsed.playerSlug, key.name);
           map.set(parsed.playerSlug, {
             keyName: key.name,
-            metadata
+            metadata,
           });
         }
       }
@@ -954,8 +1003,7 @@ var KVPlayerRepository = class {
    */
   static parseKey(key) {
     const parts = key.split(":");
-    if (parts.length !== 2)
-      return null;
+    if (parts.length !== 2) return null;
     return { clubCode: parts[0], playerSlug: parts[1] };
   }
   /**
@@ -972,7 +1020,8 @@ var KVPlayerRepository = class {
       if (parsed) {
         let hasAA = true;
         if (info3.metadata) {
-          hasAA = info3.metadata.hasAA === true || info3.metadata.hasAA === "true";
+          hasAA =
+            info3.metadata.hasAA === true || info3.metadata.hasAA === "true";
         }
         players.push({
           slug,
@@ -983,14 +1032,16 @@ var KVPlayerRepository = class {
           clubCode: parsed.clubCode,
           // Flag per il filtering (usiamo una struttura stats minima)
           stats: {
-            aaAnalysis: hasAA ? {
-              calculatedAt: "",
-              gamesAnalyzed: 0,
-              AA5: 1,
-              AA15: 1,
-              AA25: 1
-            } : void 0
-          }
+            aaAnalysis: hasAA
+              ? {
+                  calculatedAt: "",
+                  gamesAnalyzed: 0,
+                  AA5: 1,
+                  AA15: 1,
+                  AA25: 1,
+                }
+              : void 0,
+          },
         });
       }
     }
@@ -999,19 +1050,19 @@ var KVPlayerRepository = class {
       if (!clubsMap.has(player.clubSlug)) {
         clubsMap.set(player.clubSlug, {
           slug: player.clubSlug,
-          name: player.clubName
+          name: player.clubName,
         });
       }
     }
     return {
       league: "Major League Soccer",
       leagueSlug: "major-league-soccer",
-      season: (/* @__PURE__ */ new Date()).getFullYear(),
+      season: /* @__PURE__ */ new Date().getFullYear(),
       totalPlayers: players.length,
       totalClubs: clubsMap.size,
       players,
-      extractedAt: (/* @__PURE__ */ new Date()).toISOString(),
-      version: 1
+      extractedAt: /* @__PURE__ */ new Date().toISOString(),
+      version: 1,
     };
   }
   /**
@@ -1022,7 +1073,11 @@ var KVPlayerRepository = class {
     const players = [];
     let cursor;
     do {
-      const listResult = await this.kv.list({ cursor, limit: 1e3, metadata: true });
+      const listResult = await this.kv.list({
+        cursor,
+        limit: 1e3,
+        metadata: true,
+      });
       const batches = [];
       for (let i = 0; i < listResult.keys.length; i += 50) {
         batches.push(listResult.keys.slice(i, i + 50));
@@ -1037,7 +1092,7 @@ var KVPlayerRepository = class {
               players.push(player);
               this.valueCache.set(player.slug, player);
             } catch (e) {
-              console.error(`Failed to parse player data:`, e);
+              console.error("Failed to parse player data:", e);
             }
           }
         }
@@ -1049,19 +1104,19 @@ var KVPlayerRepository = class {
       if (!clubsMap.has(player.clubSlug)) {
         clubsMap.set(player.clubSlug, {
           slug: player.clubSlug,
-          name: player.clubName
+          name: player.clubName,
         });
       }
     }
     return {
       league: "Major League Soccer",
       leagueSlug: "major-league-soccer",
-      season: (/* @__PURE__ */ new Date()).getFullYear(),
+      season: /* @__PURE__ */ new Date().getFullYear(),
       totalPlayers: players.length,
       totalClubs: clubsMap.size,
       players,
-      extractedAt: (/* @__PURE__ */ new Date()).toISOString(),
-      version: 1
+      extractedAt: /* @__PURE__ */ new Date().toISOString(),
+      version: 1,
     };
   }
   /**
@@ -1127,26 +1182,25 @@ var KVPlayerRepository = class {
       throw new Error(`Player not found: ${slug}`);
     }
     const strat = strategy || new DefaultUpdateStrategy();
-    const merged = this.deepMergeWithStrategy(
-      existing,
-      updates,
-      strat,
-      ""
-    );
+    const merged = this.deepMergeWithStrategy(existing, updates, strat, "");
     const hasChanges = JSON.stringify(existing) !== JSON.stringify(merged);
     if (hasChanges) {
       const key = KVPlayerRepository.makeKey(
         merged.clubCode || existing.clubCode || "UNK",
         merged.slug
       );
-      const hasAA = !!(merged.stats?.aaAnalysis?.AA5 != null || merged.stats?.aaAnalysis?.AA15 != null || merged.stats?.aaAnalysis?.AA25 != null);
+      const hasAA = !!(
+        merged.stats?.aaAnalysis?.AA5 != null ||
+        merged.stats?.aaAnalysis?.AA15 != null ||
+        merged.stats?.aaAnalysis?.AA25 != null
+      );
       await this.kv.put(key, JSON.stringify(merged), {
         metadata: {
           name: merged.name,
           clubSlug: merged.clubSlug,
           position: merged.position,
-          hasAA
-        }
+          hasAA,
+        },
       });
       this.valueCache.set(slug, merged);
     }
@@ -1161,7 +1215,7 @@ var KVPlayerRepository = class {
       throw new Error(`Player not found: ${slug}`);
     }
     const updates = {
-      stats: this.mergeStats(existing.stats || {}, stats, strategy)
+      stats: this.mergeStats(existing.stats || {}, stats, strategy),
     };
     return this.updatePlayer(slug, updates, strategy);
   }
@@ -1194,14 +1248,18 @@ var KVPlayerRepository = class {
     if (existing) {
       return false;
     }
-    const hasAA = !!(player.stats?.aaAnalysis?.AA5 != null || player.stats?.aaAnalysis?.AA15 != null || player.stats?.aaAnalysis?.AA25 != null);
+    const hasAA = !!(
+      player.stats?.aaAnalysis?.AA5 != null ||
+      player.stats?.aaAnalysis?.AA15 != null ||
+      player.stats?.aaAnalysis?.AA25 != null
+    );
     await this.kv.put(key, JSON.stringify(player), {
       metadata: {
         name: player.name,
         clubSlug: player.clubSlug,
         position: player.position,
-        hasAA
-      }
+        hasAA,
+      },
     });
     this.valueCache.set(player.slug, player);
     return true;
@@ -1216,7 +1274,7 @@ var KVPlayerRepository = class {
       const listResult = await this.kv.list({
         prefix: `${clubCode}:`,
         cursor,
-        limit: 100
+        limit: 100,
       });
       for (const key of listResult.keys) {
         const value = await this.kv.get(key.name);
@@ -1224,7 +1282,10 @@ var KVPlayerRepository = class {
           try {
             players.push(JSON.parse(value));
           } catch (e) {
-            console.error(`Failed to parse player data for key ${key.name}:`, e);
+            console.error(
+              `Failed to parse player data for key ${key.name}:`,
+              e
+            );
           }
         }
       }
@@ -1239,7 +1300,11 @@ var KVPlayerRepository = class {
     let count3 = 0;
     let cursor;
     do {
-      const listResult = await this.kv.list({ cursor, limit: 1e3, metadata: true });
+      const listResult = await this.kv.list({
+        cursor,
+        limit: 1e3,
+        metadata: true,
+      });
       count3 += listResult.keys.length;
       cursor = listResult.list_complete ? void 0 : listResult.cursor;
     } while (cursor);
@@ -1257,12 +1322,7 @@ var KVPlayerRepository = class {
   // ============================================================================
   mergeStats(existing, updates, strategy) {
     const strat = strategy || new DefaultUpdateStrategy();
-    return this.deepMergeWithStrategy(
-      existing,
-      updates,
-      strat,
-      ""
-    );
+    return this.deepMergeWithStrategy(existing, updates, strat, "");
   }
   deepMergeWithStrategy(current, updates, strategy, path) {
     const result = { ...current };
@@ -1270,17 +1330,22 @@ var KVPlayerRepository = class {
       const newPath = path ? `${path}.${key}` : key;
       const currentValue = current[key];
       const newValue = updates[key];
-      if (newValue !== null && typeof newValue === "object" && !Array.isArray(newValue) && typeof currentValue === "object" && currentValue !== null && !Array.isArray(currentValue)) {
+      if (
+        newValue !== null &&
+        typeof newValue === "object" &&
+        !Array.isArray(newValue) &&
+        typeof currentValue === "object" &&
+        currentValue !== null &&
+        !Array.isArray(currentValue)
+      ) {
         result[key] = this.deepMergeWithStrategy(
           currentValue,
           newValue,
           strategy,
           newPath
         );
-      } else {
-        if (strategy.shouldUpdate(currentValue, newValue, newPath)) {
-          result[key] = newValue;
-        }
+      } else if (strategy.shouldUpdate(currentValue, newValue, newPath)) {
+        result[key] = newValue;
       }
     }
     return result;
@@ -1314,12 +1379,17 @@ var SorareWorkerClient = class {
       try {
         return await this.executeQuery(query, variables);
       } catch (error3) {
-        lastError = error3 instanceof Error ? error3 : new Error(String(error3));
-        if (lastError.message.includes("401") || lastError.message.includes("403") || lastError.message.includes("404")) {
+        lastError =
+          error3 instanceof Error ? error3 : new Error(String(error3));
+        if (
+          lastError.message.includes("401") ||
+          lastError.message.includes("403") ||
+          lastError.message.includes("404")
+        ) {
           throw lastError;
         }
         if (attempt < retries) {
-          const delay = retryDelay * Math.pow(2, attempt);
+          const delay = retryDelay * 2 ** attempt;
           console.log(`Retry ${attempt + 1}/${retries} after ${delay}ms...`);
           await this.sleep(delay);
         }
@@ -1331,7 +1401,7 @@ var SorareWorkerClient = class {
     const headers = {
       "Content-Type": "application/json",
       Accept: "application/json",
-      "JWT-AUD": this.jwtAud
+      "JWT-AUD": this.jwtAud,
     };
     if (this.apiKey) {
       headers["API-KEY"] = this.apiKey;
@@ -1342,7 +1412,7 @@ var SorareWorkerClient = class {
     const response = await fetch(this.baseUrl, {
       method: "POST",
       headers,
-      body: JSON.stringify({ query, variables })
+      body: JSON.stringify({ query, variables }),
     });
     if (!response.ok) {
       const text = await response.text();
@@ -1368,7 +1438,7 @@ function createSorareClient(env2) {
   return new SorareWorkerClient({
     jwtToken: env2.SORARE_API_KEY,
     // Usa come JWT (Authorization: Bearer)
-    jwtAud: "sorare-ai"
+    jwtAud: "sorare-ai",
   });
 }
 __name(createSorareClient, "createSorareClient");
@@ -1519,7 +1589,7 @@ async function extractPlayersHandler(repository, client) {
     updated: 0,
     unchanged: 0,
     total: 0,
-    errors: []
+    errors: [],
   };
   try {
     console.log("Fetching MLS competition...");
@@ -1532,24 +1602,30 @@ async function extractPlayersHandler(repository, client) {
     const allClubs = [];
     for (let i = 0; i < clubEdges.length; i++) {
       const clubNode = clubEdges[i].node;
-      console.log(`[${i + 1}/${clubEdges.length}] Fetching ${clubNode.name}...`);
+      console.log(
+        `[${i + 1}/${clubEdges.length}] Fetching ${clubNode.name}...`
+      );
       let retries = 3;
       let success = false;
       while (retries > 0 && !success) {
         try {
           const clubData = await client.query(GET_CLUB_PLAYERS, {
-            slug: clubNode.slug
+            slug: clubNode.slug,
           });
           if (clubData.football?.club) {
             allClubs.push(clubData.football.club);
             success = true;
-            console.log(`  \u2705 ${clubNode.name}: ${clubData.football.club.activePlayers?.edges.length || 0} players`);
+            console.log(
+              `  \u2705 ${clubNode.name}: ${clubData.football.club.activePlayers?.edges.length || 0} players`
+            );
           }
         } catch (err) {
           retries--;
           if (retries > 0) {
             const delay = (4 - retries) * 1e3;
-            console.warn(`  \u26A0\uFE0F Retry ${clubNode.name} in ${delay}ms... (${retries} left)`);
+            console.warn(
+              `  \u26A0\uFE0F Retry ${clubNode.name} in ${delay}ms... (${retries} left)`
+            );
             await new Promise((resolve2) => setTimeout(resolve2, delay));
           } else {
             const msg = err instanceof Error ? err.message : String(err);
@@ -1568,10 +1644,8 @@ async function extractPlayersHandler(repository, client) {
     for (const club of allClubs) {
       for (const edge of club.activePlayers?.edges || []) {
         const player = edge.node;
-        if (seenSlugs.has(player.slug))
-          continue;
-        if (player.activeClub?.slug !== club.slug)
-          continue;
+        if (seenSlugs.has(player.slug)) continue;
+        if (player.activeClub?.slug !== club.slug) continue;
         const position = player.anyPositions?.[0] || "Unknown";
         const clubCode = club.code || player.activeClub?.code || "UNK";
         const newKey = KVPlayerRepository.makeKey(clubCode, player.slug);
@@ -1581,7 +1655,10 @@ async function extractPlayersHandler(repository, client) {
             const { keyName, metadata } = existingInfo;
             let hasChanges = false;
             if (metadata) {
-              hasChanges = metadata.name !== player.displayName || metadata.clubSlug !== club.slug || metadata.position !== position;
+              hasChanges =
+                metadata.name !== player.displayName ||
+                metadata.clubSlug !== club.slug ||
+                metadata.position !== position;
             } else {
               hasChanges = true;
             }
@@ -1593,13 +1670,18 @@ async function extractPlayersHandler(repository, client) {
                   clubSlug: club.slug,
                   clubName: club.name,
                   clubCode,
-                  position
+                  position,
                 };
                 if (keyName !== newKey) {
                   await repository.kv.delete(keyName);
-                  console.log(`Club changed for ${player.displayName}: deleted old key ${keyName}`);
+                  console.log(
+                    `Club changed for ${player.displayName}: deleted old key ${keyName}`
+                  );
                 }
-                const updated = await repository.updatePlayer(player.slug, updates);
+                const updated = await repository.updatePlayer(
+                  player.slug,
+                  updates
+                );
                 if (updated) {
                   result.updated++;
                   console.log(`Updated: ${player.displayName} (${club.name})`);
@@ -1615,7 +1697,7 @@ async function extractPlayersHandler(repository, client) {
               clubSlug: club.slug,
               clubName: club.name,
               clubCode,
-              position
+              position,
             };
             const added = await repository.addPlayer(newPlayer);
             if (added) {
@@ -1657,56 +1739,57 @@ var DELAY_MS = 50;
 async function fetchPlayersHomeAwayBatch(client, playersBatch) {
   const resultMap = /* @__PURE__ */ new Map();
   const slugs = playersBatch.map((p) => p.slug);
-  for (const slug of slugs)
-    resultMap.set(slug, null);
+  for (const slug of slugs) resultMap.set(slug, null);
   try {
     const data = await client.query(GET_PLAYERS_GAME_SCORES, {
       slugs,
-      last: GAMES_COUNT
+      last: GAMES_COUNT,
     });
-    if (!data.players)
-      return resultMap;
+    if (!data.players) return resultMap;
     const playerLookup = new Map(playersBatch.map((p) => [p.slug, p]));
     for (const playerData of data.players) {
       const record = playerLookup.get(playerData.slug);
-      if (!record)
-        continue;
+      if (!record) continue;
       const clubName = playerData.activeClub?.name || record.clubName;
-      const scores = playerData.allPlayerGameScores?.edges?.map((e) => e.node) || [];
+      const scores =
+        playerData.allPlayerGameScores?.edges?.map((e) => e.node) || [];
       const homeScores = [];
       const awayScores = [];
       for (const score of scores) {
-        if (!score?.anyGame)
-          continue;
-        if (score.score <= 0)
-          continue;
+        if (!score?.anyGame) continue;
+        if (score.score <= 0) continue;
         const isHome = score.anyGame.homeTeam?.name === clubName;
         const isAway = score.anyGame.awayTeam?.name === clubName;
-        if (isHome)
-          homeScores.push(score.score);
-        else if (isAway)
-          awayScores.push(score.score);
+        if (isHome) homeScores.push(score.score);
+        else if (isAway) awayScores.push(score.score);
       }
-      const homeAverage = homeScores.length > 0 ? homeScores.reduce((a, b) => a + b, 0) / homeScores.length : 0;
-      const awayAverage = awayScores.length > 0 ? awayScores.reduce((a, b) => a + b, 0) / awayScores.length : 0;
-      const homeAdvantageFactor = awayAverage > 0 ? (homeAverage - awayAverage) / awayAverage : 0;
+      const homeAverage =
+        homeScores.length > 0
+          ? homeScores.reduce((a, b) => a + b, 0) / homeScores.length
+          : 0;
+      const awayAverage =
+        awayScores.length > 0
+          ? awayScores.reduce((a, b) => a + b, 0) / awayScores.length
+          : 0;
+      const homeAdvantageFactor =
+        awayAverage > 0 ? (homeAverage - awayAverage) / awayAverage : 0;
       resultMap.set(playerData.slug, {
-        calculatedAt: (/* @__PURE__ */ new Date()).toISOString(),
+        calculatedAt: /* @__PURE__ */ new Date().toISOString(),
         gamesAnalyzed: scores.length,
         home: {
           games: homeScores.length,
-          average: Number(homeAverage.toFixed(2))
+          average: Number(homeAverage.toFixed(2)),
         },
         away: {
           games: awayScores.length,
-          average: Number(awayAverage.toFixed(2))
+          average: Number(awayAverage.toFixed(2)),
         },
-        homeAdvantageFactor: Number(homeAdvantageFactor.toFixed(4))
+        homeAdvantageFactor: Number(homeAdvantageFactor.toFixed(4)),
       });
     }
     return resultMap;
   } catch (error3) {
-    console.warn(`Error fetching HomeAway batch:`, error3);
+    console.warn("Error fetching HomeAway batch:", error3);
     return resultMap;
   }
 }
@@ -1717,7 +1800,7 @@ async function analyzeHomeAwayHandler(repository, client) {
     processed: 0,
     updated: 0,
     errors: 0,
-    details: []
+    details: [],
   };
   try {
     const db = await repository.loadLight();
@@ -1726,7 +1809,9 @@ async function analyzeHomeAwayHandler(repository, client) {
     const BATCH_SIZE = 50;
     for (let i = 0; i < players.length; i += BATCH_SIZE) {
       const batch = players.slice(i, i + BATCH_SIZE);
-      console.log(`[Batch ${Math.floor(i / BATCH_SIZE) + 1}/${Math.ceil(players.length / BATCH_SIZE)}] Analyzing ${batch.length} players...`);
+      console.log(
+        `[Batch ${Math.floor(i / BATCH_SIZE) + 1}/${Math.ceil(players.length / BATCH_SIZE)}] Analyzing ${batch.length} players...`
+      );
       const batchHomeAwayMap = await fetchPlayersHomeAwayBatch(client, batch);
       for (const player of batch) {
         const stats = batchHomeAwayMap.get(player.slug);
@@ -1748,7 +1833,7 @@ async function analyzeHomeAwayHandler(repository, client) {
               awayGames: stats.away.games,
               homeAvg: stats.home.average,
               awayAvg: stats.away.average,
-              haFactor: stats.homeAdvantageFactor
+              haFactor: stats.homeAdvantageFactor,
             });
           } catch (err) {
             console.error(`   \u274C Failed to update ${player.slug}:`, err);
@@ -1770,7 +1855,7 @@ async function analyzeHomeAwayHandler(repository, client) {
     console.log(`   Errors: ${result.errors}`);
     return result;
   } catch (error3) {
-    console.error(`Home/Away analysis failed:`, error3);
+    console.error("Home/Away analysis failed:", error3);
     return result;
   }
 }
@@ -1781,43 +1866,59 @@ var DELAY_MS2 = 50;
 async function fetchPlayersAABatch(client, playersBatch) {
   const resultMap = /* @__PURE__ */ new Map();
   const slugs = playersBatch.map((p) => p.slug);
-  for (const slug of slugs)
-    resultMap.set(slug, null);
+  for (const slug of slugs) resultMap.set(slug, null);
   try {
     const data = await client.query(GET_PLAYERS_AA_SCORES, {
       slugs,
-      last: 25
+      last: 25,
     });
-    if (!data.players)
-      return resultMap;
+    if (!data.players) return resultMap;
     for (const playerData of data.players) {
       const scores = playerData.allPlayerGameScores.edges.map(
         (edge) => edge.node
       );
-      const validAAScores = scores.filter(
-        (score) => score.allAroundScore !== 0 && score.scoreStatus !== "DID_NOT_PLAY"
-      ).map((score) => score.allAroundScore);
-      const AA5 = validAAScores.length >= 5 ? Number(
-        (validAAScores.slice(0, 5).reduce((a, b) => a + b, 0) / 5).toFixed(2)
-      ) : null;
-      const AA15 = validAAScores.length >= 15 ? Number(
-        (validAAScores.slice(0, 15).reduce((a, b) => a + b, 0) / 15).toFixed(2)
-      ) : null;
-      const AA25 = validAAScores.length >= 25 ? Number(
-        (validAAScores.reduce((a, b) => a + b, 0) / validAAScores.length).toFixed(2)
-      ) : null;
+      const validAAScores = scores
+        .filter(
+          (score) =>
+            score.allAroundScore !== 0 && score.scoreStatus !== "DID_NOT_PLAY"
+        )
+        .map((score) => score.allAroundScore);
+      const AA5 =
+        validAAScores.length >= 5
+          ? Number(
+              (
+                validAAScores.slice(0, 5).reduce((a, b) => a + b, 0) / 5
+              ).toFixed(2)
+            )
+          : null;
+      const AA15 =
+        validAAScores.length >= 15
+          ? Number(
+              (
+                validAAScores.slice(0, 15).reduce((a, b) => a + b, 0) / 15
+              ).toFixed(2)
+            )
+          : null;
+      const AA25 =
+        validAAScores.length >= 25
+          ? Number(
+              (
+                validAAScores.reduce((a, b) => a + b, 0) / validAAScores.length
+              ).toFixed(2)
+            )
+          : null;
       resultMap.set(playerData.slug, {
-        calculatedAt: (/* @__PURE__ */ new Date()).toISOString(),
+        calculatedAt: /* @__PURE__ */ new Date().toISOString(),
         gamesAnalyzed: scores.length,
         AA5,
         AA15,
         AA25,
-        validScores: validAAScores
+        validScores: validAAScores,
       });
     }
     return resultMap;
   } catch (error3) {
-    console.warn(`Error fetching AA batch:`, error3);
+    console.warn("Error fetching AA batch:", error3);
     return resultMap;
   }
 }
@@ -1828,7 +1929,7 @@ async function analyzeAAHandler(repository, client) {
     processed: 0,
     updated: 0,
     errors: 0,
-    byPosition: {}
+    byPosition: {},
   };
   try {
     const db = await repository.loadLight();
@@ -1837,7 +1938,9 @@ async function analyzeAAHandler(repository, client) {
     const BATCH_SIZE = 50;
     for (let i = 0; i < players.length; i += BATCH_SIZE) {
       const batch = players.slice(i, i + BATCH_SIZE);
-      console.log(`[Batch ${Math.floor(i / BATCH_SIZE) + 1}/${Math.ceil(players.length / BATCH_SIZE)}] Analyzing ${batch.length} players...`);
+      console.log(
+        `[Batch ${Math.floor(i / BATCH_SIZE) + 1}/${Math.ceil(players.length / BATCH_SIZE)}] Analyzing ${batch.length} players...`
+      );
       const batchAAMap = await fetchPlayersAABatch(client, batch);
       for (const player of batch) {
         const aaStats = batchAAMap.get(player.slug);
@@ -1886,7 +1989,7 @@ async function analyzeAAHandler(repository, client) {
     console.log(`   Errors: ${result.errors}`);
     return result;
   } catch (error3) {
-    console.error(`AA analysis failed:`, error3);
+    console.error("AA analysis failed:", error3);
     return result;
   }
 }
@@ -1895,8 +1998,7 @@ __name(analyzeAAHandler, "analyzeAAHandler");
 // src/worker/handlers/analyze-odds.ts
 var DELAY_MS3 = 50;
 function basisPointsToPercentage(basisPoints) {
-  if (basisPoints == null)
-    return null;
+  if (basisPoints == null) return null;
   return Math.round(basisPoints / 100);
 }
 __name(basisPointsToPercentage, "basisPointsToPercentage");
@@ -1908,7 +2010,7 @@ async function fetchPlayersOddsBatch(client, playersBatch) {
   }
   try {
     const data = await client.query(GET_PLAYER_ODDS, {
-      slugs
+      slugs,
     });
     if (!data.players || data.players.length === 0) {
       return resultMap;
@@ -1916,13 +2018,14 @@ async function fetchPlayersOddsBatch(client, playersBatch) {
     const playerLookup = new Map(playersBatch.map((p) => [p.slug, p]));
     for (const playerData of data.players) {
       const record = playerLookup.get(playerData.slug);
-      if (!record)
-        continue;
+      if (!record) continue;
       const clubName = playerData.activeClub?.name || record.clubName;
       let startingOdds = null;
       if (playerData.nextClassicFixturePlayingStatusOdds) {
         startingOdds = {
-          starterOddsBasisPoints: playerData.nextClassicFixturePlayingStatusOdds.starterOddsBasisPoints
+          starterOddsBasisPoints:
+            playerData.nextClassicFixturePlayingStatusOdds
+              .starterOddsBasisPoints,
         };
       }
       let nextFixture = null;
@@ -1935,13 +2038,13 @@ async function fetchPlayersOddsBatch(client, playersBatch) {
           teamWinOdds = {
             winOddsBasisPoints: game.homeStats.winOddsBasisPoints ?? 0,
             drawOddsBasisPoints: game.homeStats.drawOddsBasisPoints ?? 0,
-            loseOddsBasisPoints: game.homeStats.loseOddsBasisPoints ?? 0
+            loseOddsBasisPoints: game.homeStats.loseOddsBasisPoints ?? 0,
           };
         } else if (!isHome && game.awayStats) {
           teamWinOdds = {
             winOddsBasisPoints: game.awayStats.winOddsBasisPoints ?? 0,
             drawOddsBasisPoints: game.awayStats.drawOddsBasisPoints ?? 0,
-            loseOddsBasisPoints: game.awayStats.loseOddsBasisPoints ?? 0
+            loseOddsBasisPoints: game.awayStats.loseOddsBasisPoints ?? 0,
           };
         }
         nextFixture = {
@@ -1949,17 +2052,17 @@ async function fetchPlayersOddsBatch(client, playersBatch) {
           opponent,
           isHome,
           startingOdds,
-          teamWinOdds
+          teamWinOdds,
         };
       }
       resultMap.set(playerData.slug, {
-        calculatedAt: (/* @__PURE__ */ new Date()).toISOString(),
-        nextFixture
+        calculatedAt: /* @__PURE__ */ new Date().toISOString(),
+        nextFixture,
       });
     }
     return resultMap;
   } catch (error3) {
-    console.warn(`Error fetching odds for batch:`, error3);
+    console.warn("Error fetching odds for batch:", error3);
     return resultMap;
   }
 }
@@ -1987,7 +2090,7 @@ async function analyzeOddsHandler(repository, client) {
     skipped: 0,
     errors: 0,
     withStartingOdds: 0,
-    withWinOdds: 0
+    withWinOdds: 0,
   };
   try {
     const db = await repository.loadLight();
@@ -1996,12 +2099,15 @@ async function analyzeOddsHandler(repository, client) {
     const BATCH_SIZE = 50;
     for (let i = 0; i < players.length; i += BATCH_SIZE) {
       const batch = players.slice(i, i + BATCH_SIZE);
-      console.log(`[Batch ${Math.floor(i / BATCH_SIZE) + 1}/${Math.ceil(players.length / BATCH_SIZE)}] Analyzing ${batch.length} players...`);
+      console.log(
+        `[Batch ${Math.floor(i / BATCH_SIZE) + 1}/${Math.ceil(players.length / BATCH_SIZE)}] Analyzing ${batch.length} players...`
+      );
       const batchOddsMap = await fetchPlayersOddsBatch(client, batch);
       for (const player of batch) {
         const odds = batchOddsMap.get(player.slug);
         if (odds) {
-          const startingOddsBP = odds.nextFixture?.startingOdds?.starterOddsBasisPoints;
+          const startingOddsBP =
+            odds.nextFixture?.startingOdds?.starterOddsBasisPoints;
           const hasNextGame = !!odds.nextFixture?.fixtureDate;
           if (!startingOddsBP || startingOddsBP < 1e3 || !hasNextGame) {
             result.skipped++;
@@ -2017,7 +2123,9 @@ async function analyzeOddsHandler(repository, client) {
             );
             if (updated) {
               result.updated++;
-              console.log(`   \u2705 ${player.name}: ${formatOddsDisplay(odds)}`);
+              console.log(
+                `   \u2705 ${player.name}: ${formatOddsDisplay(odds)}`
+              );
             } else {
               result.skipped++;
             }
@@ -2050,7 +2158,7 @@ async function analyzeOddsHandler(repository, client) {
     console.log(`   With win odds: ${result.withWinOdds}`);
     return result;
   } catch (error3) {
-    console.error(`Odds analysis failed:`, error3);
+    console.error("Odds analysis failed:", error3);
     return result;
   }
 }
@@ -2114,26 +2222,48 @@ async function handleFetch(request, env2, ctx) {
   const headers = {
     "Content-Type": "application/json",
     "Access-Control-Allow-Origin": "*",
-    "Access-Control-Allow-Methods": "GET, POST, OPTIONS"
+    "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
   };
   if (request.method === "OPTIONS") {
     return new Response(null, { headers });
   }
   try {
     if (path === "/" || path === "/health") {
-      const playerCount = await createKVRepository(env2.MLS_PLAYERS).countPlayers();
-      return json({
-        status: "ok",
-        service: "mls-player-sync",
-        players: playerCount,
-        timestamp: (/* @__PURE__ */ new Date()).toISOString()
-      }, headers);
+      const playerCount = await createKVRepository(
+        env2.MLS_PLAYERS
+      ).countPlayers();
+      return json(
+        {
+          status: "ok",
+          service: "mls-player-sync",
+          players: playerCount,
+          timestamp: /* @__PURE__ */ new Date().toISOString(),
+        },
+        headers
+      );
     }
     if (path === "/trigger" && request.method === "POST") {
       const body = await request.json().catch(() => ({}));
       const job = body.job;
-      if (!job || !["extract-players", "analyze-homeaway", "analyze-aa", "analyze-odds"].includes(job)) {
-        return json({ error: "Unknown job. Use: extract-players, analyze-homeaway, analyze-aa, analyze-odds" }, headers, 400);
+      if (
+        !(
+          job &&
+          [
+            "extract-players",
+            "analyze-homeaway",
+            "analyze-aa",
+            "analyze-odds",
+          ].includes(job)
+        )
+      ) {
+        return json(
+          {
+            error:
+              "Unknown job. Use: extract-players, analyze-homeaway, analyze-aa, analyze-odds",
+          },
+          headers,
+          400
+        );
       }
       const repository = createKVRepository(env2.MLS_PLAYERS);
       const client = createSorareClient(env2);
@@ -2152,28 +2282,38 @@ async function handleFetch(request, env2, ctx) {
           result = await analyzeOddsHandler(repository, client);
           break;
       }
-      return json({
-        success: true,
-        job,
-        result,
-        timestamp: (/* @__PURE__ */ new Date()).toISOString()
-      }, headers);
+      return json(
+        {
+          success: true,
+          job,
+          result,
+          timestamp: /* @__PURE__ */ new Date().toISOString(),
+        },
+        headers
+      );
     }
     if (path === "/status") {
       const repository = createKVRepository(env2.MLS_PLAYERS);
       const db = await repository.load();
-      const withHomeAway = db.players.filter((p) => p.stats?.homeAwayAnalysis).length;
+      const withHomeAway = db.players.filter(
+        (p) => p.stats?.homeAwayAnalysis
+      ).length;
       const withAA = db.players.filter((p) => p.stats?.aaAnalysis).length;
-      const withOdds = db.players.filter((p) => p.stats?.odds?.nextFixture?.startingOdds).length;
-      return json({
-        totalPlayers: db.totalPlayers,
-        totalClubs: db.totalClubs,
-        withHomeAwayAnalysis: withHomeAway,
-        withAAAnalysis: withAA,
-        withOdds,
-        season: db.season,
-        extractedAt: db.extractedAt
-      }, headers);
+      const withOdds = db.players.filter(
+        (p) => p.stats?.odds?.nextFixture?.startingOdds
+      ).length;
+      return json(
+        {
+          totalPlayers: db.totalPlayers,
+          totalClubs: db.totalClubs,
+          withHomeAwayAnalysis: withHomeAway,
+          withAAAnalysis: withAA,
+          withOdds,
+          season: db.season,
+          extractedAt: db.extractedAt,
+        },
+        headers
+      );
     }
     return json({ error: "Not found" }, headers, 404);
   } catch (error3) {
@@ -2199,48 +2339,59 @@ var worker_default = {
    * Handler per cron triggers
    */
   async scheduled(controller, env2, ctx) {
-    console.log(`[CRON] Triggered: ${controller.cron} at ${(/* @__PURE__ */ new Date()).toISOString()}`);
+    console.log(
+      `[CRON] Triggered: ${controller.cron} at ${(/* @__PURE__ */ new Date()).toISOString()}`
+    );
     ctx.waitUntil(
       handleCron(controller.cron, env2).catch((error3) => {
         console.error("Cron handler failed:", error3);
         throw error3;
       })
     );
-  }
+  },
 };
 
 // node_modules/.pnpm/wrangler@3.114.17_@cloudflare+workers-types@4.20260226.1/node_modules/wrangler/templates/middleware/middleware-ensure-req-body-drained.ts
-var drainBody = /* @__PURE__ */ __name(async (request, env2, _ctx, middlewareCtx) => {
-  try {
-    return await middlewareCtx.next(request, env2);
-  } finally {
+var drainBody = /* @__PURE__ */ __name(
+  async (request, env2, _ctx, middlewareCtx) => {
     try {
-      if (request.body !== null && !request.bodyUsed) {
-        const reader = request.body.getReader();
-        while (!(await reader.read()).done) {
+      return await middlewareCtx.next(request, env2);
+    } finally {
+      try {
+        if (request.body !== null && !request.bodyUsed) {
+          const reader = request.body.getReader();
+          while (!(await reader.read()).done) {}
         }
+      } catch (e) {
+        console.error("Failed to drain the unused request body.", e);
       }
-    } catch (e) {
-      console.error("Failed to drain the unused request body.", e);
     }
-  }
-}, "drainBody");
+  },
+  "drainBody"
+);
 var middleware_ensure_req_body_drained_default = drainBody;
 
 // node_modules/.pnpm/wrangler@3.114.17_@cloudflare+workers-types@4.20260226.1/node_modules/wrangler/templates/middleware/middleware-scheduled.ts
-var scheduled = /* @__PURE__ */ __name(async (request, env2, _ctx, middlewareCtx) => {
-  const url = new URL(request.url);
-  if (url.pathname === "/__scheduled") {
-    const cron = url.searchParams.get("cron") ?? "";
-    await middlewareCtx.dispatch("scheduled", { cron });
-    return new Response("Ran scheduled event");
-  }
-  const resp = await middlewareCtx.next(request, env2);
-  if (request.headers.get("referer")?.endsWith("/__scheduled") && url.pathname === "/favicon.ico" && resp.status === 500) {
-    return new Response(null, { status: 404 });
-  }
-  return resp;
-}, "scheduled");
+var scheduled = /* @__PURE__ */ __name(
+  async (request, env2, _ctx, middlewareCtx) => {
+    const url = new URL(request.url);
+    if (url.pathname === "/__scheduled") {
+      const cron = url.searchParams.get("cron") ?? "";
+      await middlewareCtx.dispatch("scheduled", { cron });
+      return new Response("Ran scheduled event");
+    }
+    const resp = await middlewareCtx.next(request, env2);
+    if (
+      request.headers.get("referer")?.endsWith("/__scheduled") &&
+      url.pathname === "/favicon.ico" &&
+      resp.status === 500
+    ) {
+      return new Response(null, { status: 404 });
+    }
+    return resp;
+  },
+  "scheduled"
+);
 var middleware_scheduled_default = scheduled;
 
 // node_modules/.pnpm/wrangler@3.114.17_@cloudflare+workers-types@4.20260226.1/node_modules/wrangler/templates/middleware/middleware-miniflare3-json-error.ts
@@ -2249,28 +2400,31 @@ function reduceError(e) {
     name: e?.name,
     message: e?.message ?? String(e),
     stack: e?.stack,
-    cause: e?.cause === void 0 ? void 0 : reduceError(e.cause)
+    cause: e?.cause === void 0 ? void 0 : reduceError(e.cause),
   };
 }
 __name(reduceError, "reduceError");
-var jsonError = /* @__PURE__ */ __name(async (request, env2, _ctx, middlewareCtx) => {
-  try {
-    return await middlewareCtx.next(request, env2);
-  } catch (e) {
-    const error3 = reduceError(e);
-    return Response.json(error3, {
-      status: 500,
-      headers: { "MF-Experimental-Error-Stack": "true" }
-    });
-  }
-}, "jsonError");
+var jsonError = /* @__PURE__ */ __name(
+  async (request, env2, _ctx, middlewareCtx) => {
+    try {
+      return await middlewareCtx.next(request, env2);
+    } catch (e) {
+      const error3 = reduceError(e);
+      return Response.json(error3, {
+        status: 500,
+        headers: { "MF-Experimental-Error-Stack": "true" },
+      });
+    }
+  },
+  "jsonError"
+);
 var middleware_miniflare3_json_error_default = jsonError;
 
 // .wrangler/tmp/bundle-ijyoPu/middleware-insertion-facade.js
 var __INTERNAL_WRANGLER_MIDDLEWARE__ = [
   middleware_ensure_req_body_drained_default,
   middleware_scheduled_default,
-  middleware_miniflare3_json_error_default
+  middleware_miniflare3_json_error_default,
 ];
 var middleware_insertion_facade_default = worker_default;
 
@@ -2286,7 +2440,7 @@ function __facade_invokeChain__(request, env2, ctx, dispatch, middlewareChain) {
     dispatch,
     next(newRequest, newEnv) {
       return __facade_invokeChain__(newRequest, newEnv, ctx, dispatch, tail);
-    }
+    },
   };
   return head(request, env2, ctx, middlewareCtx);
 }
@@ -2294,7 +2448,7 @@ __name(__facade_invokeChain__, "__facade_invokeChain__");
 function __facade_invoke__(request, env2, ctx, dispatch, finalMiddleware) {
   return __facade_invokeChain__(request, env2, ctx, dispatch, [
     ...__facade_middleware__,
-    finalMiddleware
+    finalMiddleware,
   ]);
 }
 __name(__facade_invoke__, "__facade_invoke__");
@@ -2316,13 +2470,16 @@ var __Facade_ScheduledController__ = class {
 };
 __name(__Facade_ScheduledController__, "__Facade_ScheduledController__");
 function wrapExportedHandler(worker) {
-  if (__INTERNAL_WRANGLER_MIDDLEWARE__ === void 0 || __INTERNAL_WRANGLER_MIDDLEWARE__.length === 0) {
+  if (
+    __INTERNAL_WRANGLER_MIDDLEWARE__ === void 0 ||
+    __INTERNAL_WRANGLER_MIDDLEWARE__.length === 0
+  ) {
     return worker;
   }
   for (const middleware of __INTERNAL_WRANGLER_MIDDLEWARE__) {
     __facade_register__(middleware);
   }
-  const fetchDispatcher = /* @__PURE__ */ __name(function(request, env2, ctx) {
+  const fetchDispatcher = /* @__PURE__ */ __name((request, env2, ctx) => {
     if (worker.fetch === void 0) {
       throw new Error("Handler does not export a fetch() function.");
     }
@@ -2331,24 +2488,26 @@ function wrapExportedHandler(worker) {
   return {
     ...worker,
     fetch(request, env2, ctx) {
-      const dispatcher = /* @__PURE__ */ __name(function(type, init) {
+      const dispatcher = /* @__PURE__ */ __name((type, init) => {
         if (type === "scheduled" && worker.scheduled !== void 0) {
           const controller = new __Facade_ScheduledController__(
             Date.now(),
             init.cron ?? "",
-            () => {
-            }
+            () => {}
           );
           return worker.scheduled(controller, env2, ctx);
         }
       }, "dispatcher");
       return __facade_invoke__(request, env2, ctx, dispatcher, fetchDispatcher);
-    }
+    },
   };
 }
 __name(wrapExportedHandler, "wrapExportedHandler");
 function wrapWorkerEntrypoint(klass) {
-  if (__INTERNAL_WRANGLER_MIDDLEWARE__ === void 0 || __INTERNAL_WRANGLER_MIDDLEWARE__.length === 0) {
+  if (
+    __INTERNAL_WRANGLER_MIDDLEWARE__ === void 0 ||
+    __INTERNAL_WRANGLER_MIDDLEWARE__.length === 0
+  ) {
     return klass;
   }
   for (const middleware of __INTERNAL_WRANGLER_MIDDLEWARE__) {
@@ -2368,8 +2527,7 @@ function wrapWorkerEntrypoint(klass) {
         const controller = new __Facade_ScheduledController__(
           Date.now(),
           init.cron ?? "",
-          () => {
-          }
+          () => {}
         );
         return super.scheduled(controller);
       }
@@ -2395,6 +2553,6 @@ if (typeof middleware_insertion_facade_default === "object") {
 var middleware_loader_entry_default = WRAPPED_ENTRY;
 export {
   __INTERNAL_WRANGLER_MIDDLEWARE__,
-  middleware_loader_entry_default as default
+  middleware_loader_entry_default as default,
 };
 //# sourceMappingURL=index.js.map
