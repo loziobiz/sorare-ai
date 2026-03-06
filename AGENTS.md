@@ -2,7 +2,7 @@
 Una dashboard per gestire la propria galleria di carte collezionabili Sorare.
 Gestione collezioni, lineup, tornei, statistiche, ecc.
 
-**IMPORTANT**
+**IMPORTANTE**
 La cartella ./cli fa parte di un modulo backend.
 Non considerare e NON MODIFICARE MAI il codice all'interno a meno che non ti venga esplicitamente citato con riferimenti precisi a file nella richiesta utente.
 
@@ -25,7 +25,7 @@ This project uses **Ultracite**, a zero-config Biome preset that enforces strict
 - **Check for issues**: `pnpm check` (alias di `pnpm exec ultracite check`)
 - **Diagnose setup**: `pnpm exec ultracite doctor`
 
-Biome (the underlying engine) provides extremely fast Rust-based linting and formatting. Most issues are automatically fixable.
+With Biome, most issues are automatically fixable.
 
 ---
 
@@ -106,9 +106,6 @@ Write code that is **accessible, performant, type-safe, and maintainable**. Focu
 
 **React 19+:**
 - Use ref as a prop instead of `React.forwardRef`
-
-**Solid/Svelte/Vue/Qwik:**
-- Use `class` and `for` attributes (not `className` or `htmlFor`)
 
 ---
 

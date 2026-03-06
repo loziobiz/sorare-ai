@@ -7,7 +7,6 @@ import { LoadingSpinner } from "@/components/loading-spinner";
 
 import { Button } from "@/components/ui/button";
 import { useKvCards } from "@/hooks/use-kv-cards";
-import { ACTIVE_LEAGUES } from "@/lib/config";
 import type { SavedFormation } from "@/lib/db";
 import { db } from "@/lib/db";
 import type { UnifiedCard } from "@/lib/kv-types";
@@ -43,6 +42,20 @@ interface CompactCardProps {
     };
   };
 }
+
+// Label delle modalità di gioco (condiviso tra i componenti)
+const GAME_MODE_LABELS: Record<string, string> = {
+  uncapped: "Uncapped",
+  260: "CAP 260",
+  220: "CAP 220",
+  pro_gas: "Pro GAS",
+  mls_arena_260: "MLS ARENA 260",
+  mls_in_season: "MLS IN-SEASON",
+  gas_arena_260: "GAS ARENA 260",
+  gas_arena_220: "GAS ARENA 220",
+  gas_arena_nocap: "GAS ARENA NOCAP",
+  gas_classic: "GAS CLASSIC",
+};
 
 /**
  * Restituisce il colore del badge L10 in base al valore
@@ -328,19 +341,7 @@ function FormationCard({
   }, [dragState.activeItem, allFormations, updateCompatibility]);
 
   // Label della modalità
-  const modeLabels: Record<string, string> = {
-    uncapped: "Uncapped",
-    260: "CAP 260",
-    220: "CAP 220",
-    pro_gas: "Pro GAS",
-    mls_arena_260: "MLS ARENA 260",
-    mls_in_season: "MLS IN-SEASON",
-    gas_arena_260: "GAS ARENA 260",
-    gas_arena_220: "GAS ARENA 220",
-    gas_arena_nocap: "GAS ARENA NOCAP",
-    gas_classic: "GAS CLASSIC",
-  };
-  const modeLabel = modeLabels[formation.gameMode] ?? "CAP 260";
+  const modeLabel = GAME_MODE_LABELS[formation.gameMode] ?? "CAP 260";
 
   // Determina il colore del badge in base al gameMode
   let modeColor: string;
@@ -604,20 +605,69 @@ export function SavedLineups() {
     [formations]
   );
 
+  /**
+   * Calcola la data della prima partita di una formazione
+   * (la data più vicina tra tutte le carte della formazione)
+   */
+  const getFormationNextGameDate = useCallback(
+    (formation: SavedFormation): Date | null => {
+      let earliestDate: Date | null = null;
+
+      for (const card of formation.cards) {
+        const cardData = currentCardsMap.get(card.slug);
+        const anyPlayer = cardData?.anyPlayer as
+          | {
+              nextGame?: { date?: string | null } | null;
+            }
+          | undefined;
+        const nextGameDate = anyPlayer?.nextGame?.date;
+        if (nextGameDate) {
+          const date = new Date(nextGameDate);
+          if (!earliestDate || date < earliestDate) {
+            earliestDate = date;
+          }
+        }
+      }
+
+      return earliestDate;
+    },
+    [currentCardsMap]
+  );
+
+  // Raggruppa le formazioni per gameMode e ordina per data della prima partita
   const groupedFormations = useMemo(() => {
     const groups: Record<string, SavedFormation[]> = {};
-    for (const formation of formations) {
-      const [leagueName, countryCode] = formation.league.split("|");
-      const customName = ACTIVE_LEAGUES[formation.league];
-      const leagueLabel = customName ?? `${leagueName} (${countryCode})`;
 
-      if (!groups[leagueLabel]) {
-        groups[leagueLabel] = [];
+    for (const formation of formations) {
+      const gameModeLabel =
+        GAME_MODE_LABELS[formation.gameMode] ?? formation.gameMode ?? "Altro";
+
+      if (!groups[gameModeLabel]) {
+        groups[gameModeLabel] = [];
       }
-      groups[leagueLabel].push(formation);
+      groups[gameModeLabel].push(formation);
     }
+
+    // Ordina ogni gruppo per data della prima partita
+    for (const label of Object.keys(groups)) {
+      groups[label].sort((a, b) => {
+        const dateA = getFormationNextGameDate(a);
+        const dateB = getFormationNextGameDate(b);
+
+        // Se entrambe hanno una data, confronta le date
+        if (dateA && dateB) {
+          return dateA.getTime() - dateB.getTime();
+        }
+        // Se solo una ha una data, mettila prima
+        if (dateA) return -1;
+        if (dateB) return 1;
+        // Se nessuna ha una data, mantieni l'ordine originale
+        return 0;
+      });
+    }
+
     return groups;
-  }, [formations]);
+  }, [formations, getFormationNextGameDate]);
 
   if (isLoading) {
     return (
@@ -641,23 +691,28 @@ export function SavedLineups() {
             </Button>
           </div>
         ) : (
-          <div className="space-y-6">
-            {Object.entries(groupedFormations).map(([league, items]) => (
-              <div key={league}>
-                <div className="flex flex-wrap items-start gap-5">
-                  {items.map((formation) => (
-                    <FormationCard
-                      allFormations={formations}
-                      currentCardsMap={currentCardsMap}
-                      formation={formation}
-                      key={formation.id}
-                      onDelete={handleDeleteClick}
-                      onEdit={handleEdit}
-                    />
-                  ))}
+          <div className="space-y-8">
+            {Object.entries(groupedFormations)
+              .filter(([, items]) => items.length > 0)
+              .map(([gameModeLabel, items]) => (
+                <div key={gameModeLabel}>
+                  <h2 className="mb-3 font-bold text-lg text-slate-700">
+                    {gameModeLabel}
+                  </h2>
+                  <div className="flex flex-wrap items-start gap-5">
+                    {items.map((formation) => (
+                      <FormationCard
+                        allFormations={formations}
+                        currentCardsMap={currentCardsMap}
+                        formation={formation}
+                        key={formation.id}
+                        onDelete={handleDeleteClick}
+                        onEdit={handleEdit}
+                      />
+                    ))}
+                  </div>
                 </div>
-              </div>
-            ))}
+              ))}
           </div>
         )}
       </SavedLineupsDnDProvider>
