@@ -580,11 +580,13 @@ export async function addExtraPlayerSlug(
 ): Promise<void> {
   const existing = await kv.get(EXTRA_PLAYER_SLUGS_KEY);
   const slugs: string[] = existing ? JSON.parse(existing) : [];
-  
+
   if (!slugs.includes(slug)) {
     slugs.push(slug);
     await kv.put(EXTRA_PLAYER_SLUGS_KEY, JSON.stringify(slugs));
-    console.log(`[ExtraPlayer] Added ${slug} to sync queue (${slugs.length} total)`);
+    console.log(
+      `[ExtraPlayer] Added ${slug} to sync queue (${slugs.length} total)`
+    );
   }
 }
 
@@ -605,33 +607,38 @@ export async function markExtraPlayerSlugsAsSynced(
 ): Promise<void> {
   const existingQueue = await kv.get(EXTRA_PLAYER_SLUGS_KEY);
   const queue: string[] = existingQueue ? JSON.parse(existingQueue) : [];
-  
+
   // Rimuovi dalla coda
   const newQueue = queue.filter((s) => !slugs.includes(s));
   await kv.put(EXTRA_PLAYER_SLUGS_KEY, JSON.stringify(newQueue));
-  
+
   // Aggiungi alla lista sincronizzati
   const existingSynced = await kv.get(EXTRA_PLAYER_SLUGS_SYNCED_KEY);
   const synced: string[] = existingSynced ? JSON.parse(existingSynced) : [];
-  
+
   for (const slug of slugs) {
     if (!synced.includes(slug)) {
       synced.push(slug);
     }
   }
   await kv.put(EXTRA_PLAYER_SLUGS_SYNCED_KEY, JSON.stringify(synced));
-  
-  console.log(`[ExtraPlayer] Marked ${slugs.length} as synced, ${newQueue.length} remaining in queue`);
+
+  console.log(
+    `[ExtraPlayer] Marked ${slugs.length} as synced, ${newQueue.length} remaining in queue`
+  );
 }
 
 /**
  * Verifica se uno slug è un giocatore extra (non MLS)
  * Lo è se è nella lista sincronizzati o nella coda
  */
-export async function isExtraPlayer(kv: KVNamespace, slug: string): Promise<boolean> {
+export async function isExtraPlayer(
+  kv: KVNamespace,
+  slug: string
+): Promise<boolean> {
   const queue = await getExtraPlayerSlugs(kv);
   if (queue.includes(slug)) return true;
-  
+
   const syncedValue = await kv.get(EXTRA_PLAYER_SLUGS_SYNCED_KEY);
   if (syncedValue) {
     const synced: string[] = JSON.parse(syncedValue);
@@ -641,9 +648,57 @@ export async function isExtraPlayer(kv: KVNamespace, slug: string): Promise<bool
 }
 
 /**
+ * Estrae gli slugs dei giocatori referenziati dalle carte utente
+ * Scansiona tutte le chiavi USR_* e estrae gli slugs unici
+ */
+async function getReferencedPlayerSlugs(kv: KVNamespace): Promise<Set<string>> {
+  const referencedSlugs = new Set<string>();
+  let cursor: string | undefined;
+
+  do {
+    const listResult = await kv.list({
+      prefix: "USR_",
+      limit: 1000,
+      cursor,
+    });
+
+    for (const key of listResult.keys) {
+      const value = await kv.get(key.name);
+      if (!value) continue;
+
+      try {
+        const cardData = JSON.parse(value) as Record<string, unknown>;
+        const cardSlug = cardData.slug as string;
+        const playerSlug = cardData.playerSlug as string;
+
+        if (cardSlug && playerSlug) {
+          // Estrai lo slug corretto (gestisce date di nascita)
+          // Pattern: nome-giocatore-YYYY-MM-DD-anno-rarità-seriale o nome-giocatore-anno-rarità-seriale
+          const dateMatch = cardSlug.match(/^(.*?-\d{4}-\d{2}-\d{2})-/);
+          if (dateMatch) {
+            // Caso con data: andrew-thomas-1998-09-01-2025-limited-211 → andrew-thomas-1998-09-01
+            referencedSlugs.add(dateMatch[1]);
+          } else {
+            // Caso senza data: usa playerSlug
+            referencedSlugs.add(playerSlug);
+          }
+        }
+      } catch (e) {
+        // Ignora errori parsing
+      }
+    }
+
+    cursor = listResult.list_complete ? undefined : listResult.cursor;
+  } while (cursor);
+
+  console.log(`[GetReferencedSlugs] Found ${referencedSlugs.size} unique players in cards`);
+  return referencedSlugs;
+}
+
+/**
  * Carica tutti i giocatori per l'analisi (MLS + Extra)
+ * FILTRA solo i giocatori referenziati dalle carte utente
  * Con limite massimo totale (default 1200)
- * Priorità: tutti i MLS + extra più recenti
  */
 export async function loadAllPlayersForAnalysis(
   kv: KVNamespace,
@@ -651,41 +706,54 @@ export async function loadAllPlayersForAnalysis(
   options: { maxTotal?: number } = {}
 ): Promise<PlayerRecord[]> {
   const maxTotal = options.maxTotal ?? 1200;
-  
-  // 1. Carica tutti i giocatori MLS (usando loadLight che è efficiente)
-  const db = await repository.loadLight();
-  const mlsPlayers = db.players;
-  
-  console.log(`[LoadAllPlayers] MLS players: ${mlsPlayers.length}`);
-  
-  // 2. Ottieni la lista extra sincronizzati
-  const syncedValue = await kv.get(EXTRA_PLAYER_SLUGS_SYNCED_KEY);
-  const extraSlugs: string[] = syncedValue ? JSON.parse(syncedValue) : [];
-  
-  console.log(`[LoadAllPlayers] Extra players synced: ${extraSlugs.length}`);
-  
-  // 3. Carica i giocatori extra dal KV
-  const extraPlayers: PlayerRecord[] = [];
-  
-  for (const slug of extraSlugs) {
-    const player = await repository.findBySlug(slug);
-    if (player) {
-      extraPlayers.push(player);
+
+  // 1. Ottieni gli slugs referenziati dalle carte (solo quelli che ci interessano)
+  const referencedSlugs = await getReferencedPlayerSlugs(kv);
+
+  // 2. Carica tutti i giocatori dal KV (MLS + Extra)
+  const allDbPlayers: PlayerRecord[] = [];
+  let cursor: string | undefined;
+
+  do {
+    const listResult = await kv.list({
+      prefix: "", // Tutte le chiavi (senza USR_ e SYSTEM_)
+      limit: 1000,
+      cursor,
+    });
+
+    for (const key of listResult.keys) {
+      // Salta chiavi di sistema e carte
+      if (key.name.startsWith("USR_") || key.name.startsWith("SYSTEM:")) {
+        continue;
+      }
+
+      const value = await kv.get(key.name);
+      if (!value) continue;
+
+      try {
+        const player = JSON.parse(value) as PlayerRecord;
+        // Aggiungi solo se referenziato da una carta
+        if (referencedSlugs.has(player.slug)) {
+          allDbPlayers.push(player);
+        }
+      } catch (e) {
+        // Ignora errori parsing
+      }
     }
+
+    cursor = listResult.list_complete ? undefined : listResult.cursor;
+  } while (cursor);
+
+  console.log(`[LoadAllPlayers] Filtered ${allDbPlayers.length} referenced players from DB`);
+
+  // 3. Limita se necessario
+  if (allDbPlayers.length > maxTotal) {
+    console.log(`[LoadAllPlayers] Limiting from ${allDbPlayers.length} to ${maxTotal}`);
+    return allDbPlayers.slice(0, maxTotal);
   }
-  
-  // 4. Combina e limita
-  const allPlayers = [...mlsPlayers, ...extraPlayers];
-  
-  if (allPlayers.length > maxTotal) {
-    console.log(`[LoadAllPlayers] Limiting from ${allPlayers.length} to ${maxTotal}`);
-    // Priorità: tutti i MLS, poi i migliori extra per qualche criterio
-    // Per ora prendiamo i primi maxTotal
-    return allPlayers.slice(0, maxTotal);
-  }
-  
-  console.log(`[LoadAllPlayers] Total players to analyze: ${allPlayers.length}`);
-  return allPlayers;
+
+  console.log(`[LoadAllPlayers] Total players to analyze: ${allDbPlayers.length}`);
+  return allDbPlayers;
 }
 
 /**

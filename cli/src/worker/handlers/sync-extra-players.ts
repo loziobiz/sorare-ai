@@ -11,9 +11,8 @@
  */
 
 import {
-  type KVPlayerRepository,
-  addExtraPlayerSlug,
   getExtraPlayerSlugs,
+  type KVPlayerRepository,
   markExtraPlayerSlugsAsSynced,
 } from "../lib/kv-repository.js";
 import type { SorareWorkerClient } from "../lib/sorare-client.js";
@@ -78,9 +77,12 @@ async function fetchPlayerBasicInfo(
   position: string;
 } | null> {
   try {
-    const data = await client.query<GraphQLPlayerBasicInfo>(GET_PLAYER_BASIC_INFO, {
-      slug,
-    });
+    const data = await client.query<GraphQLPlayerBasicInfo>(
+      GET_PLAYER_BASIC_INFO,
+      {
+        slug,
+      }
+    );
 
     const player = data?.football?.player;
     if (!player) {
@@ -171,7 +173,9 @@ export async function syncExtraPlayersHandler(
           });
 
           if (added) {
-            console.log(`  ✅ Synced: ${playerData.name} (${playerData.clubName})`);
+            console.log(
+              `  ✅ Synced: ${playerData.name} (${playerData.clubName})`
+            );
             syncedSlugs.push(slug);
             result.synced++;
           } else {

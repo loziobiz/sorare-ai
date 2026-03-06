@@ -521,11 +521,154 @@ async function handleFetch(
       return json(result, headers, result.success ? 200 : 400);
     }
 
+    // POST /api/admin/rebuild-extra-queue - Ricostruisce la coda extra da tutte le carte
+    if (
+      path === "/api/admin/rebuild-extra-queue" &&
+      request.method === "POST"
+    ) {
+      const dryRun = url.searchParams.get("dryRun") !== "false";
+      const userId = url.searchParams.get("userId") || undefined;
+
+      const result = await rebuildExtraPlayersQueue(env.SORARE_AI_DATA, {
+        dryRun,
+        userId,
+      });
+
+      return json(
+        {
+          success: true,
+          dryRun,
+          userId: userId || "all",
+          result,
+          timestamp: new Date().toISOString(),
+        },
+        headers
+      );
+    }
+
     return json({ error: "Not found" }, headers, 404);
   } catch (error) {
     const msg = error instanceof Error ? error.message : String(error);
     console.error("Handler error:", msg);
     return json({ error: msg }, headers, 500);
+  }
+}
+
+/**
+ * Ricostruisce la coda dei giocatori extra scansionando tutte le carte utente
+ * Utile per migrare carte esistenti quando si aggiunge la funzionalità extra players
+ */
+async function rebuildExtraPlayersQueue(
+  kv: KVNamespace,
+  options: { dryRun: boolean; userId?: string }
+): Promise<{
+  scannedCards: number;
+  uniquePlayers: number;
+  existingPlayers: number;
+  addedToQueue: number;
+  errors: number;
+  samplePlayers: string[];
+}> {
+  const { dryRun, userId } = options;
+
+  const result = {
+    scannedCards: 0,
+    uniquePlayers: 0,
+    existingPlayers: 0,
+    addedToQueue: 0,
+    errors: 0,
+    samplePlayers: [] as string[],
+  };
+
+  try {
+    // Importa le funzioni necessarie
+    const { createKVRepository } = await import("./lib/kv-repository.js");
+    const { extractCorrectPlayerSlug } = await import(
+      "./handlers/user-cards.js"
+    );
+
+    const repository = createKVRepository(kv);
+    const uniqueSlugs = new Set<string>();
+
+    // Scansiona le carte (tutti gli utenti o solo uno specifico)
+    const prefix = userId ? `USR_${userId}:` : "USR_";
+    let cursor: string | undefined;
+    let totalCards = 0;
+
+    do {
+      const listResult = await kv.list({
+        prefix,
+        limit: 1000,
+        cursor,
+      });
+
+      for (const key of listResult.keys) {
+        totalCards++;
+        const value = await kv.get(key.name);
+        if (!value) continue;
+
+        try {
+          const cardData = JSON.parse(value) as Record<string, unknown>;
+          const cardSlug = cardData.slug as string;
+          const playerSlug = cardData.playerSlug as string;
+
+          if (!(cardSlug && playerSlug)) continue;
+
+          // Estrai lo slug corretto (gestisce date di nascita)
+          const correctSlug = extractCorrectPlayerSlug(cardSlug, playerSlug);
+
+          if (!uniqueSlugs.has(correctSlug)) {
+            uniqueSlugs.add(correctSlug);
+
+            // Verifica se il player esiste già
+            const existing = await repository.findBySlug(correctSlug);
+
+            if (existing) {
+              result.existingPlayers++;
+            } else {
+              // Non esiste nel database
+              result.addedToQueue++;
+
+              // Salva i primi 10 esempi
+              if (result.samplePlayers.length < 10) {
+                result.samplePlayers.push(correctSlug);
+              }
+            }
+          }
+        } catch (e) {
+          result.errors++;
+        }
+      }
+
+      cursor = listResult.list_complete ? undefined : listResult.cursor;
+    } while (cursor);
+
+    result.scannedCards = totalCards;
+    result.uniquePlayers = uniqueSlugs.size;
+
+    // Se non dryRun, salva TUTTI gli slugs in una volta sola
+    if (!dryRun && result.addedToQueue > 0) {
+      const slugsToAdd = Array.from(uniqueSlugs).filter(async (slug) => {
+        const existing = await repository.findBySlug(slug);
+        return !existing;
+      });
+
+      // Salva la lista nel KV
+      await kv.put("SYSTEM:EXTRA_PLAYER_SLUGS", JSON.stringify(slugsToAdd));
+      console.log(`[RebuildQueue] Saved ${slugsToAdd.length} players to queue`);
+    }
+
+    console.log(
+      `[RebuildQueue] Scanned ${result.scannedCards} cards, found ${result.uniquePlayers} unique players`
+    );
+    console.log(
+      `[RebuildQueue] Existing: ${result.existingPlayers}, Added to queue: ${result.addedToQueue}, Errors: ${result.errors}`
+    );
+
+    return result;
+  } catch (error) {
+    console.error("[RebuildQueue] Error:", error);
+    throw error;
   }
 }
 

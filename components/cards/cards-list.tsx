@@ -62,7 +62,7 @@ export interface ColumnWidths {
   l40: number;
 }
 
-export type SortKey = "name" | "team" | "l5" | "l10" | "l40";
+export type SortKey = "name" | "team" | "aa15" | "l5" | "l10" | "l40";
 export type SortDirection = "asc" | "desc";
 
 export interface CardsListProps {
@@ -85,6 +85,7 @@ function convertSortKey(key: SortKey): string {
   const mapping: Record<SortKey, string> = {
     name: "name",
     team: "team",
+    aa15: "aa15",
     l5: "l5Average",
     l10: "l10Average",
     l40: "l40Average",
@@ -150,6 +151,7 @@ export function CardsList({
     const reverseMapping: Record<string, SortKey> = {
       name: "name",
       team: "team",
+      aa15: "aa15",
       l5Average: "l5",
       l10Average: "l10",
       l40Average: "l40",

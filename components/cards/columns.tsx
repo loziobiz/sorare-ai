@@ -362,11 +362,7 @@ export function getLineupColumns(
       accessorFn: (row) => row.playerStats?.aaAnalysis?.AA15 ?? null,
       cell: ({ row }) => {
         const aa15 = row.original.playerStats?.aaAnalysis?.AA15;
-        return (
-          <div className="font-medium">
-            {aa15?.toFixed(0) ?? "-"}
-          </div>
-        );
+        return <div className="font-medium">{aa15?.toFixed(0) ?? "-"}</div>;
       },
     },
     {
@@ -478,11 +474,7 @@ export function getDashboardColumns(): ColumnDef<Card>[] {
       accessorFn: (row) => row.playerStats?.aaAnalysis?.AA15 ?? null,
       cell: ({ row }) => {
         const aa15 = row.original.playerStats?.aaAnalysis?.AA15;
-        return (
-          <div className="font-medium">
-            {aa15?.toFixed(0) ?? "-"}
-          </div>
-        );
+        return <div className="font-medium">{aa15?.toFixed(0) ?? "-"}</div>;
       },
     },
     {
