@@ -16,7 +16,7 @@ export type PositionFilter =
   | "Midfielder"
   | "Forward";
 export type SealedFilter = "unsealed" | "sealed" | "all";
-export type SortOption = "name" | "team" | "l5" | "l10" | "l15" | "l40";
+export type SortOption = "name" | "team" | "aa15" | "l5" | "l10" | "l15" | "l40";
 
 export interface LeagueOption {
   value: string;
@@ -182,6 +182,11 @@ function sortCards(cards: Card[], sortBy: SortOption): Card[] {
         return (b.l15Average ?? 0) - (a.l15Average ?? 0);
       case "l40":
         return (b.l40Average ?? 0) - (a.l40Average ?? 0);
+      case "aa15": {
+        const aa15A = (a as UnifiedCard).playerStats?.aaAnalysis?.AA15 ?? 0;
+        const aa15B = (b as UnifiedCard).playerStats?.aaAnalysis?.AA15 ?? 0;
+        return aa15B - aa15A;
+      }
       default:
         return 0;
     }

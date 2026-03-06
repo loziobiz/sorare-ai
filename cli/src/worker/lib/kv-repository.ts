@@ -691,7 +691,9 @@ async function getReferencedPlayerSlugs(kv: KVNamespace): Promise<Set<string>> {
     cursor = listResult.list_complete ? undefined : listResult.cursor;
   } while (cursor);
 
-  console.log(`[GetReferencedSlugs] Found ${referencedSlugs.size} unique players in cards`);
+  console.log(
+    `[GetReferencedSlugs] Found ${referencedSlugs.size} unique players in cards`
+  );
   return referencedSlugs;
 }
 
@@ -744,15 +746,21 @@ export async function loadAllPlayersForAnalysis(
     cursor = listResult.list_complete ? undefined : listResult.cursor;
   } while (cursor);
 
-  console.log(`[LoadAllPlayers] Filtered ${allDbPlayers.length} referenced players from DB`);
+  console.log(
+    `[LoadAllPlayers] Filtered ${allDbPlayers.length} referenced players from DB`
+  );
 
   // 3. Limita se necessario
   if (allDbPlayers.length > maxTotal) {
-    console.log(`[LoadAllPlayers] Limiting from ${allDbPlayers.length} to ${maxTotal}`);
+    console.log(
+      `[LoadAllPlayers] Limiting from ${allDbPlayers.length} to ${maxTotal}`
+    );
     return allDbPlayers.slice(0, maxTotal);
   }
 
-  console.log(`[LoadAllPlayers] Total players to analyze: ${allDbPlayers.length}`);
+  console.log(
+    `[LoadAllPlayers] Total players to analyze: ${allDbPlayers.length}`
+  );
   return allDbPlayers;
 }
 

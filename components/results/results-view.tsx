@@ -84,21 +84,21 @@ function getRankColorClass(rank: number): string {
 
 function getScoreBadgeColor(score: number): { bg: string; text: string } {
   if (score === 0) {
-    return { bg: "bg-slate-100", text: "text-slate-500" };
+    return { bg: "bg-white/5", text: "text-slate-400" };
   }
   if (score <= 30) {
-    return { bg: "bg-rose-100", text: "text-rose-700" };
+    return { bg: "bg-rose-900/40", text: "text-rose-400" };
   }
   if (score <= 40) {
-    return { bg: "bg-orange-100", text: "text-orange-700" };
+    return { bg: "bg-orange-900/40", text: "text-orange-400" };
   }
   if (score <= 59) {
-    return { bg: "bg-lime-100", text: "text-lime-700" };
+    return { bg: "bg-lime-900/40", text: "text-lime-400" };
   }
   if (score <= 79) {
-    return { bg: "bg-emerald-100", text: "text-emerald-700" };
+    return { bg: "bg-emerald-900/40", text: "text-emerald-400" };
   }
-  return { bg: "bg-cyan-100", text: "text-cyan-700" };
+  return { bg: "bg-cyan-900/40", text: "text-cyan-400" };
 }
 
 function PlayerCard({ appearance }: { appearance: So5Appearance }) {
@@ -118,7 +118,7 @@ function PlayerCard({ appearance }: { appearance: So5Appearance }) {
             width={85}
           />
         ) : (
-          <div className="flex h-[120px] w-[85px] items-center justify-center rounded-lg bg-slate-200 font-bold text-slate-500 text-xl">
+          <div className="flex h-[120px] w-[85px] items-center justify-center rounded-lg bg-white/10 font-bold text-slate-400 text-xl">
             {(appearance.anyPlayer?.displayName?.[0] ?? "?").toUpperCase()}
           </div>
         )}
@@ -156,12 +156,12 @@ function LineupRow({
   );
 
   return (
-    <div className="space-y-2 rounded-lg border border-slate-200 bg-white p-2 shadow-sm">
+    <div className="space-y-2 rounded-lg border border-white/10 bg-[#1A1B23] p-2 shadow-sm">
       {/* Header: nome, info e punteggio */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <h3 className="font-bold text-slate-800 text-xl">{lineup.name}</h3>
-          <span className="inline-block rounded-full bg-slate-100 px-2 py-0.5 font-medium text-[12px] text-slate-600">
+          <h3 className="font-bold text-slate-100 text-xl">{lineup.name}</h3>
+          <span className="inline-block rounded-full bg-white/10 px-2 py-0.5 font-medium text-[12px] text-slate-400">
             {lineup.so5Leaderboard.displayName}
           </span>
         </div>
@@ -173,7 +173,7 @@ function LineupRow({
               #{ranking.ranking}
             </span>
           )}
-          <span className="font-bold text-slate-700">
+          <span className="font-bold text-slate-300">
             {totalScore.toFixed(2)} pts
           </span>
           {ranking?.eligibleForReward && (
@@ -269,7 +269,7 @@ export function ResultsView({ initialGameWeek }: ResultsViewProps) {
 
   if (error) {
     return (
-      <div className="rounded-lg border border-red-200 bg-red-50 p-4 text-red-700">
+      <div className="rounded-lg border border-red-900/40 bg-red-900/20 p-4 text-red-400">
         Errore: {error}
       </div>
     );
@@ -286,7 +286,7 @@ export function ResultsView({ initialGameWeek }: ResultsViewProps) {
           </p>
         </div>
         <select
-          className="h-10 rounded-md border border-input bg-background px-3 py-2 font-medium text-sm ring-offset-background focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
+          className="h-10 rounded-md border border-white/10 bg-[#1A1B23] px-3 py-2 font-medium text-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-violet-500"
           onChange={(e) => setSelectedSlug(e.target.value)}
           value={selectedSlug}
         >
@@ -309,24 +309,24 @@ export function ResultsView({ initialGameWeek }: ResultsViewProps) {
         <>
           {/* Stats summary */}
           <div className="grid gap-4 sm:grid-cols-3">
-            <div className="rounded-lg border bg-white p-4 shadow-sm">
-              <div className="text-muted-foreground text-sm">Formazioni</div>
-              <div className="flex items-center gap-2 font-bold text-2xl">
-                <Users className="h-5 w-5 text-blue-500" />
+            <div className="rounded-lg border border-white/10 bg-[#1A1B23] p-4 shadow-sm">
+              <div className="text-slate-400 text-sm">Formazioni</div>
+              <div className="flex items-center gap-2 font-bold text-2xl text-slate-100">
+                <Users className="h-5 w-5 text-blue-400" />
                 {fixture.mySo5Lineups.length}
               </div>
             </div>
-            <div className="rounded-lg border bg-white p-4 shadow-sm">
-              <div className="text-muted-foreground text-sm">Rankings</div>
-              <div className="flex items-center gap-2 font-bold text-2xl">
-                <Trophy className="h-5 w-5 text-purple-500" />
+            <div className="rounded-lg border border-white/10 bg-[#1A1B23] p-4 shadow-sm">
+              <div className="text-slate-400 text-sm">Rankings</div>
+              <div className="flex items-center gap-2 font-bold text-2xl text-slate-100">
+                <Trophy className="h-5 w-5 text-purple-400" />
                 {fixture.mySo5Rankings.length}
               </div>
             </div>
-            <div className="rounded-lg border bg-white p-4 shadow-sm">
-              <div className="text-muted-foreground text-sm">Premi</div>
-              <div className="flex items-center gap-2 font-bold text-2xl">
-                <Trophy className="h-5 w-5 text-amber-500" />
+            <div className="rounded-lg border border-white/10 bg-[#1A1B23] p-4 shadow-sm">
+              <div className="text-slate-400 text-sm">Premi</div>
+              <div className="flex items-center gap-2 font-bold text-2xl text-slate-100">
+                <Trophy className="h-5 w-5 text-amber-400" />
                 {
                   fixture.mySo5Rankings.filter((r) => r.eligibleForReward)
                     .length
@@ -345,7 +345,7 @@ export function ResultsView({ initialGameWeek }: ResultsViewProps) {
           )}
         </>
       ) : (
-        <div className="rounded-lg border p-8 text-center text-muted-foreground">
+        <div className="rounded-lg border border-white/10 bg-[#1A1B23] p-8 text-center text-slate-400">
           Nessun dato disponibile per questa Game Week
         </div>
       )}

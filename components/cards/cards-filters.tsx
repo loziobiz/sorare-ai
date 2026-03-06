@@ -176,6 +176,7 @@ function SortSelect({ value, onChange }: SortSelectProps) {
       >
         <option value="name">Nome</option>
         <option value="team">Squadra</option>
+        <option value="aa15">Media AA15</option>
         <option value="l5">Media L5</option>
         <option value="l15">Media L15</option>
         <option value="l40">Media L40</option>
