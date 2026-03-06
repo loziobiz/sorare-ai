@@ -42,7 +42,7 @@ function Home() {
       <div className="w-full max-w-md space-y-6">
         <div className="space-y-2 text-center">
           <h1 className="font-bold text-4xl text-slate-100 tracking-tight">
-            Sorare AI
+            Yet Another Sorare Manager
           </h1>
         </div>
 

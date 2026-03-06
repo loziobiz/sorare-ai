@@ -35,7 +35,7 @@ export function DashboardHeader({
   return (
     <div className="flex items-center justify-between">
       <div>
-        <h1 className="font-bold text-3xl">Sorare AI Dashboard</h1>
+        <h1 className="font-bold text-3xl">YASM Dashboard</h1>
         <p className="text-muted-foreground">
           {userSlug && `Benvenuto, ${userSlug}`}
           {lastUpdate && (
