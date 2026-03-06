@@ -270,7 +270,19 @@ async function handleFetch(
         return json(
           {
             error:
-              "Invalid request. Required: userId, clubCode, playerSlug, cardData",
+              "Invalid request. Required: userId, clubCode, playerSlug, cardData (with slug)",
+          },
+          headers,
+          400
+        );
+      }
+
+      // Verifica che cardData.slug esista (obbligatorio per la chiave)
+      if (!body.cardData?.slug) {
+        return json(
+          {
+            error:
+              "Invalid request. cardData.slug is required (e.g., 'matteo-meisl-2023-limited-169')",
           },
           headers,
           400
@@ -430,18 +442,21 @@ async function handleFetch(
       return json({ userId, clubCode, count }, headers);
     }
 
-    // GET /api/cards/single?key=xxx - Recupera singola carta
+    // GET /api/cards/single?userId=xxx&slug=xxx - Recupera singola carta
     if (path === "/api/cards/single" && request.method === "GET") {
-      const key = url.searchParams.get("key");
+      const userId = url.searchParams.get("userId");
+      const clubCode = url.searchParams.get("clubCode");
+      const slug = url.searchParams.get("slug");
 
-      if (!key) {
+      if (!userId || !clubCode || !slug) {
         return json(
-          { error: "Missing required query parameter: key" },
+          { error: "Missing required query parameters: userId, clubCode, slug" },
           headers,
           400
         );
       }
 
+      const key = `USR_${userId}:${clubCode}:${slug}`;
       const result = await getUserCard(env.SORARE_AI_DATA, key);
       return json(result, headers, result.success ? 200 : 404);
     }
@@ -581,19 +596,21 @@ async function invalidateUserCache(
   const cache = (caches as unknown as { default: Cache }).default;
 
   // Invalida SOLO l'URL con with-players senza filtri
-  const url = `https://sorare-mls-sync.loziobiz.workers.dev/api/cards/with-players?userId=${userId}`;
+  const urlString = `https://sorare-mls-sync.loziobiz.workers.dev/api/cards/with-players?userId=${userId}`;
   
-  // Usa la stessa chiave esatta usata in getCachedOrFetch
-  const cacheKey = new Request(url, { method: 'GET' });
+  // Usa la STESSA logica di createCacheKey per garantire match esatto
+  // Normalizza l'URL attraverso URL class come fa createCacheKey
+  const url = new URL(urlString);
+  const cacheKey = new Request(url.toString(), { method: 'GET' });
 
   try {
-    await cache.delete(cacheKey);
-    console.log(`[CACHE INVALIDATE] ${url}`);
+    const deleted = await cache.delete(cacheKey);
+    console.log(`[CACHE INVALIDATE] ${url.toString()} - Success: ${deleted}`);
   } catch (e) {
-    // Ignora errori di delete (potrebbe non esistere)
+    console.error(`[CACHE INVALIDATE ERROR] ${url.toString()}:`, e);
   }
 
-  return [url];
+  return [url.toString()];
 }
 
 /**

@@ -6,8 +6,9 @@
   "scripts": {
     "dev": "vite dev --port 3000",
     "build": "vite build",
-    "preview": "pnpm build && wrangler dev",
-    "deploy": "pnpm build && wrangler deploy",
+    "preview": "pnpm build && ./wrangler-with-token.sh dev",
+    "deploy": "pnpm build && ./wrangler-with-token.sh deploy",
+    "wrangler": "./wrangler-with-token.sh",
     "cf-typegen": "wrangler types",
     "lint": "eslint",
     "format": "pnpm exec ultracite fix",

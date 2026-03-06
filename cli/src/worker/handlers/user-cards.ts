@@ -2,7 +2,7 @@
  * User Cards Handler
  *
  * Gestisce il salvataggio e recupero delle carte utente in KV.
- * Key format: USR_{USER_ID}:{CLUB_CODE}:{PLAYER_SLUG}
+ * Key format: USR_{USER_ID}:{CLUB_CODE}:{CARD_SLUG}
  *
  * Endpoints:
  * - POST /api/cards         : Salva singola carta
@@ -38,14 +38,14 @@ export interface CardOperationResult {
 
 /**
  * Genera la key KV per una carta utente
- * Format: USR_{USER_ID}:{CLUB_CODE}:{PLAYER_SLUG}
+ * Format: USR_{USER_ID}:{CLUB_CODE}:{CARD_SLUG}
  */
 export function makeUserCardKey(
   userId: string,
   clubCode: string,
-  playerSlug: string
+  cardSlug: string
 ): string {
-  return `USR_${userId}:${clubCode}:${playerSlug}`;
+  return `USR_${userId}:${clubCode}:${cardSlug}`;
 }
 
 /**
@@ -53,7 +53,7 @@ export function makeUserCardKey(
  */
 export function parseUserCardKey(
   key: string
-): { userId: string; clubCode: string; playerSlug: string } | null {
+): { userId: string; clubCode: string; cardSlug: string } | null {
   if (!key.startsWith("USR_")) return null;
 
   const parts = key.split(":");
@@ -63,7 +63,7 @@ export function parseUserCardKey(
   return {
     userId,
     clubCode: parts[1],
-    playerSlug: parts[2],
+    cardSlug: parts[2],
   };
 }
 
@@ -164,7 +164,17 @@ export async function saveUserCard(
   card: SaveCardRequest
 ): Promise<CardOperationResult> {
   try {
-    const key = makeUserCardKey(card.userId, card.clubCode, card.playerSlug);
+    // Estrai cardSlug dai cardData (obbligatorio)
+    const cardSlug = card.cardData.slug as string;
+    if (!cardSlug) {
+      return {
+        success: false,
+        key: "",
+        error: "cardData.slug is required",
+      };
+    }
+
+    const key = makeUserCardKey(card.userId, card.clubCode, cardSlug);
 
     // Leggi valore esistente se presente
     const existingValue = await kv.get(key);
@@ -186,6 +196,7 @@ export async function saveUserCard(
       userId: card.userId,       // Metadati sempre aggiornati
       clubCode: card.clubCode,
       playerSlug: card.playerSlug,
+      slug: cardSlug,            // Slug della carta (completo)
       savedAt: new Date().toISOString(),
       updatedAt: existingValue ? new Date().toISOString() : undefined, // Solo se update
     };
@@ -197,7 +208,7 @@ export async function saveUserCard(
     const msg = error instanceof Error ? error.message : String(error);
     return {
       success: false,
-      key: makeUserCardKey(card.userId, card.clubCode, card.playerSlug),
+      key: "",
       error: msg,
     };
   }
@@ -336,35 +347,35 @@ export async function getUserCardsWithPlayerData(
 
         let playerData: Record<string, unknown> | null = null;
 
-        // Recupera dati giocatore se abbiamo clubCode e playerSlug
+        // Recupera dati giocatore se abbiamo clubCode e cardSlug
         if (parsed) {
-          // 1. Prova con lo slug dalla key (potrebbe essere vecchio)
-          const playerKeyFromSlug = `${parsed.clubCode}:${parsed.playerSlug}`;
-          const playerValueFromSlug = await kv.get(playerKeyFromSlug);
+          // Estrai playerSlug corretto per il match con il database
+          // Logica: se card.slug contiene data di nascita, estrai lo slug corretto
+          //         altrimenti usa card.playerSlug
+          let playerSlug: string;
           
-          if (playerValueFromSlug) {
-            try {
-              playerData = JSON.parse(playerValueFromSlug) as Record<string, unknown>;
-            } catch (e) {
-              console.error(`Failed to parse player ${playerKeyFromSlug}:`, e);
-            }
+          if (cardData.slug && /\d{4}-\d{2}-\d{2}/.test(cardData.slug as string)) {
+            // Caso con data di nascita: estrai lo slug corretto dal cardSlug
+            // es: "andrew-thomas-1998-09-01-2025-limited-211" → "andrew-thomas-1998-09-01"
+            playerSlug = extractCorrectPlayerSlug(
+              cardData.slug as string,
+              cardData.playerSlug as string
+            );
+          } else {
+            // Caso senza data: usa playerSlug direttamente
+            // es: "oumar-solet-bomawoko-2021-limited-246" → "oumar-solet-bomawoko"
+            playerSlug = cardData.playerSlug as string;
           }
           
-          // 2. Se non trovato, estrai lo slug corretto dalla card
-          if (!playerData && cardData.slug && typeof cardData.slug === 'string') {
-            const correctSlug = extractCorrectPlayerSlug(
-              cardData.slug,
-              cardData.playerSlug as string || parsed.playerSlug
-            );
-            if (correctSlug !== parsed.playerSlug) {
-              const playerKeyFromCardSlug = `${parsed.clubCode}:${correctSlug}`;
-              const playerValueFromCardSlug = await kv.get(playerKeyFromCardSlug);
-              if (playerValueFromCardSlug) {
-                try {
-                  playerData = JSON.parse(playerValueFromCardSlug) as Record<string, unknown>;
-                } catch (e) {
-                  console.error(`Failed to parse player ${playerKeyFromCardSlug}:`, e);
-                }
+          if (playerSlug) {
+            const playerKey = `${parsed.clubCode}:${playerSlug}`;
+            const playerValue = await kv.get(playerKey);
+            
+            if (playerValue) {
+              try {
+                playerData = JSON.parse(playerValue) as Record<string, unknown>;
+              } catch (e) {
+                console.error(`Failed to parse player ${playerKey}:`, e);
               }
             }
           }
@@ -437,33 +448,33 @@ export async function getUserCard(
     let playerData: Record<string, unknown> | null = null;
     
     if (parsed) {
-      // 1. Prova con lo slug dalla key (potrebbe essere vecchio)
-      const playerKeyFromSlug = `${parsed.clubCode}:${parsed.playerSlug}`;
-      const playerValueFromSlug = await kv.get(playerKeyFromSlug);
+      // Estrai playerSlug corretto per il match con il database
+      // Logica: se card.slug contiene data di nascita, estrai lo slug corretto
+      //         altrimenti usa card.playerSlug
+      let playerSlug: string;
       
-      if (playerValueFromSlug) {
-        try {
-          playerData = JSON.parse(playerValueFromSlug) as Record<string, unknown>;
-        } catch (e) {
-          console.error(`Failed to parse player ${playerKeyFromSlug}:`, e);
-        }
+      if (cardData.slug && /\d{4}-\d{2}-\d{2}/.test(cardData.slug as string)) {
+        // Caso con data di nascita: estrai lo slug corretto dal cardSlug
+        // es: "andrew-thomas-1998-09-01-2025-limited-211" → "andrew-thomas-1998-09-01"
+        playerSlug = extractCorrectPlayerSlug(
+          cardData.slug as string,
+          cardData.playerSlug as string
+        );
+      } else {
+        // Caso senza data: usa playerSlug direttamente
+        // es: "oumar-solet-bomawoko-2021-limited-246" → "oumar-solet-bomawoko"
+        playerSlug = cardData.playerSlug as string;
       }
       
-      // 2. Se non trovato, estrai lo slug corretto dalla card
-      if (!playerData && cardData.slug && typeof cardData.slug === 'string') {
-        const correctSlug = extractCorrectPlayerSlug(
-          cardData.slug,
-          cardData.playerSlug as string || parsed.playerSlug
-        );
-        if (correctSlug !== parsed.playerSlug) {
-          const playerKeyFromCardSlug = `${parsed.clubCode}:${correctSlug}`;
-          const playerValueFromCardSlug = await kv.get(playerKeyFromCardSlug);
-          if (playerValueFromCardSlug) {
-            try {
-              playerData = JSON.parse(playerValueFromCardSlug) as Record<string, unknown>;
-            } catch (e) {
-              console.error(`Failed to parse player ${playerKeyFromCardSlug}:`, e);
-            }
+      if (playerSlug) {
+        const playerKey = `${parsed.clubCode}:${playerSlug}`;
+        const playerValue = await kv.get(playerKey);
+        
+        if (playerValue) {
+          try {
+            playerData = JSON.parse(playerValue) as Record<string, unknown>;
+          } catch (e) {
+            console.error(`Failed to parse player ${playerKey}:`, e);
           }
         }
       }

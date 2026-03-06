@@ -10,8 +10,13 @@ API per la gestione dei dati giocatori MLS e delle carte utente Sorare.
 
 Gestione delle carte possedute dagli utenti. Ogni carta è salvata in Cloudflare KV con formato chiave:
 ```
-USR_{USER_ID}:{CLUB_CODE}:{PLAYER_SLUG}
+USR_{USER_ID}:{CLUB_CODE}:{CARD_SLUG}
 ```
+
+**Note sulla chiave:**
+- `CARD_SLUG` è lo slug completo della carta (es: `matteo-meisl-2023-limited-169`)
+- Questo permette di avere multiple carte dello stesso giocatore (stagioni/rarità diverse)
+- Esempio: un utente può avere sia `matteo-meisl-2023-limited-169` che `matteo-meisl-2024-limited-18`
 
 ### Riepilogo Endpoints
 
@@ -19,7 +24,7 @@ USR_{USER_ID}:{CLUB_CODE}:{PLAYER_SLUG}
 |----------|--------|-------------|
 | `/api/cards` | POST | Salva singola carta |
 | `/api/cards/batch` | POST | Salva batch (max 500) |
-| `/api/cards/single?key=xxx` | GET | Recupera singola carta per key |
+| `/api/cards/single?userId=&clubCode=&slug=` | GET | Recupera singola carta |
 | `/api/cards?userId=xxx` | GET | Lista carte |
 | `/api/cards/with-players?userId=xxx` | GET | Lista carte + dati giocatore |
 | `/api/cards/count?userId=xxx` | GET | Conta carte |
@@ -40,7 +45,8 @@ Salva una singola carta utente nel KV store.
   "userId": "string",        // Identificativo utente (richiesto)
   "clubCode": "string",      // Codice club 3 lettere, es: "ATL" (richiesto)
   "playerSlug": "string",    // Slug giocatore Sorare (richiesto)
-  "cardData": {              // Dati aggiuntivi della carta (opzionale)
+  "cardData": {              // Dati aggiuntivi della carta (richiesto)
+    "slug": "string",        // Slug completo della carta (richiesto, es: "matteo-meisl-2023-limited-169")
     "rarity": "limited|rare|super_rare|unique",
     "serialNumber": 42,
     "purchasePrice": 0.05,
@@ -54,7 +60,7 @@ Salva una singola carta utente nel KV store.
 ```json
 {
   "success": true,
-  "key": "USR_user123:ATL:adrian-simon-gill"
+  "key": "USR_user123:ADM:matteo-meisl-2023-limited-169"
 }
 ```
 
@@ -73,11 +79,12 @@ curl -X POST https://sorare-mls-sync.loziobiz.workers.dev/api/cards \
   -H "Content-Type: application/json" \
   -d '{
     "userId": "user123",
-    "clubCode": "ATL",
-    "playerSlug": "adrian-simon-gill",
+    "clubCode": "ADM",
+    "playerSlug": "matteo-meisl",
     "cardData": {
+      "slug": "matteo-meisl-2023-limited-169",
       "rarity": "limited",
-      "serialNumber": 42,
+      "serialNumber": 169,
       "purchasePrice": 0.05
     }
   }'
@@ -115,13 +122,13 @@ Salva multiple carte in un'unica chiamata. Utile per importare collezioni di cen
 {
   "success": true,
   "summary": {
-    "total": 5,
-    "success": 5,
+    "total": 2,
+    "success": 2,
     "errors": 0
   },
   "results": [
-    { "success": true, "key": "USR_user123:MIA:lionel-messi" },
-    { "success": true, "key": "USR_user123:LAFC:denis-bouanga" }
+    { "success": true, "key": "USR_user123:MIA:lionel-messi-2024-super_rare-7" },
+    { "success": true, "key": "USR_user123:LAFC:denis-bouanga-2023-rare-123" }
   ]
 }
 ```
@@ -136,13 +143,21 @@ curl -X POST https://sorare-mls-sync.loziobiz.workers.dev/api/cards/batch \
         "userId": "user123",
         "clubCode": "MIA",
         "playerSlug": "lionel-messi",
-        "cardData": { "rarity": "super_rare", "serialNumber": 7 }
+        "cardData": { 
+          "slug": "lionel-messi-2024-super_rare-7",
+          "rarity": "super_rare", 
+          "serialNumber": 7 
+        }
       },
       {
         "userId": "user123",
         "clubCode": "LAFC",
         "playerSlug": "denis-bouanga",
-        "cardData": { "rarity": "rare", "serialNumber": 123 }
+        "cardData": { 
+          "slug": "denis-bouanga-2023-rare-123",
+          "rarity": "rare", 
+          "serialNumber": 123 
+        }
       }
     ]
   }'
@@ -152,30 +167,32 @@ curl -X POST https://sorare-mls-sync.loziobiz.workers.dev/api/cards/batch \
 
 #### 3. Recupera singola carta
 
-**GET** `/api/cards/single?key={key}`
+**GET** `/api/cards/single?userId={userId}&clubCode={clubCode}&slug={slug}`
 
-Recupera una singola carta tramite la sua chiave KV completa, con dati giocatore innestati.
+Recupera una singola carta tramite userId, clubCode e slug della carta, con dati giocatore innestati.
 
 **Nota sui playerSlug**: Se il `playerSlug` nella carta non corrisponde a quello nel database (es. `andrew-thomas` vs `andrew-thomas-1998-09-01`), il sistema tenta automaticamente di estrarre lo slug corretto dallo slug completo della carta (formato: `{player-slug}-{anno}-{rarity}-{serial}`).
 
 **Query Parameters:**
 | Parametro | Tipo | Obbligatorio | Descrizione |
 |-----------|------|--------------|-------------|
-| `key` | string | Sì | Key KV completa della carta (es: `USR_user123:ATL:adrian-simon-gill`) |
+| `userId` | string | Sì | ID utente |
+| `clubCode` | string | Sì | Codice club 3 lettere |
+| `slug` | string | Sì | Slug completo della carta (es: `matteo-meisl-2023-limited-169`) |
 
 **Response Success (200):**
 ```json
 {
   "success": true,
   "card": {
-    "key": "USR_user123:SEA:nicolas-dubersarsky",
+    "key": "USR_user123:ADM:matteo-meisl-2023-limited-169",
     "value": {
       "rarity": "limited",
-      "serialNumber": 42,
+      "serialNumber": 169,
       "userId": "user123",
-      "clubCode": "SEA",
-      "playerSlug": "nicolas-dubersarsky",
-      "slug": "nicolas-dubersarsky-2025-limited-42",
+      "clubCode": "ADM",
+      "playerSlug": "matteo-meisl",
+      "slug": "matteo-meisl-2023-limited-169",
       "leagueName": "Major League Soccer",
       "so5Scores": [
         {
@@ -187,9 +204,9 @@ Recupera una singola carta tramite la sua chiave KV completa, con dati giocatore
       "savedAt": "2026-03-05T15:44:09.357Z"
     },
     "playerData": {
-      "slug": "nicolas-dubersarsky",
-      "name": "Nicolás Dubersarsky",
-      "clubCode": "SEA",
+      "slug": "matteo-meisl",
+      "name": "Matteo Meisl",
+      "clubCode": "ADM",
       "position": "Midfielder",
       "stats": {
         "aaAnalysis": {
@@ -215,7 +232,7 @@ Recupera una singola carta tramite la sua chiave KV completa, con dati giocatore
 
 **Esempio:**
 ```bash
-curl "https://sorare-mls-sync.loziobiz.workers.dev/api/cards/single?key=USR_user123:ATL:adrian-simon-gill"
+curl "https://sorare-mls-sync.loziobiz.workers.dev/api/cards/single?userId=user123&clubCode=ADM&slug=matteo-meisl-2023-limited-169"
 ```
 
 ---
@@ -238,24 +255,40 @@ Recupera tutte le carte di un utente, con opzioni di filtro e paginazione.
 ```json
 {
   "userId": "user123",
-  "count": 6,
+  "count": 3,
   "complete": true,
   "cursor": "...",
   "cards": [
     {
-      "key": "USR_user123:SEA:nicolas-dubersarsky",
+      "key": "USR_user123:ADM:matteo-meisl-2023-limited-169",
       "value": {
         "rarity": "limited",
-        "serialNumber": 211,
+        "serialNumber": 169,
         "userId": "user123",
-        "clubCode": "SEA",
-        "playerSlug": "nicolas-dubersarsky",
-        "slug": "nicolas-dubersarsky-2025-limited-211",
+        "clubCode": "ADM",
+        "playerSlug": "matteo-meisl",
+        "slug": "matteo-meisl-2023-limited-169",
         "leagueName": "Major League Soccer",
         "so5Scores": [
           { "score": 72.5, "projectedScore": 75.0, "scoreStatus": "SCORED" }
         ],
         "savedAt": "2026-03-05T15:44:09.357Z"
+      }
+    },
+    {
+      "key": "USR_user123:ADM:matteo-meisl-2024-limited-18",
+      "value": {
+        "rarity": "limited",
+        "serialNumber": 18,
+        "userId": "user123",
+        "clubCode": "ADM",
+        "playerSlug": "matteo-meisl",
+        "slug": "matteo-meisl-2024-limited-18",
+        "leagueName": "Major League Soccer",
+        "so5Scores": [
+          { "score": 68.3, "projectedScore": 70.0, "scoreStatus": "SCORED" }
+        ],
+        "savedAt": "2026-03-05T16:20:15.123Z"
       }
     }
   ]
@@ -301,14 +334,14 @@ Recupera tutte le carte di un utente con i dati del giocatore corrispondente inn
   "complete": true,
   "cards": [
     {
-      "key": "USR_user123:SEA:nicolas-dubersarsky",
+      "key": "USR_user123:ADM:matteo-meisl-2023-limited-169",
       "value": {
         "rarity": "limited",
-        "serialNumber": 211,
+        "serialNumber": 169,
         "userId": "user123",
-        "clubCode": "SEA",
-        "playerSlug": "nicolas-dubersarsky",
-        "slug": "nicolas-dubersarsky-2025-limited-211",
+        "clubCode": "ADM",
+        "playerSlug": "matteo-meisl",
+        "slug": "matteo-meisl-2023-limited-169",
         "leagueName": "Major League Soccer",
         "so5Scores": [
           { "score": 72.5, "projectedScore": 75.0, "scoreStatus": "SCORED" }
@@ -316,11 +349,11 @@ Recupera tutte le carte di un utente con i dati del giocatore corrispondente inn
         "savedAt": "2026-03-05T16:02:21.547Z"
       },
       "playerData": {
-        "slug": "nicolas-dubersarsky",
-        "name": "Nicolás Dubersarsky",
-        "clubSlug": "seattle-sounders",
-        "clubName": "Seattle Sounders",
-        "clubCode": "SEA",
+        "slug": "matteo-meisl",
+        "name": "Matteo Meisl",
+        "clubSlug": "atlanta-united",
+        "clubName": "Atlanta United FC",
+        "clubCode": "ADM",
         "position": "Midfielder",
         "stats": {
           "aaAnalysis": {
@@ -396,7 +429,7 @@ Elimina una carta specifica dal KV store.
 ```json
 {
   "success": true,
-  "key": "USR_user123:ATL:adrian-simon-gill"
+  "key": "USR_user123:ADM:matteo-meisl-2023-limited-169"
 }
 ```
 
@@ -411,7 +444,7 @@ Elimina una carta specifica dal KV store.
 
 **Esempio cURL:**
 ```bash
-curl -X DELETE "https://sorare-mls-sync.loziobiz.workers.dev/api/cards/USR_user123:ATL:adrian-simon-gill"
+curl -X DELETE "https://sorare-mls-sync.loziobiz.workers.dev/api/cards/USR_user123:ADM:matteo-meisl-2023-limited-169"
 ```
 
 ---
@@ -493,12 +526,13 @@ interface So5Score {
 ### Key Format
 
 ```
-USR_{USER_ID}:{CLUB_CODE}:{PLAYER_SLUG}
+USR_{USER_ID}:{CLUB_CODE}:{CARD_SLUG}
 
 Esempi:
-- USR_user123:ATL:adrian-simon-gill
-- USR_user456:MIA:lionel-messi
-- USR_user789:LAFC:denis-bouanga
+- USR_user123:ADM:matteo-meisl-2023-limited-169
+- USR_user123:ADM:matteo-meisl-2024-limited-18
+- USR_user456:MIA:lionel-messi-2024-super_rare-7
+- USR_user789:LAFC:denis-bouanga-2023-rare-123
 ```
 
 ---
@@ -567,7 +601,7 @@ Quando si usa l'endpoint `/api/cards/with-players`, il campo `playerData.stats.o
 | Codice | Errore | Causa |
 |--------|--------|-------|
 | 400 | Missing required parameter: userId | Parametro `userId` mancante |
-| 400 | Invalid request. Required: userId, clubCode, playerSlug | Body JSON incompleto |
+| 400 | Invalid request. Required: userId, clubCode, playerSlug, cardData.slug | Body JSON incompleto o cardData.slug mancante |
 | 400 | Invalid card key format | DELETE con chiave malformata |
 | 400 | Batch too large. Max 500 cards per request | Batch > 500 carte |
 | 500 | Various KV errors | Errore Cloudflare KV |

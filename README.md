@@ -65,6 +65,7 @@ pnpm deploy   # Deploy OpenNext Cloudflare
 │   └── ...
 ├── public/                  # Static assets
 ├── dist/                    # Build output
+├── cli/                    # CF Backend Subproject (ignore it!)
 └── vite.config.ts          # Vite configuration
 ```
 
@@ -79,10 +80,53 @@ L'autenticazione è gestita tramite **server functions** di TanStack Start con c
 
 Il deploy avviene su **Cloudflare Workers** utilizzando Wrangler:
 
-1. Configura le tue credenziali Cloudflare
-2. Esegui `pnpm deploy:start`
+### Autenticazione
+
+L'autenticazione con Cloudflare avviene tramite **API Token** (configurato in `.dev.vars`):
+
+```bash
+# .dev.vars
+CLOUDFLARE_API_TOKEN=tWfjNI43sJ4Xa_R7sbYVhYtf8UoGuoQ42Zg6Xcnd
+```
+
+Per generare un nuovo token:
+1. Vai su [Cloudflare Dashboard](https://dash.cloudflare.com/profile/api-tokens)
+2. Crea un token con i permessi:
+   - `Zone:Read`
+   - `Cloudflare Pages:Edit`
+   - `Account:Read`
+   - `Workers Scripts:Edit`
+
+### Deploy
+
+```bash
+# Deploy su Cloudflare Workers (usa automaticamente il token da .dev.vars)
+pnpm wrangler deploy
+
+# Oppure esporta manualmente il token e usa il comando standard
+export CLOUDFLARE_API_TOKEN=$(grep CLOUDFLARE_API_TOKEN .dev.vars | cut -d= -f2)
+pnpm deploy
+```
 
 La configurazione è in `wrangler.jsonc`.
+
+## 📊 Architettura Dati
+
+L'applicazione utilizza **Cloudflare KV** come storage primario. Le carte vengono scaricate dall'API Sorare solo tramite il pulsante "Aggiorna carte", poi salvate nel KV e lette da tutte le viste.
+
+📖 [Documentazione completa](./docs/architecture.md)
+
+### Flusso principale
+
+1. **Login** → Salva JWT token (cookie) e email (localStorage)
+2. **Aggiorna carte** → Scarica da Sorare → Salva su KV
+3. **Dashboard/Lineup** → Legge sempre dal KV (veloce, no rate limit)
+
+### Funzionalità
+
+- **Dashboard**: Visualizzazione carte con statistiche e next game
+- **Lineup Builder**: Creazione formazioni con filtri avanzati
+- **Saved Lineups**: Gestione formazioni salvate con drag & drop
 
 ## 📝 Note sulla migrazione
 
