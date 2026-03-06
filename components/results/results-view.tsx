@@ -20,6 +20,8 @@ interface FixtureOption {
   slug: string;
   gameWeek: number;
   displayName: string;
+  startDate?: string;
+  endDate?: string;
 }
 
 async function fetchSo5Fixtures(): Promise<FixtureOption[]> {
@@ -40,10 +42,12 @@ async function fetchSo5Fixtures(): Promise<FixtureOption[]> {
   }
 
   return result.data.so5.allSo5Fixtures.nodes.map(
-    (node: { slug: string; gameWeek: number; displayName: string }) => ({
+    (node: { slug: string; gameWeek: number; displayName: string; startDate?: string; endDate?: string }) => ({
       slug: node.slug,
       gameWeek: node.gameWeek,
       displayName: node.displayName,
+      startDate: node.startDate,
+      endDate: node.endDate,
     })
   );
 }
@@ -211,15 +215,45 @@ export function ResultsView({ initialGameWeek }: ResultsViewProps) {
   const [isLoadingResults, setIsLoadingResults] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  // Trova la game week corrente basata sulla data
+  const findCurrentGameWeek = (fixturesData: FixtureOption[]): FixtureOption | null => {
+    const now = new Date();
+    
+    // Cerca una fixture dove la data corrente è compresa tra startDate e endDate
+    const current = fixturesData.find((f) => {
+      if (!f.startDate || !f.endDate) return false;
+      const start = new Date(f.startDate);
+      const end = new Date(f.endDate);
+      return now >= start && now <= end;
+    });
+    
+    if (current) return current;
+    
+    // Se non siamo in nessuna GW attiva, trova la più vicina
+    // (la più recente conclusa o la prossima che inizia)
+    const sorted = [...fixturesData].sort((a, b) => b.gameWeek - a.gameWeek);
+    
+    // Cerca la prima fixture che finisce dopo adesso (prossima)
+    const next = sorted.find((f) => f.endDate && new Date(f.endDate) > now);
+    if (next) return next;
+    
+    // Altrimenti prendi la più recente (quella con gameWeek più alto)
+    return sorted[0] ?? null;
+  };
+
   // Carica lista fixtures
   useEffect(() => {
     fetchSo5Fixtures()
       .then((data) => {
         setFixtures(data);
-        // Seleziona la GW iniziale o la più recente
-        const initial = initialGameWeek
-          ? data.find((f) => f.gameWeek === initialGameWeek)
-          : data.sort((a, b) => b.gameWeek - a.gameWeek)[0];
+        // Seleziona la GW iniziale o quella corrente
+        let initial: FixtureOption | null = null;
+        if (initialGameWeek) {
+          initial = data.find((f) => f.gameWeek === initialGameWeek) ?? null;
+        }
+        if (!initial) {
+          initial = findCurrentGameWeek(data);
+        }
         if (initial) {
           setSelectedSlug(initial.slug);
         }
@@ -292,6 +326,11 @@ export function ResultsView({ initialGameWeek }: ResultsViewProps) {
         >
           <option value="">Seleziona Game Week</option>
           {fixtures
+            .filter((f) => {
+              // Nascondi GW future (quelle che iniziano dopo oggi)
+              if (!f.startDate) return true;
+              return new Date(f.startDate) <= new Date();
+            })
             .sort((a, b) => b.gameWeek - a.gameWeek)
             .map((f) => (
               <option key={f.slug} value={f.slug}>
