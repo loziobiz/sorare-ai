@@ -17,9 +17,9 @@ export function AppPageShell({
 }: AppPageShellProps) {
   const variantClasses = {
     default:
-      "min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 p-4 pt-4 md:p-6 md:pt-6 lg:p-8 lg:pt-8 dark:from-slate-900 dark:to-slate-800",
-    wide: "min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 p-4 pt-4 md:p-6 md:pt-6 dark:from-slate-900 dark:to-slate-800",
-    auth: "min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 p-4 dark:from-slate-900 dark:to-slate-800",
+      "min-h-screen bg-[#131317] text-slate-200 p-4 pt-4 md:p-6 md:pt-6 lg:p-8 lg:pt-8",
+    wide: "min-h-screen bg-[#131317] text-slate-200 p-4 pt-4 md:p-6 md:pt-6",
+    auth: "min-h-screen bg-[#131317] text-slate-200 p-4",
   };
 
   return (

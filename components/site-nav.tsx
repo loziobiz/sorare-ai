@@ -41,24 +41,24 @@ export function SiteNav({ className }: SiteNavProps) {
   }, []);
 
   const navItems: NavItem[] = [
-    { href: "/cards", label: "Le mie Carte", icon: CreditCard },
-    { href: "/lineup", label: "Crea Formazione", icon: Layers },
+    { href: "/cards", label: "My Cards", icon: CreditCard },
+    { href: "/lineup", label: "Create Team", icon: Layers },
     {
       href: "/saved-lineups",
       label:
         savedLineupsCount !== null
-          ? `Formazioni Salvate (${savedLineupsCount})`
-          : "Formazioni Salvate",
+          ? `Saved Teams (${savedLineupsCount})`
+          : "Saved Teams",
       icon: Save,
     },
-    { href: "/results", label: "Risultati", icon: Trophy },
-    { href: "/settings", label: "Impostazioni", icon: Settings },
+    { href: "/results", label: "Results", icon: Trophy },
+    { href: "/settings", label: "Settings", icon: Settings },
   ];
 
   return (
     <nav
       className={cn(
-        "flex items-center gap-2 border-slate-200 border-b pb-0",
+        "flex w-full items-center justify-center gap-1 border-white/5 border-b bg-[#1A1B23] px-4",
         className
       )}
     >
@@ -69,15 +69,15 @@ export function SiteNav({ className }: SiteNavProps) {
         return (
           <Link
             className={cn(
-              "flex items-center gap-2 rounded-lg px-4 py-2 font-medium text-sm transition-colors",
+              "flex flex-col items-center justify-center gap-1 border-t-2 px-6 py-3 font-medium text-xs transition-colors sm:text-sm",
               isActive
-                ? "bg-violet-100 text-violet-700"
-                : "text-slate-600 hover:bg-slate-100 hover:text-slate-900"
+                ? "border-violet-500 text-violet-400"
+                : "border-transparent text-slate-400 hover:text-slate-200"
             )}
             key={item.href}
             to={item.href}
           >
-            <Icon className="h-4 w-4" />
+            <Icon className="h-5 w-5" />
             {item.label}
           </Link>
         );

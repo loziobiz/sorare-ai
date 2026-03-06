@@ -16,21 +16,21 @@ function getL10BadgeColor(l10: number | undefined): {
   text: string;
 } {
   if (!l10 || l10 === 0) {
-    return { bg: "bg-slate-100", text: "text-slate-500" };
+    return { bg: "bg-white/10", text: "text-slate-400" };
   }
   if (l10 <= 30) {
-    return { bg: "bg-rose-100", text: "text-rose-700" };
+    return { bg: "bg-red-500/20", text: "text-red-400" };
   }
   if (l10 <= 40) {
-    return { bg: "bg-orange-100", text: "text-orange-700" };
+    return { bg: "bg-orange-500/20", text: "text-orange-400" };
   }
   if (l10 <= 59) {
-    return { bg: "bg-lime-100", text: "text-lime-700" };
+    return { bg: "bg-lime-500/20", text: "text-lime-400" };
   }
   if (l10 <= 79) {
-    return { bg: "bg-emerald-100", text: "text-emerald-700" };
+    return { bg: "bg-emerald-500/20", text: "text-emerald-400" };
   }
-  return { bg: "bg-cyan-100", text: "text-cyan-700" };
+  return { bg: "bg-cyan-500/20", text: "text-cyan-400" };
 }
 
 interface PitchSlotProps {
@@ -94,11 +94,11 @@ export function PitchSlot({ label, card, isActive, onClick }: PitchSlotProps) {
               );
               let colorClass = "";
               if (starterOdds < 50) {
-                colorClass = "bg-red-100 text-red-700";
+                colorClass = "bg-red-500/20 text-red-400";
               } else if (starterOdds <= 70) {
-                colorClass = "bg-amber-100 text-amber-700";
+                colorClass = "bg-orange-500/20 text-orange-400";
               } else {
-                colorClass = "bg-emerald-100 text-emerald-700";
+                colorClass = "bg-emerald-500/20 text-emerald-400";
               }
               return (
                 <span

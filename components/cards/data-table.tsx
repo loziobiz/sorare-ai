@@ -87,18 +87,22 @@ export function DataTable<TData>({
   }
 
   return (
-    <div className="overflow-x-auto rounded-md border">
+    <div className="overflow-x-auto rounded-xl border border-white/5 bg-[#1A1B23]">
       <Table className="table-fixed">
-        <TableHeader className="sticky top-0 z-10 bg-white shadow-sm">
+        <TableHeader className="sticky top-0 z-10 border-white/5 border-b bg-[#1A1B23]">
           {table.getHeaderGroups().map((headerGroup) => (
-            <TableRow className="hover:bg-muted/50" key={headerGroup.id}>
+            <TableRow
+              className="border-white/5 hover:bg-white/5"
+              key={headerGroup.id}
+            >
               {headerGroup.headers.map((header) => {
                 const isSortable = header.column.getCanSort();
                 return (
                   <TableHead
                     className={cn(
+                      "font-semibold text-slate-400 text-xs uppercase tracking-wider",
                       isSortable &&
-                        "cursor-pointer select-none hover:bg-muted/80"
+                        "cursor-pointer select-none hover:bg-white/5 hover:text-slate-300"
                     )}
                     key={header.id}
                     onClick={
@@ -125,7 +129,8 @@ export function DataTable<TData>({
           {table.getRowModel().rows.map((row) => (
             <TableRow
               className={cn(
-                onRowClick && !disabled && "cursor-pointer hover:bg-muted/50",
+                "border-white/5 transition-colors",
+                onRowClick && !disabled && "cursor-pointer hover:bg-white/5",
                 disabled && "cursor-not-allowed opacity-50"
               )}
               key={row.id}
@@ -137,6 +142,7 @@ export function DataTable<TData>({
             >
               {row.getVisibleCells().map((cell) => (
                 <TableCell
+                  className="py-3 text-slate-200 text-sm"
                   key={cell.id}
                   style={{ width: cell.column.getSize() }}
                 >

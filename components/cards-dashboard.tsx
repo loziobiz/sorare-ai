@@ -71,7 +71,7 @@ export function CardsDashboard() {
   return (
     <div className="flex h-[calc(100vh-2rem)] flex-col">
       {/* Header e filtri sticky */}
-      <div className="sticky top-0 z-20 bg-white pb-2">
+      <div className="sticky top-0 z-20 bg-transparent pb-2">
         <div className="mt-6">
           <DashboardHeader
             isLoading={isLoading}
@@ -120,7 +120,7 @@ export function CardsDashboard() {
         )}
 
         <div className="mt-6 flex items-center justify-between">
-          <h2 className="font-bold text-2xl">
+          <h2 className="font-bold text-2xl text-slate-200">
             Your Cards ({filteredCards.length})
           </h2>
           <ViewToggle onViewModeChange={setViewMode} viewMode={viewMode} />

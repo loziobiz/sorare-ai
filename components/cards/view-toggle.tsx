@@ -15,19 +15,21 @@ export function ViewToggle({ viewMode, onViewModeChange }: ViewToggleProps) {
     <div className="flex gap-2">
       <Button
         aria-label="Vista griglia"
+        className={`border-white/10 ${viewMode === "grid" ? "bg-white/20 text-white" : "bg-white/5 text-slate-400 hover:bg-white/10 hover:text-slate-200"}`}
         onClick={() => onViewModeChange("grid")}
         size="icon-sm"
         title="Vista griglia"
-        variant={viewMode === "grid" ? "default" : "outline"}
+        variant="outline"
       >
         <Grid />
       </Button>
       <Button
         aria-label="Vista lista"
+        className={`border-white/10 ${viewMode === "list" ? "bg-white/20 text-white" : "bg-white/5 text-slate-400 hover:bg-white/10 hover:text-slate-200"}`}
         onClick={() => onViewModeChange("list")}
         size="icon-sm"
         title="Vista lista"
-        variant={viewMode === "list" ? "default" : "outline"}
+        variant="outline"
       >
         <List />
       </Button>

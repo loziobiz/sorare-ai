@@ -153,7 +153,7 @@ async function handleFetch(
 
       const repository = createKVRepository(env.SORARE_AI_DATA);
       const player = await repository.findBySlug(slug);
-      
+
       return json(
         {
           found: !!player,
@@ -448,9 +448,11 @@ async function handleFetch(
       const clubCode = url.searchParams.get("clubCode");
       const slug = url.searchParams.get("slug");
 
-      if (!userId || !clubCode || !slug) {
+      if (!(userId && clubCode && slug)) {
         return json(
-          { error: "Missing required query parameters: userId, clubCode, slug" },
+          {
+            error: "Missing required query parameters: userId, clubCode, slug",
+          },
           headers,
           400
         );
@@ -473,7 +475,10 @@ async function handleFetch(
         );
       }
 
-      const invalidatedUrls = await invalidateUserCache(env.SORARE_AI_DATA, userId);
+      const invalidatedUrls = await invalidateUserCache(
+        env.SORARE_AI_DATA,
+        userId
+      );
 
       return json(
         {
@@ -529,7 +534,7 @@ const CACHE_CONTROL_HEADER = `public, max-age=${CACHE_TTL_SECONDS}`;
 function createCacheKey(request: Request): Request {
   const url = new URL(request.url);
   // Crea una request con SOLO l'URL e metodo GET, nessun header
-  return new Request(url.toString(), { method: 'GET' });
+  return new Request(url.toString(), { method: "GET" });
 }
 
 /**
@@ -552,7 +557,7 @@ async function getCachedOrFetch(
       statusText: cached.statusText,
       headers: {
         ...Object.fromEntries(cached.headers.entries()),
-        'X-Cache-Status': 'HIT',
+        "X-Cache-Status": "HIT",
       },
     });
     return responseWithHeader;
@@ -570,14 +575,14 @@ async function getCachedOrFetch(
     // Se mettiamo Cache-Control, la CDN mette in cache e l'invalidazione non funziona
     await cache.put(cacheKey, responseToCache);
     console.log(`[CACHE MISS] ${request.url} - Saved to cache`);
-    
+
     // Aggiungi header di debug
     return new Response(response.body, {
       status: response.status,
       statusText: response.statusText,
       headers: {
         ...Object.fromEntries(response.headers.entries()),
-        'X-Cache-Status': 'MISS',
+        "X-Cache-Status": "MISS",
       },
     });
   }
@@ -597,11 +602,11 @@ async function invalidateUserCache(
 
   // Invalida SOLO l'URL con with-players senza filtri
   const urlString = `https://sorare-mls-sync.loziobiz.workers.dev/api/cards/with-players?userId=${userId}`;
-  
+
   // Usa la STESSA logica di createCacheKey per garantire match esatto
   // Normalizza l'URL attraverso URL class come fa createCacheKey
   const url = new URL(urlString);
-  const cacheKey = new Request(url.toString(), { method: 'GET' });
+  const cacheKey = new Request(url.toString(), { method: "GET" });
 
   try {
     const deleted = await cache.delete(cacheKey);

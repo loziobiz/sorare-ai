@@ -19,13 +19,13 @@ export function PitchField({
   const isProGas = slotCount === 7;
 
   return (
-    <div className="relative flex aspect-[21/31] flex-col overflow-hidden rounded-xl bg-gradient-to-b from-emerald-600 to-emerald-700 shadow-lg">
+    <div className="relative flex aspect-[21/31] flex-col overflow-hidden rounded-xl border border-white/5 bg-[#1A1B23] shadow-2xl shadow-violet-900/20">
       {/* Linee del campo */}
-      <div className="absolute inset-5 rounded-lg border-2 border-white/30" />
-      <div className="absolute top-1/2 right-5 left-5 h-0.5 -translate-y-1/2 bg-white/30" />
-      <div className="absolute top-1/2 left-1/2 h-28 w-28 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 border-white/30" />
-      <div className="absolute bottom-5 left-1/2 h-24 w-40 -translate-x-1/2 border-2 border-white/30 border-b-0" />
-      <div className="absolute top-5 left-1/2 h-24 w-40 -translate-x-1/2 border-2 border-white/30 border-t-0" />
+      <div className="absolute inset-5 rounded-lg border-2 border-emerald-500/20" />
+      <div className="absolute top-1/2 right-5 left-5 h-0.5 -translate-y-1/2 bg-emerald-500/20" />
+      <div className="absolute top-1/2 left-1/2 h-28 w-28 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 border-emerald-500/20" />
+      <div className="absolute bottom-5 left-1/2 h-24 w-40 -translate-x-1/2 border-2 border-emerald-500/20 border-b-0" />
+      <div className="absolute top-5 left-1/2 h-24 w-40 -translate-x-1/2 border-2 border-emerald-500/20 border-t-0" />
 
       {/* Slot posizioni */}
       <div className="relative z-10 flex h-full flex-col justify-between gap-2 px-4 py-3">

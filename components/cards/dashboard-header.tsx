@@ -46,13 +46,22 @@ export function DashboardHeader({
         </p>
       </div>
       <div className="flex gap-2">
-        <Button disabled={isDisabled} onClick={onSync} variant="outline">
+        <Button
+          className="border-white/10 bg-white/5 text-slate-200 hover:bg-white/10 hover:text-white"
+          disabled={isDisabled}
+          onClick={onSync}
+          variant="outline"
+        >
           <RefreshCw
             className={`mr-2 h-4 w-4 ${isSyncing ? "animate-spin" : ""}`}
           />
           Aggiorna carte
         </Button>
-        <Button onClick={handleLogout} variant="outline">
+        <Button
+          className="border-white/10 bg-white/5 text-slate-200 hover:bg-white/10 hover:text-white"
+          onClick={handleLogout}
+          variant="outline"
+        >
           <LogOut className="mr-2 h-4 w-4" />
           Logout
         </Button>

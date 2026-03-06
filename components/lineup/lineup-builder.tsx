@@ -666,7 +666,7 @@ export function LineupBuilder() {
           {/* Nome formazione e CAP L10 */}
           <div className="mb-3 space-y-2">
             <Input
-              className="h-9"
+              className="h-9 border-white/10 bg-white/5 text-white placeholder:text-slate-500"
               id="formation-name"
               onChange={(e) => setFormationName(e.target.value)}
               placeholder={`Nome formazione (default: ${gameModeConfig.label})`}
@@ -674,7 +674,7 @@ export function LineupBuilder() {
             />
             <div className="flex items-center gap-3">
               <select
-                className="flex h-9 flex-1 rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                className="flex h-9 flex-1 rounded-md border border-white/10 bg-[#1A1B23] px-3 py-1 text-slate-200 text-sm shadow-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                 id="cap-select"
                 onChange={(e) => {
                   const newMode = e.target.value as GameMode;
@@ -760,10 +760,10 @@ export function LineupBuilder() {
         {/* Sezione destra - Collezione carte */}
         <div className="flex max-h-[calc(100vh-6rem)] max-w-[1000px] flex-1 flex-col">
           {/* Header e filtri sticky */}
-          <div className="sticky top-0 z-20 bg-white pb-2">
+          <div className="sticky top-0 z-20 bg-transparent pb-2">
             {/* Header selezione */}
             <div className="mb-4 flex items-center justify-between">
-              <h2 className="font-bold text-slate-800 text-xl">
+              <h2 className="font-bold text-slate-200 text-xl">
                 Seleziona{" "}
                 {activeSlot ? (
                   <span className="text-violet-600">{activeSlot}</span>
@@ -783,8 +783,8 @@ export function LineupBuilder() {
                   className={cn(
                     "flex h-9 rounded-md border px-3 py-1 text-sm shadow-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
                     gameModeConfig.requiredLeague
-                      ? "border-amber-300 bg-amber-50 text-amber-800"
-                      : "border-input bg-background"
+                      ? "border-amber-900/30 bg-amber-950/30 text-amber-500"
+                      : "border-white/10 bg-[#1A1B23] text-slate-200"
                   )}
                   disabled={!!gameModeConfig.requiredLeague}
                   id="league-filter"
@@ -819,7 +819,7 @@ export function LineupBuilder() {
                   Rarità:
                 </label>
                 <select
-                  className="flex h-9 rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                  className="flex h-9 rounded-md border border-white/10 bg-[#1A1B23] px-3 py-1 text-slate-200 text-sm shadow-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                   id="rarity-filter"
                   onChange={(e) =>
                     setRarityFilter(e.target.value as RarityFilter)
@@ -906,7 +906,7 @@ export function LineupBuilder() {
                     L10 Max:
                   </label>
                   <Input
-                    className="h-9 w-16 rounded-md border-slate-200 bg-slate-50 text-center text-slate-700"
+                    className="h-9 w-16 rounded-md border-white/10 bg-white/5 text-center text-slate-200"
                     id="l10-min-filter"
                     max="99"
                     min="0"
@@ -928,28 +928,28 @@ export function LineupBuilder() {
                 </div>
                 <div className="flex justify-center gap-1">
                   <button
-                    className="rounded bg-slate-100 px-2 py-0.5 font-medium text-[10px] text-slate-600 hover:bg-slate-200"
+                    className="rounded bg-white/5 px-2 py-0.5 font-medium text-[10px] text-slate-400 hover:bg-white/10 hover:text-slate-200"
                     onClick={() => setL10MinFilter("40")}
                     type="button"
                   >
                     40
                   </button>
                   <button
-                    className="rounded bg-slate-100 px-2 py-0.5 font-medium text-[10px] text-slate-600 hover:bg-slate-200"
+                    className="rounded bg-white/5 px-2 py-0.5 font-medium text-[10px] text-slate-400 hover:bg-white/10 hover:text-slate-200"
                     onClick={() => setL10MinFilter("50")}
                     type="button"
                   >
                     50
                   </button>
                   <button
-                    className="rounded bg-slate-100 px-2 py-0.5 font-medium text-[10px] text-slate-600 hover:bg-slate-200"
+                    className="rounded bg-white/5 px-2 py-0.5 font-medium text-[10px] text-slate-400 hover:bg-white/10 hover:text-slate-200"
                     onClick={() => setL10MinFilter("60")}
                     type="button"
                   >
                     60
                   </button>
                   <button
-                    className="rounded bg-slate-100 px-2 py-0.5 font-medium text-[10px] text-slate-600 hover:bg-slate-200"
+                    className="rounded bg-white/5 px-2 py-0.5 font-medium text-[10px] text-slate-400 hover:bg-white/10 hover:text-slate-200"
                     onClick={() => setL10MinFilter("")}
                     type="button"
                   >
@@ -961,7 +961,7 @@ export function LineupBuilder() {
               <div className="relative min-w-[200px] flex-1">
                 <Search className="absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-slate-400" />
                 <Input
-                  className="h-11 rounded-xl border-slate-200 bg-slate-50 pl-10 text-slate-700 placeholder:text-slate-400"
+                  className="h-11 rounded-xl border-white/10 bg-white/5 pl-10 text-slate-200 placeholder:text-slate-500"
                   onChange={(e) => setSearchQuery(e.target.value)}
                   placeholder="Cerca giocatore..."
                   value={searchQuery}

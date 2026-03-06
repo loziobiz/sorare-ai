@@ -31,7 +31,7 @@ interface CardsFiltersProps {
 }
 
 const SELECT_CLASS =
-  "flex h-9 rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring";
+  "flex h-9 rounded-md border border-white/10 bg-[#1A1B23] px-3 py-1 text-sm text-slate-200 shadow-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring";
 
 export function CardsFilters({
   rarity,
@@ -75,7 +75,10 @@ interface RaritySelectProps {
 function RaritySelect({ value, onChange }: RaritySelectProps) {
   return (
     <div className="flex items-center gap-2">
-      <label className="font-medium text-sm" htmlFor="rarity-filter">
+      <label
+        className="font-medium text-slate-200 text-sm"
+        htmlFor="rarity-filter"
+      >
         Rarità:
       </label>
       <select
@@ -100,7 +103,10 @@ interface PositionSelectProps {
 function PositionSelect({ value, onChange }: PositionSelectProps) {
   return (
     <div className="flex items-center gap-2">
-      <label className="font-medium text-sm" htmlFor="position-filter">
+      <label
+        className="font-medium text-slate-200 text-sm"
+        htmlFor="position-filter"
+      >
         Ruolo:
       </label>
       <select
@@ -128,7 +134,10 @@ interface LeagueSelectProps {
 function LeagueSelect({ value, leagues, onChange }: LeagueSelectProps) {
   return (
     <div className="flex items-center gap-2">
-      <label className="font-medium text-sm" htmlFor="league-filter">
+      <label
+        className="font-medium text-slate-200 text-sm"
+        htmlFor="league-filter"
+      >
         Lega:
       </label>
       <select
@@ -156,7 +165,7 @@ interface SortSelectProps {
 function SortSelect({ value, onChange }: SortSelectProps) {
   return (
     <div className="flex items-center gap-2">
-      <label className="font-medium text-sm" htmlFor="sort-by">
+      <label className="font-medium text-slate-200 text-sm" htmlFor="sort-by">
         Ordina per:
       </label>
       <select
@@ -189,7 +198,7 @@ function InSeasonCheckbox({ checked, onChange }: InSeasonCheckboxProps) {
         onCheckedChange={(value) => onChange(value === true)}
       />
       <label
-        className="cursor-pointer font-medium text-sm"
+        className="cursor-pointer font-medium text-slate-200 text-sm"
         htmlFor="in-season-filter"
       >
         In-Season
@@ -206,7 +215,10 @@ interface SealedSelectProps {
 function SealedSelect({ value, onChange }: SealedSelectProps) {
   return (
     <div className="flex items-center gap-2">
-      <label className="font-medium text-sm" htmlFor="sealed-filter">
+      <label
+        className="font-medium text-slate-200 text-sm"
+        htmlFor="sealed-filter"
+      >
         Stato:
       </label>
       <select
@@ -233,7 +245,7 @@ function SearchInput({ value, onChange }: SearchInputProps) {
     <div className="relative min-w-[200px] flex-1">
       <Search className="absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-slate-400" />
       <Input
-        className="h-9 pl-10"
+        className="h-9 border-white/10 bg-white/5 pl-10 text-slate-200 placeholder:text-slate-500"
         onChange={(e) => onChange(e.target.value)}
         placeholder="Cerca giocatore o squadra..."
         value={value}

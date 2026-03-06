@@ -19,8 +19,6 @@ interface AAGameScore {
   scoreStatus: string;
 }
 
-
-
 export interface AnalyzeAAResult {
   processed: number;
   updated: number;
@@ -50,10 +48,13 @@ async function fetchPlayerAA(
   slug: string
 ): Promise<AAStats | null> {
   try {
-    const data = await client.query<GraphQLPlayerAASingle>(GET_PLAYER_AA_SCORES, {
-      slug,
-      last: 25,
-    });
+    const data = await client.query<GraphQLPlayerAASingle>(
+      GET_PLAYER_AA_SCORES,
+      {
+        slug,
+        last: 25,
+      }
+    );
 
     if (!data.football?.player) return null;
 
@@ -74,9 +75,9 @@ async function fetchPlayerAA(
     const AA5 =
       validAAScores.length >= 5
         ? Number(
-            (
-              validAAScores.slice(0, 5).reduce((a, b) => a + b, 0) / 5
-            ).toFixed(2)
+            (validAAScores.slice(0, 5).reduce((a, b) => a + b, 0) / 5).toFixed(
+              2
+            )
           )
         : null;
 
@@ -124,7 +125,7 @@ async function fetchPlayersAABatch(
   // Processa in parallelo con concorrenza limitata
   for (let i = 0; i < playersBatch.length; i += CONCURRENCY) {
     const batch = playersBatch.slice(i, i + CONCURRENCY);
-    
+
     const promises = batch.map(async (player) => {
       const aaStats = await fetchPlayerAA(client, player.slug);
       resultMap.set(player.slug, aaStats);
@@ -180,7 +181,9 @@ export async function analyzeAAHandler(
           const strategy = new DefaultUpdateStrategy();
 
           try {
-            console.log(`   💾 Saving AA for ${player.slug}: AA5=${aaStats.AA5}, AA15=${aaStats.AA15}, AA25=${aaStats.AA25}`);
+            console.log(
+              `   💾 Saving AA for ${player.slug}: AA5=${aaStats.AA5}, AA15=${aaStats.AA15}, AA25=${aaStats.AA25}`
+            );
             const updated = await repository.updatePlayerStats(
               player.slug,
               { aaAnalysis: aaStats },

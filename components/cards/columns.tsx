@@ -137,7 +137,7 @@ export function ScoreHistogram({
   const reversedScores = [...displayScores].reverse();
 
   return (
-    <div className="flex h-[45px] w-[80px] items-end rounded bg-gray-100 p-1">
+    <div className="flex h-[45px] w-[80px] items-end rounded bg-white/5 p-1">
       {reversedScores.map((item) => {
         const heightPercent = (item.score / maxScore) * 100;
         const height =
@@ -240,11 +240,11 @@ export function getLineupColumns(
                       );
                       let colorClass = "";
                       if (starterOdds < 50) {
-                        colorClass = "bg-red-100 text-red-700";
+                        colorClass = "bg-red-500/20 text-red-400";
                       } else if (starterOdds <= 70) {
-                        colorClass = "bg-amber-100 text-amber-700";
+                        colorClass = "bg-orange-500/20 text-orange-400";
                       } else {
-                        colorClass = "bg-emerald-100 text-emerald-700";
+                        colorClass = "bg-emerald-500/20 text-emerald-400";
                       }
                       return (
                         <span
@@ -298,17 +298,17 @@ export function getLineupColumns(
         const l10Value = Math.round(l10);
         let colorClass = "";
         if (l10Value === 0) {
-          colorClass = "bg-gray-100 text-gray-600";
+          colorClass = "bg-white/10 text-slate-400";
         } else if (l10Value <= 30) {
-          colorClass = "bg-red-100 text-red-700";
+          colorClass = "bg-red-500/20 text-red-400";
         } else if (l10Value <= 40) {
-          colorClass = "bg-orange-100 text-orange-700";
+          colorClass = "bg-orange-500/20 text-orange-400";
         } else if (l10Value <= 59) {
-          colorClass = "bg-lime-100 text-lime-700";
+          colorClass = "bg-lime-500/20 text-lime-400";
         } else if (l10Value <= 79) {
-          colorClass = "bg-green-100 text-green-700";
+          colorClass = "bg-emerald-500/20 text-emerald-400";
         } else {
-          colorClass = "bg-cyan-100 text-cyan-700";
+          colorClass = "bg-cyan-500/20 text-cyan-400";
         }
         const exceedsCap =
           l10Remaining !== undefined &&

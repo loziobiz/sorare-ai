@@ -65,21 +65,21 @@ function getL10BadgeColor(l10: number | undefined): {
   text: string;
 } {
   if (!l10 || l10 === 0) {
-    return { bg: "bg-slate-100", text: "text-slate-500" };
+    return { bg: "bg-white/10", text: "text-slate-400" };
   }
   if (l10 <= 30) {
-    return { bg: "bg-rose-100", text: "text-rose-700" };
+    return { bg: "bg-red-500/20", text: "text-red-400" };
   }
   if (l10 <= 40) {
-    return { bg: "bg-orange-100", text: "text-orange-700" };
+    return { bg: "bg-orange-500/20", text: "text-orange-400" };
   }
   if (l10 <= 59) {
-    return { bg: "bg-lime-100", text: "text-lime-700" };
+    return { bg: "bg-lime-500/20", text: "text-lime-400" };
   }
   if (l10 <= 79) {
-    return { bg: "bg-emerald-100", text: "text-emerald-700" };
+    return { bg: "bg-emerald-500/20", text: "text-emerald-400" };
   }
-  return { bg: "bg-cyan-100", text: "text-cyan-700" };
+  return { bg: "bg-cyan-500/20", text: "text-cyan-400" };
 }
 
 function getTeamAbbreviation(
@@ -152,12 +152,12 @@ function MatchInfo({
 
   return (
     <div className="flex flex-col items-center leading-tight">
-      <div className="flex items-center gap-1 font-medium text-[11px] text-slate-700">
-        <span className={isHomeTeam ? "rounded bg-slate-200 px-1" : ""}>
+      <div className="flex items-center gap-1 font-medium text-[11px] text-slate-300">
+        <span className={isHomeTeam ? "rounded bg-white/10 px-1" : ""}>
           {homeTeam}
         </span>
-        <span className="text-slate-400">vs</span>
-        <span className={isAwayTeam ? "rounded bg-slate-200 px-1" : ""}>
+        <span className="text-slate-500">vs</span>
+        <span className={isAwayTeam ? "rounded bg-white/10 px-1" : ""}>
           {awayTeam}
         </span>
       </div>
@@ -219,11 +219,11 @@ function CompactCard({
             );
             let colorClass = "";
             if (starterOdds < 50) {
-              colorClass = "bg-red-100 text-red-700";
+              colorClass = "bg-red-500/20 text-red-400";
             } else if (starterOdds <= 70) {
-              colorClass = "bg-amber-100 text-amber-700";
+              colorClass = "bg-orange-500/20 text-orange-400";
             } else {
-              colorClass = "bg-emerald-100 text-emerald-700";
+              colorClass = "bg-emerald-500/20 text-emerald-400";
             }
             return (
               <span
@@ -349,14 +349,14 @@ function FormationCard({
     formation.gameMode === "pro_gas" ||
     formation.gameMode === "gas_classic"
   ) {
-    modeColor = "bg-purple-100 text-purple-700";
+    modeColor = "bg-purple-500/20 text-purple-400";
   } else if (
     formation.gameMode === "mls_arena_260" ||
     formation.gameMode === "mls_in_season"
   ) {
-    modeColor = "bg-gray-100 text-gray-700";
+    modeColor = "bg-white/10 text-slate-300";
   } else {
-    modeColor = "bg-slate-100 text-slate-600";
+    modeColor = "bg-white/5 text-slate-400";
   }
 
   // Calcolo L10 totale e rapporto CAP
@@ -378,11 +378,11 @@ function FormationCard({
     dragState.activeItem?.card.slug === card.slug;
 
   return (
-    <div className="min-w-0 max-w-full space-y-2 rounded-lg border border-slate-200 bg-white p-2 shadow-sm">
+    <div className="min-w-0 max-w-full space-y-2 rounded-lg border border-white/10 bg-white/5 p-2 text-slate-200 shadow-sm">
       {/* Nome formazione, L10/CAP e azioni */}
       <div className="flex items-start justify-between">
         <div className="flex flex-col">
-          <h3 className="font-bold text-lg text-slate-800 leading-tight">
+          <h3 className="font-bold text-lg text-slate-200 leading-tight">
             {formation.name}
           </h3>
           <span
@@ -395,7 +395,7 @@ function FormationCard({
           {/* L10/CAP a sinistra dei pulsanti azione */}
           {capRatio !== null && (
             <span
-              className={`inline-block rounded-full px-2 py-0.5 font-medium text-[12px] ${capRatio > 1 ? "bg-amber-100 text-amber-700" : "bg-emerald-100 text-emerald-700"}`}
+              className={`inline-block rounded-full px-2 py-0.5 font-medium text-[12px] ${capRatio > 1 ? "bg-orange-500/20 text-orange-400" : "bg-emerald-500/20 text-emerald-400"}`}
             >
               {totalL10.toFixed(0)}/{capValue}
             </span>
@@ -403,15 +403,15 @@ function FormationCard({
           {/* Pulsanti azione - solo icone */}
           <div className="flex items-center gap-1">
             <Button
-              className="h-8 w-8 p-0"
+              className="h-8 w-8 p-0 hover:bg-white/10"
               onClick={() => onEdit(formation)}
               size="icon"
               variant="ghost"
             >
-              <Pencil className="h-4 w-4 text-slate-500" />
+              <Pencil className="h-4 w-4 text-slate-400 transition-colors hover:text-white" />
             </Button>
             <Button
-              className="h-8 w-8 p-0"
+              className="h-8 w-8 p-0 hover:bg-white/10 hover:text-red-400"
               onClick={() => formation.id && onDelete(formation.id)}
               size="icon"
               variant="ghost"
@@ -681,7 +681,7 @@ export function SavedLineups() {
     <div className="space-y-6">
       <SavedLineupsDnDProvider onSwap={handleSwapCards}>
         {formations.length === 0 ? (
-          <div className="py-12 text-center text-slate-500">
+          <div className="py-12 text-center text-slate-400">
             <p>Nessuna formazione salvata.</p>
             <Button
               className="mt-4"
@@ -696,7 +696,7 @@ export function SavedLineups() {
               .filter(([, items]) => items.length > 0)
               .map(([gameModeLabel, items]) => (
                 <div key={gameModeLabel}>
-                  <h2 className="mb-3 font-bold text-lg text-slate-700">
+                  <h2 className="mb-3 font-bold text-lg text-slate-200">
                     {gameModeLabel}
                   </h2>
                   <div className="flex flex-wrap items-start gap-5">
@@ -719,21 +719,21 @@ export function SavedLineups() {
 
       {/* Modale conferma cancellazione */}
       {deleteConfirm !== null && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-          <div className="w-full max-w-sm overflow-hidden rounded-xl bg-white shadow-2xl">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4">
+          <div className="w-full max-w-sm overflow-hidden rounded-xl border border-white/10 bg-[#1A1B23] shadow-2xl">
             {/* Header con icona */}
-            <div className="flex flex-col items-center border-b bg-slate-50 px-6 pt-6 pb-4">
-              <div className="mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-red-100">
-                <AlertTriangle className="h-6 w-6 text-red-600" />
+            <div className="flex flex-col items-center border-white/10 border-b bg-white/5 px-6 pt-6 pb-4">
+              <div className="mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-red-500/20">
+                <AlertTriangle className="h-6 w-6 text-red-400" />
               </div>
-              <h3 className="font-semibold text-lg text-slate-800">
+              <h3 className="font-semibold text-lg text-slate-200">
                 Conferma cancellazione
               </h3>
             </div>
 
             {/* Contenuto */}
             <div className="px-6 py-4">
-              <p className="text-center text-slate-600 text-sm leading-relaxed">
+              <p className="text-center text-slate-400 text-sm leading-relaxed">
                 Sei sicuro di voler cancellare questa formazione?
                 <br />
                 <span className="text-slate-500">
@@ -743,7 +743,7 @@ export function SavedLineups() {
             </div>
 
             {/* Azioni */}
-            <div className="flex gap-3 border-t bg-slate-50 px-6 py-4">
+            <div className="flex gap-3 border-white/10 border-t bg-white/5 px-6 py-4">
               <Button
                 className="h-10 flex-1"
                 onClick={() => setDeleteConfirm(null)}

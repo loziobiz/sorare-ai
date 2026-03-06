@@ -69,16 +69,19 @@ export function parseUserCardKey(
 
 /**
  * Estrae lo slug del giocatore corretto per il match con il database.
- * 
+ *
  * Logica:
  * 1. Se cardSlug contiene una data di nascita (YYYY-MM-DD), usa lo slug troncato dopo la data
  *    es: "andrew-thomas-1998-09-01-2025-limited-211" → "andrew-thomas-1998-09-01"
  * 2. Se NON contiene data di nascita, usa playerSlug della carta
  *    es: "oumar-solet-bomawoko-2021-limited-246" → usa card.playerSlug = "oumar-solet-bomawoko"
- * 
+ *
  * Riconosce data di nascita: pattern (\d{4}-\d{2}-\d{2}) che NON è seguito immediatamente da -limited o -rare
  */
-function extractCorrectPlayerSlug(cardSlug: string, playerSlug: string): string {
+function extractCorrectPlayerSlug(
+  cardSlug: string,
+  playerSlug: string
+): string {
   // Cerca data di nascita nel formato YYYY-MM-DD
   const dateMatch = cardSlug.match(/^(.*?-\d{4}-\d{2}-\d{2})-/);
   if (dateMatch) {
@@ -86,7 +89,7 @@ function extractCorrectPlayerSlug(cardSlug: string, playerSlug: string): string 
     // es: "andrew-thomas-1998-09-01-2025-limited-211" → "andrew-thomas-1998-09-01"
     return dateMatch[1];
   }
-  
+
   // Caso senza data di nascita: usa playerSlug della carta
   return playerSlug;
 }
@@ -97,38 +100,44 @@ function extractCorrectPlayerSlug(cardSlug: string, playerSlug: string): string 
  * - Aggiunge: leagueName (estratto da activeCompetitions[0].name)
  * - In so5Scores tiene solo: score, projectedScore, scoreStatus
  */
-function sanitizeCardData(cardData: Record<string, unknown>): Record<string, unknown> {
+function sanitizeCardData(
+  cardData: Record<string, unknown>
+): Record<string, unknown> {
   const sanitized = { ...cardData };
-  
+
   // Estrai nome lega (cerca MLS in activeCompetitions)
   if (Array.isArray(sanitized.activeCompetitions)) {
     const mlsComp = sanitized.activeCompetitions.find((comp: unknown) => {
       const c = comp as Record<string, unknown>;
-      const name = String(c.name || '').toLowerCase();
-      const slug = String(c.slug || '').toLowerCase();
-      return name.includes('major league soccer') || 
-             name.includes('mls') || 
-             slug.includes('mls');
+      const name = String(c.name || "").toLowerCase();
+      const slug = String(c.slug || "").toLowerCase();
+      return (
+        name.includes("major league soccer") ||
+        name.includes("mls") ||
+        slug.includes("mls")
+      );
     }) as Record<string, unknown> | undefined;
-    
+
     if (mlsComp?.name) {
       sanitized.leagueName = mlsComp.name;
     }
   }
-  
+
   // Rimuovi campi non necessari
   delete sanitized.activeCompetitions;
   delete sanitized.ownershipHistory;
-  
+
   // Filtra so5Scores
   if (Array.isArray(sanitized.so5Scores)) {
-    sanitized.so5Scores = sanitized.so5Scores.map((score: Record<string, unknown>) => ({
-      score: score.score,
-      projectedScore: score.projectedScore,
-      scoreStatus: score.scoreStatus,
-    }));
+    sanitized.so5Scores = sanitized.so5Scores.map(
+      (score: Record<string, unknown>) => ({
+        score: score.score,
+        projectedScore: score.projectedScore,
+        scoreStatus: score.scoreStatus,
+      })
+    );
   }
-  
+
   return sanitized;
 }
 
@@ -136,22 +145,24 @@ function sanitizeCardData(cardData: Record<string, unknown>): Record<string, unk
  * Pulisce i dati giocatore per la risposta API
  * - Rimuove: aaAnalysis.validScores
  */
-function sanitizePlayerData(playerData: Record<string, unknown> | null): Record<string, unknown> | null {
+function sanitizePlayerData(
+  playerData: Record<string, unknown> | null
+): Record<string, unknown> | null {
   if (!playerData) return null;
-  
+
   const sanitized = { ...playerData };
-  
+
   // Rimuovi validScores da aaAnalysis
-  if (sanitized.stats && typeof sanitized.stats === 'object') {
+  if (sanitized.stats && typeof sanitized.stats === "object") {
     const stats = { ...sanitized.stats } as Record<string, unknown>;
-    if (stats.aaAnalysis && typeof stats.aaAnalysis === 'object') {
+    if (stats.aaAnalysis && typeof stats.aaAnalysis === "object") {
       const aaAnalysis = { ...stats.aaAnalysis } as Record<string, unknown>;
       delete aaAnalysis.validScores;
       stats.aaAnalysis = aaAnalysis;
     }
     sanitized.stats = stats;
   }
-  
+
   return sanitized;
 }
 
@@ -179,7 +190,7 @@ export async function saveUserCard(
     // Leggi valore esistente se presente
     const existingValue = await kv.get(key);
     let existingData: Record<string, unknown> = {};
-    
+
     if (existingValue) {
       try {
         existingData = JSON.parse(existingValue) as Record<string, unknown>;
@@ -191,12 +202,12 @@ export async function saveUserCard(
 
     // Merge: dati esistenti + nuovi dati (i nuovi sovrascrivono i vecchi se in conflitto)
     const value = {
-      ...existingData,           // Preserva dati esistenti
-      ...card.cardData,          // Sovrascrivi/aggiorna con nuovi dati
-      userId: card.userId,       // Metadati sempre aggiornati
+      ...existingData, // Preserva dati esistenti
+      ...card.cardData, // Sovrascrivi/aggiorna con nuovi dati
+      userId: card.userId, // Metadati sempre aggiornati
       clubCode: card.clubCode,
       playerSlug: card.playerSlug,
-      slug: cardSlug,            // Slug della carta (completo)
+      slug: cardSlug, // Slug della carta (completo)
       savedAt: new Date().toISOString(),
       updatedAt: existingValue ? new Date().toISOString() : undefined, // Solo se update
     };
@@ -353,8 +364,11 @@ export async function getUserCardsWithPlayerData(
           // Logica: se card.slug contiene data di nascita, estrai lo slug corretto
           //         altrimenti usa card.playerSlug
           let playerSlug: string;
-          
-          if (cardData.slug && /\d{4}-\d{2}-\d{2}/.test(cardData.slug as string)) {
+
+          if (
+            cardData.slug &&
+            /\d{4}-\d{2}-\d{2}/.test(cardData.slug as string)
+          ) {
             // Caso con data di nascita: estrai lo slug corretto dal cardSlug
             // es: "andrew-thomas-1998-09-01-2025-limited-211" → "andrew-thomas-1998-09-01"
             playerSlug = extractCorrectPlayerSlug(
@@ -366,11 +380,11 @@ export async function getUserCardsWithPlayerData(
             // es: "oumar-solet-bomawoko-2021-limited-246" → "oumar-solet-bomawoko"
             playerSlug = cardData.playerSlug as string;
           }
-          
+
           if (playerSlug) {
             const playerKey = `${parsed.clubCode}:${playerSlug}`;
             const playerValue = await kv.get(playerKey);
-            
+
             if (playerValue) {
               try {
                 playerData = JSON.parse(playerValue) as Record<string, unknown>;
@@ -431,7 +445,15 @@ export async function deleteUserCard(
 export async function getUserCard(
   kv: KVNamespace,
   key: string
-): Promise<{ success: boolean; card?: { key: string; value: Record<string, unknown>; playerData: Record<string, unknown> | null }; error?: string }> {
+): Promise<{
+  success: boolean;
+  card?: {
+    key: string;
+    value: Record<string, unknown>;
+    playerData: Record<string, unknown> | null;
+  };
+  error?: string;
+}> {
   try {
     const value = await kv.get(key);
     if (!value) {
@@ -442,17 +464,17 @@ export async function getUserCard(
     }
 
     const cardData = JSON.parse(value) as Record<string, unknown>;
-    
+
     // Estrai clubCode e playerSlug dalla key per recuperare i dati giocatore
     const parsed = parseUserCardKey(key);
     let playerData: Record<string, unknown> | null = null;
-    
+
     if (parsed) {
       // Estrai playerSlug corretto per il match con il database
       // Logica: se card.slug contiene data di nascita, estrai lo slug corretto
       //         altrimenti usa card.playerSlug
       let playerSlug: string;
-      
+
       if (cardData.slug && /\d{4}-\d{2}-\d{2}/.test(cardData.slug as string)) {
         // Caso con data di nascita: estrai lo slug corretto dal cardSlug
         // es: "andrew-thomas-1998-09-01-2025-limited-211" → "andrew-thomas-1998-09-01"
@@ -465,11 +487,11 @@ export async function getUserCard(
         // es: "oumar-solet-bomawoko-2021-limited-246" → "oumar-solet-bomawoko"
         playerSlug = cardData.playerSlug as string;
       }
-      
+
       if (playerSlug) {
         const playerKey = `${parsed.clubCode}:${playerSlug}`;
         const playerValue = await kv.get(playerKey);
-        
+
         if (playerValue) {
           try {
             playerData = JSON.parse(playerValue) as Record<string, unknown>;
