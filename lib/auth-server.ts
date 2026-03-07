@@ -46,6 +46,8 @@ export interface AuthResult {
   error?: string;
   requiresTwoFactor?: boolean;
   user?: { slug: string };
+  token?: string;
+  otpChallenge?: string;
 }
 
 export const getAuthToken = createServerFn({ method: "GET" }).handler(
@@ -165,7 +167,7 @@ export const login = createServerFn({ method: "POST" })
 
       if (signInData.otpSessionChallenge) {
         setOtpChallenge(signInData.otpSessionChallenge);
-        return { success: false, requiresTwoFactor: true };
+        return { success: false, requiresTwoFactor: true, otpChallenge: signInData.otpSessionChallenge };
       }
 
       if (signInData.errors?.length) {
@@ -177,7 +179,7 @@ export const login = createServerFn({ method: "POST" })
 
       if (signInData.jwtToken?.token && signInData.currentUser) {
         setAuthToken(signInData.jwtToken.token);
-        return { success: true, user: { slug: signInData.currentUser.slug } };
+        return { success: true, token: signInData.jwtToken.token, user: { slug: signInData.currentUser.slug } };
       }
       return { success: false, error: "Unexpected response" };
     } catch (error) {
@@ -189,10 +191,10 @@ export const login = createServerFn({ method: "POST" })
   });
 
 export const loginWithTwoFactor = createServerFn({ method: "POST" })
-  .inputValidator((data: { otpCode: string }) => data)
+  .inputValidator((data: { otpCode: string; otpChallenge?: string }) => data)
   .handler(async ({ data }): Promise<AuthResult> => {
     try {
-      const otpChallenge = getCookie(COOKIE_OTP_CHALLENGE);
+      const otpChallenge = data.otpChallenge ?? getCookie(COOKIE_OTP_CHALLENGE);
       if (!otpChallenge) {
         return { success: false, error: "No 2FA challenge found." };
       }
@@ -219,7 +221,7 @@ export const loginWithTwoFactor = createServerFn({ method: "POST" })
       if (signInData.jwtToken?.token && signInData.currentUser) {
         setAuthToken(signInData.jwtToken.token);
         deleteCookie(COOKIE_OTP_CHALLENGE);
-        return { success: true, user: { slug: signInData.currentUser.slug } };
+        return { success: true, token: signInData.jwtToken.token, user: { slug: signInData.currentUser.slug } };
       }
       return { success: false, error: "Unexpected response" };
     } catch (error) {

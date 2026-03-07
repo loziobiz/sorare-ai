@@ -62,7 +62,7 @@ export interface ColumnWidths {
   l40: number;
 }
 
-export type SortKey = "name" | "team" | "aa15" | "l5" | "l10" | "l40";
+export type SortKey = "name" | "team" | "aa15" | "l5" | "l10" | "l40" | "starterOdds";
 export type SortDirection = "asc" | "desc";
 
 export interface CardsListProps {
@@ -89,6 +89,7 @@ function convertSortKey(key: SortKey): string {
     l5: "l5Average",
     l10: "l10Average",
     l40: "l40Average",
+    starterOdds: "starterOdds",
   };
   return mapping[key];
 }
@@ -155,6 +156,7 @@ export function CardsList({
       l5Average: "l5",
       l10Average: "l10",
       l40Average: "l40",
+      starterOdds: "starterOdds",
     };
 
     const newKey = reverseMapping[firstSort.id];

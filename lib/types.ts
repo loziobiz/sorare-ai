@@ -61,6 +61,7 @@ export interface So5Appearance {
     name: string;
     rarityTyped: string;
     pictureUrl?: string;
+    anyPositions?: string[];
   };
   anyPlayer?: {
     displayName: string;

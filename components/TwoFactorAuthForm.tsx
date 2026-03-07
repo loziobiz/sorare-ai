@@ -34,15 +34,20 @@ export function TwoFactorAuthForm({
     setError("");
 
     try {
-      const result = await loginWithTwoFactor({ data: { otpCode } });
+      const otpChallenge = localStorage.getItem("sorare_otp_challenge") ?? undefined;
+      const result = await loginWithTwoFactor({ data: { otpCode, otpChallenge } });
 
       if (result.success) {
+        if (result.token) {
+          document.cookie = `sorare_jwt_token=${result.token}; path=/; max-age=${30 * 24 * 60 * 60}; SameSite=Lax`;
+        }
+        localStorage.removeItem("sorare_otp_challenge");
         onSuccess?.();
       } else {
         setError(result.error || "Two-factor authentication failed");
       }
     } catch (_err) {
-      setError("An unexpected error occurred");
+      setError(`Errore: ${_err instanceof Error ? _err.message : String(_err)}`);
     } finally {
       setIsLoading(false);
     }

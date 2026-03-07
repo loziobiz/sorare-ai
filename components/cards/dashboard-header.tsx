@@ -1,6 +1,5 @@
 "use client";
 
-import { useRouter } from "@tanstack/react-router";
 import { LogOut, RefreshCw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { logout } from "@/lib/auth-server";
@@ -22,12 +21,11 @@ export function DashboardHeader({
   isSyncing,
   onSync,
 }: DashboardHeaderProps) {
-  const router = useRouter();
-
   const handleLogout = async () => {
     await logout();
     clearUserEmail();
-    router.navigate({ to: "/" });
+    document.cookie = "sorare_jwt_token=; path=/; max-age=0";
+    window.location.href = "/";
   };
 
   const isDisabled = isSyncing || isLoading;

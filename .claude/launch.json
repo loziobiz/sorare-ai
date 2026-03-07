@@ -1,0 +1,17 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "Next.js dev",
+      "runtimeExecutable": "pnpm",
+      "runtimeArgs": ["dev"],
+      "port": 3000
+    },
+    {
+      "name": "Cloudflare preview",
+      "runtimeExecutable": "pnpm",
+      "runtimeArgs": ["preview"],
+      "port": 8787
+    }
+  ]
+}

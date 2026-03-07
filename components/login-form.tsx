@@ -37,10 +37,16 @@ export function LoginForm({ onSuccess, onTwoFactorRequired }: LoginFormProps) {
       if (result.success) {
         // Salva email per identificare l'utente nelle chiamate KV
         localStorage.setItem("sorare_user_email", email.toLowerCase().trim());
+        if (result.token) {
+          document.cookie = `sorare_jwt_token=${result.token}; path=/; max-age=${30 * 24 * 60 * 60}; SameSite=Lax`;
+        }
         onSuccess?.();
       } else if (result.requiresTwoFactor) {
         // Salva email anche per il flusso 2FA
         localStorage.setItem("sorare_user_email", email.toLowerCase().trim());
+        if (result.otpChallenge) {
+          localStorage.setItem("sorare_otp_challenge", result.otpChallenge);
+        }
         onTwoFactorRequired?.();
       } else {
         setError(result.error || "Login failed");
