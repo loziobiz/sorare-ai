@@ -16,7 +16,14 @@ export type PositionFilter =
   | "Midfielder"
   | "Forward";
 export type SealedFilter = "unsealed" | "sealed" | "all";
-export type SortOption = "name" | "team" | "aa15" | "l5" | "l10" | "l15" | "l40";
+export type SortOption =
+  | "name"
+  | "team"
+  | "aa15"
+  | "l5"
+  | "l10"
+  | "l15"
+  | "l40";
 
 export interface LeagueOption {
   value: string;
@@ -201,6 +208,48 @@ export interface CardFilters {
   inSeasonOnly: boolean;
   sealed: SealedFilter;
   searchQuery: string;
+}
+
+interface CardWithL10Average {
+  l10Average?: number;
+}
+
+interface FormationSlotWithCard {
+  card: CardWithL10Average | null;
+}
+
+/**
+ * Restituisce il valore L10 raw (senza arrotondamenti).
+ */
+export function getL10RawValue(l10Average: number | undefined): number {
+  if (l10Average === undefined || l10Average === null) {
+    return 0;
+  }
+  return l10Average;
+}
+
+/**
+ * Calcola il totale L10 con somma raw (nessun arrotondamento per-card).
+ */
+export function calculateCardsL10Total(cards: CardWithL10Average[]): number {
+  let total = 0;
+  for (const card of cards) {
+    total += getL10RawValue(card.l10Average);
+  }
+  return total;
+}
+
+/**
+ * Calcola il totale L10 di una formazione a slot.
+ */
+export function calculateFormationSlotsL10Total(
+  formation: FormationSlotWithCard[]
+): number {
+  let total = 0;
+  for (const slot of formation) {
+    total += getL10RawValue(slot.card?.l10Average);
+  }
+  return total;
 }
 
 /**

@@ -142,7 +142,7 @@ const DEFAULT_CACHE_TTL = 30 * 60 * 1000; // 30 minuti
 
 export async function fetchCardsPage({
   cursor,
-  signal,
+  signal: _signal,
   useCache = true,
   cacheTtl = DEFAULT_CACHE_TTL,
 }: FetchCardsOptions = {}): Promise<CardsResponse> {
@@ -196,6 +196,8 @@ export async function fetchAllCards(
     pageDelay?: number;
     signal?: AbortSignal;
     cacheTtl?: number;
+    /** Se true, nessuna pagina usa cache (per sync autoritativo) */
+    useCache?: boolean;
   } = {}
 ): Promise<{ cards: CardData[]; userSlug: string }> {
   const {
@@ -204,6 +206,7 @@ export async function fetchAllCards(
     pageDelay = 1100,
     signal,
     cacheTtl = DEFAULT_CACHE_TTL,
+    useCache: useCacheOption = true,
   } = options;
 
   const allCards: CardData[] = [];
@@ -220,7 +223,7 @@ export async function fetchAllCards(
       cacheTtl,
       cursor,
       signal,
-      useCache: pageCount === 1, // Usa cache solo per la prima pagina
+      useCache: useCacheOption && pageCount === 1, // Cache solo se richiesta e solo prima pagina
     });
     allCards.push(...result.cards);
 

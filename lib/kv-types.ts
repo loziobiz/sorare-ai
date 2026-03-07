@@ -477,3 +477,20 @@ export class UserIdError extends Error {
     this.name = "UserIdError";
   }
 }
+
+/** Errore quando il sync batch ha fallito per una o più carte */
+export class KvSyncError extends Error {
+  summary: KvBatchSaveResponse["summary"];
+  failedResults: Array<{ key: string; error?: string }>;
+
+  constructor(
+    message: string,
+    summary: KvBatchSaveResponse["summary"],
+    failedResults: Array<{ key: string; error?: string }>
+  ) {
+    super(message);
+    this.name = "KvSyncError";
+    this.summary = summary;
+    this.failedResults = failedResults;
+  }
+}

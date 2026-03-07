@@ -3,6 +3,7 @@
  * Base URL: https://sorare-mls-sync.loziobiz.workers.dev
  */
 
+import { KV_CARDS_BATCH_SIZE } from "../shared/kv-constants.js";
 import type {
   KvBatchSaveRequest,
   KvBatchSaveResponse,
@@ -16,7 +17,7 @@ import type {
   KvSingleSaveResponse,
   UnifiedCard,
 } from "./kv-types";
-import { KvApiError } from "./kv-types";
+import { KvApiError, KvSyncError } from "./kv-types";
 import type { CardData } from "./sorare-api";
 
 const API_BASE_URL = "https://sorare-mls-sync.loziobiz.workers.dev";
@@ -446,6 +447,7 @@ export function mapKvCardToUnifiedCard(kvCard: KvCardResponse): UnifiedCard {
 
 /**
  * Recupera tutte le carte dell'utente con i dati dei giocatori innestati.
+ * @param skipCache - Se true, aggiunge un param per bypassare la cache worker (per reload post-sync)
  */
 export function fetchUserCardsWithPlayers(
   userId: string,
@@ -453,14 +455,22 @@ export function fetchUserCardsWithPlayers(
     clubCode?: string;
     limit?: number;
     cursor?: string;
+    /** Param per bypassare cache worker; usa _t=timestamp per URL univoco */
+    skipCache?: boolean;
+    /** Timestamp per skipCache, usato da fetchAllUserCards per coerenza tra pagine */
+    _skipCacheT?: number;
   }
 ): Promise<KvCardsListResponse> {
-  return httpGet<KvCardsListResponse>("/api/cards/with-players", {
+  const params: Record<string, string> = {
     userId,
     ...(options?.clubCode && { clubCode: options.clubCode }),
     ...(options?.limit && { limit: options.limit.toString() }),
     ...(options?.cursor && { cursor: options.cursor }),
-  });
+  };
+  if (options?.skipCache) {
+    params._t = String(options._skipCacheT ?? Date.now());
+  }
+  return httpGet<KvCardsListResponse>("/api/cards/with-players", params);
 }
 
 /**
@@ -534,7 +544,7 @@ export async function syncCardsToKv(
   sorareCards: CardData[],
   onProgress?: (saved: number, total: number) => void
 ): Promise<KvBatchSaveResponse> {
-  const batchSize = 500; // Limite API
+  const batchSize = KV_CARDS_BATCH_SIZE;
   const results: KvBatchSaveResponse["results"] = [];
 
   // Dividi in batch
@@ -555,14 +565,31 @@ export async function syncCardsToKv(
   }
 
   const successCount = results.filter((r) => r.success).length;
+  const errorCount = sorareCards.length - successCount;
+  const summary = {
+    total: sorareCards.length,
+    success: successCount,
+    errors: errorCount,
+  };
+
+  if (errorCount > 0) {
+    const failedResults = results.filter((r) => !r.success);
+    const failedSlugs = failedResults
+      .map((r) => r.key.split(":").pop() ?? r.key)
+      .slice(0, 5)
+      .join(", ");
+    const more =
+      failedResults.length > 5 ? ` e altre ${failedResults.length - 5}` : "";
+    throw new KvSyncError(
+      `Sync fallito: ${errorCount} di ${sorareCards.length} carte non salvate (es. ${failedSlugs}${more})`,
+      summary,
+      failedResults.map((r) => ({ key: r.key, error: r.error }))
+    );
+  }
 
   return {
-    success: successCount === sorareCards.length,
-    summary: {
-      total: sorareCards.length,
-      success: successCount,
-      errors: sorareCards.length - successCount,
-    },
+    success: true,
+    summary,
     results,
   };
 }
@@ -570,25 +597,29 @@ export async function syncCardsToKv(
 /**
  * Recupera tutte le carte con paginazione automatica.
  * Utile quando ci sono più di 1000 carte.
+ * @param skipCache - Se true, bypassa la cache worker (per reload post-sync autorevole)
  */
 export async function fetchAllUserCards(
   userId: string,
-  onProgress?: (count: number) => void
+  options?: { onProgress?: (count: number) => void; skipCache?: boolean }
 ): Promise<UnifiedCard[]> {
   const allCards: UnifiedCard[] = [];
   let cursor: string | undefined;
   let hasMore = true;
+  const skipCacheT = options?.skipCache ? Date.now() : undefined;
 
   while (hasMore) {
     const response = await fetchUserCardsWithPlayers(userId, {
       limit: 1000,
       cursor,
+      skipCache: options?.skipCache,
+      _skipCacheT: skipCacheT,
     });
 
     const unifiedCards = response.cards.map(mapKvCardToUnifiedCard);
     allCards.push(...unifiedCards);
 
-    onProgress?.(allCards.length);
+    options?.onProgress?.(allCards.length);
 
     hasMore = !response.complete && response.cursor !== undefined;
     cursor = response.cursor;

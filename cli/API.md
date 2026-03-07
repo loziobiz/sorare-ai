@@ -672,13 +672,208 @@ Cache-Control: public, max-age=86400
 
 ---
 
+## User JWT & Auto-Sync API
+
+Gestione automatica della sincronizzazione carte tramite JWT Sorare salvato nel KV.
+
+### Flusso completo
+
+```
+1. Utente fa login su Sorare → Client ottiene JWT
+2. Client chiama POST /api/user/jwt → Worker salva token cifrato
+3. Ogni martedì 06:00 UTC: Cron scarica carte automaticamente
+4. Utente può forzare sync: POST /api/user/refresh-cards
+```
+
+### Endpoints
+
+#### 1. Salva JWT utente
+
+**POST** `/api/user/jwt`
+
+Salva il JWT Sorare dell'utente nel KV (cifrato) per sincronizzazioni automatiche future.
+
+**Request Body:**
+```json
+{
+  "userId": "alessandro.bisi",
+  "token": "eyJhbGciOiJIUzI1NiJ9..."
+}
+```
+
+| Campo | Tipo | Obbligatorio | Descrizione |
+|-------|------|--------------|-------------|
+| `userId` | string | Sì | ID utente univoco |
+| `token` | string | Sì | JWT valido da Sorare API |
+
+**Response Success (200):**
+```json
+{
+  "success": true,
+  "message": "JWT saved successfully"
+}
+```
+
+**Response Error (400/500):**
+```json
+{
+  "error": "Invalid JWT format"
+}
+```
+
+**Esempio cURL:**
+```bash
+curl -X POST https://sorare-mls-sync.loziobiz.workers.dev/api/user/jwt \
+  -H "Content-Type: application/json" \
+  -d '{
+    "userId": "alessandro.bisi",
+    "token": "eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiI2NWU0YjBkZi0yNzhkLTQyM2QtOGEzMS00OTJlMTkxMjUwMTAiLCJzY3AiOiJ1c2VyIiwiYXVkIjoic29yYXJlLWFpIiwiaWF0IjoxNzcyMDU1MzgyLCJleHAiOjE3NzQ2NDczODJ9..."
+  }'
+```
+
+**Note:**
+- Il token viene cifrato prima del salvataggio
+- La scadenza (`exp`) viene estratta e salvata separatamente
+- Durata tipica JWT Sorare: ~30 giorni
+
+---
+
+#### 2. Stato sincronizzazione
+
+**GET** `/api/user/sync-status?userId={userId}`
+
+Recupera lo stato del token e dell'ultima sincronizzazione.
+
+**Query Parameters:**
+| Parametro | Tipo | Obbligatorio | Descrizione |
+|-----------|------|--------------|-------------|
+| `userId` | string | Sì | ID utente |
+
+**Response Success (200):**
+```json
+{
+  "userId": "alessandro.bisi",
+  "hasToken": true,
+  "isValid": true,
+  "expiresInDays": 21,
+  "lastSyncAt": "2026-03-06T12:00:00.000Z"
+}
+```
+
+**Response Error (404):**
+```json
+{
+  "error": "No JWT found for user"
+}
+```
+
+**Esempio cURL:**
+```bash
+curl "https://sorare-mls-sync.loziobiz.workers.dev/api/user/sync-status?userId=alessandro.bisi"
+```
+
+**Uso consigliato lato client:**
+```javascript
+const status = await fetch('/api/user/sync-status?userId=' + userId).then(r => r.json());
+
+if (status.expiresInDays < 3) {
+  // Mostra: "Token in scadenza, rieffettua il login"
+}
+
+if (!status.lastSyncAt || isOld(status.lastSyncAt, 7)) {
+  // Mostra: "Dati obsoleti, aggiorna ora"
+}
+```
+
+---
+
+#### 3. Refresh carte on-demand
+
+**POST** `/api/user/refresh-cards`
+
+Forza immediatamente il download delle carte da Sorare API per l'utente specificato.
+
+**Request Body:**
+```json
+{
+  "userId": "alessandro.bisi",
+  "token": "eyJhbGciOiJIUzI1NiJ9..."
+}
+```
+
+| Campo | Tipo | Obbligatorio | Descrizione |
+|-------|------|--------------|-------------|
+| `userId` | string | Sì | ID utente |
+| `token` | string | Sì | JWT valido (verificato contro quello salvato) |
+
+**Response Success (200):**
+```json
+{
+  "success": true,
+  "userId": "alessandro.bisi",
+  "cardsFound": 1041,
+  "cardsSaved": 1041
+}
+```
+
+**Response Error (401/500):**
+```json
+{
+  "success": false,
+  "userId": "alessandro.bisi",
+  "cardsFound": 0,
+  "cardsSaved": 0,
+  "error": "Token expired or invalid"
+}
+```
+
+**Esempio cURL:**
+```bash
+curl -X POST https://sorare-mls-sync.loziobiz.workers.dev/api/user/refresh-cards \
+  -H "Content-Type: application/json" \
+  -d '{
+    "userId": "alessandro.bisi",
+    "token": "eyJhbGciOiJIUzI1NiJ9..."
+  }'
+```
+
+**Note:**
+- Se il token è scaduto, l'utente deve rifare login su Sorare
+- Il nuovo token viene automaticamente salvato nel KV
+- Operazione sincrona: può richiedere tempo per molte carte (usa `--max-time`)
+
+---
+
+### Confronto: Flusso Manuale vs Automatico
+
+| Aspetto | Flusso Manuale | Flusso Automatico (JWT) |
+|---------|---------------|------------------------|
+| **Trigger** | Client chiama `/api/cards` | Cron ogni martedì 06:00 |
+| **JWT** | Non necessario | Richiesto, salvato in KV |
+| **Dati** | Client scarica e invia | Worker scarica direttamente |
+| **L5/L15/L40** | Foto al momento del salvataggio | Foto al momento del cron |
+| **so5Scores** | Storico al momento del salvataggio | Storico al momento del cron |
+| **Posizioni** | Fisse alla carta | Fisse alla carta |
+| **Uso ideale** | Prima configurazione, carte nuove | Aggiornamento periodico |
+
+**Flusso ibrido consigliato:**
+1. **Setup iniziale**: Client scarica tutte le carte e le invia al Worker (completo)
+2. **Aggiornamento JWT**: Client invia token dopo ogni login
+3. **Aggiornamenti**: Cron automatico ogni martedì mattina
+4. **Forzatura**: Utente può cliccare "Aggiorna ora" che chiama `/api/user/refresh-cards`
+
+**Nota importante:** L5/L15/L40 nelle carte sono sempre "fotografie" al momento del salvataggio (non live). Per dati statistici aggiornati usare il player data con AA analysis.
+
+---
+
 ## Cron Jobs
 
-Il worker esegue anche operazioni schedulate (cron) per mantenere aggiornati i dati giocatori:
+Il worker esegue anche operazioni schedulate (cron) per mantenere aggiornati i dati giocatori e carte utente:
 
 | Cron | Frequenza | Azione |
 |------|-----------|--------|
-| `0 8 * * 2` | Martedì 08:00 UTC | Extract players (nuovi giocatori) |
+| `0 6 * * 2` | Martedì 06:00 UTC | **Sync user cards** (scarica carte da Sorare per tutti gli utenti con JWT valido) |
+| `0 8 * * 2` | Martedì 08:00 UTC | Extract players (nuovi giocatori MLS) |
 | `0 8 * * 3` | Mercoledì 08:00 UTC | Analyze home/away + AA |
 | `0 8 * * 4` | Giovedì 08:00 UTC | Analyze odds |
 | `0 20 * * 5` | Venerdì 20:00 UTC | Analyze odds |

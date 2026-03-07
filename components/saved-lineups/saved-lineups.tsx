@@ -7,6 +7,7 @@ import { LoadingSpinner } from "@/components/loading-spinner";
 
 import { Button } from "@/components/ui/button";
 import { useKvCards } from "@/hooks/use-kv-cards";
+import { calculateCardsL10Total } from "@/lib/cards-utils";
 import type { SavedFormation } from "@/lib/db";
 import { db } from "@/lib/db";
 import type { UnifiedCard } from "@/lib/kv-types";
@@ -206,7 +207,7 @@ function CompactCard({
               className={`inline-flex w-10 items-center justify-center gap-0.5 rounded px-1 py-0.5 font-medium text-[9px] ${colors.bg} ${colors.text}`}
             >
               <span>📊</span>
-              {card.l10Average?.toFixed(0) ?? "-"}
+              {card.l10Average ?? "-"}
             </span>
           );
         })()}
@@ -249,7 +250,7 @@ interface FormationCardProps {
   allFormations: SavedFormation[];
   onEdit: (formation: SavedFormation) => void;
   onDelete: (id: number) => void;
-  currentCardsMap: Map<string, Record<string, unknown>>;
+  currentCardsMap: Map<string, Card>;
 }
 
 function FormationCard({
@@ -294,42 +295,42 @@ function FormationCard({
       return orderA - orderB;
     })
     .map((card) => {
-      // Merge saved card with fresh data to get power, l10Average, activeClub, and nextGame
-      const freshData = currentCardsMap.get(card.slug);
-      if (freshData) {
-        const freshAnyPlayer = freshData.anyPlayer as
-          | {
-              activeClub?: { name: string; code?: string } | null;
-              nextGame?: {
-                date?: string | null;
-                homeTeam?: { name?: string; code?: string } | null;
-                awayTeam?: { name?: string; code?: string } | null;
-              } | null;
-              nextClassicFixturePlayingStatusOdds?: {
-                starterOddsBasisPoints: number;
-              } | null;
-            }
-          | undefined;
-        const cardAnyPlayer = card.anyPlayer;
+      const freshCard = currentCardsMap.get(card.slug);
+      const cardAnyPlayer = card.anyPlayer;
+      const freshAnyPlayer = freshCard?.anyPlayer;
 
-        // Deep merge di anyPlayer per preservare dati come nextClassicFixturePlayingStatusOdds
-        const mergedAnyPlayer = {
-          ...cardAnyPlayer,
-          ...freshAnyPlayer,
-          // Preserva nextClassicFixturePlayingStatusOdds se i dati freschi non lo hanno
-          nextClassicFixturePlayingStatusOdds:
-            freshAnyPlayer?.nextClassicFixturePlayingStatusOdds ??
-            cardAnyPlayer?.nextClassicFixturePlayingStatusOdds,
-        };
+      // Deep merge di anyPlayer per preservare dati come nextClassicFixturePlayingStatusOdds
+      const mergedAnyPlayer = {
+        ...cardAnyPlayer,
+        ...freshAnyPlayer,
+        // Preserva nextClassicFixturePlayingStatusOdds se i dati freschi non lo hanno
+        nextClassicFixturePlayingStatusOdds:
+          freshAnyPlayer?.nextClassicFixturePlayingStatusOdds ??
+          cardAnyPlayer?.nextClassicFixturePlayingStatusOdds,
+      };
+
+      if (freshCard) {
+        // Usa sempre i dati freschi dal KV per gli average
         return {
           ...card,
-          power: (freshData.power as string | undefined) ?? card.power,
-          l10Average:
-            (freshData.l10Average as number | undefined) ?? card.l10Average,
+          power: freshCard.power ?? card.power,
+          l5Average: freshCard.l5Average,
+          l10Average: freshCard.l10Average,
+          l15Average: freshCard.l15Average,
+          l40Average: freshCard.l40Average,
           anyPlayer: mergedAnyPlayer,
         };
       }
-      return card;
+
+      // Nessun fallback storico per le statistiche
+      return {
+        ...card,
+        l5Average: undefined,
+        l10Average: undefined,
+        l15Average: undefined,
+        l40Average: undefined,
+        anyPlayer: mergedAnyPlayer,
+      };
     })
     .map((card) => card as Card);
 
@@ -360,10 +361,7 @@ function FormationCard({
   }
 
   // Calcolo L10 totale e rapporto CAP
-  const totalL10 = sortedCards.reduce(
-    (sum, card) => sum + (card.l10Average ?? 0),
-    0
-  );
+  const totalL10 = calculateCardsL10Total(sortedCards);
   // Estrai CAP dal gameMode (gestisce sia numeri che stringhe come "mls_arena_260")
   const gameModeStr = String(formation.gameMode ?? "");
   let capValue: number | null = null;
@@ -470,17 +468,7 @@ export function SavedLineups() {
 
   // Create a map of current cards for quick lookup
   const currentCardsMap = useMemo(
-    () =>
-      new Map(
-        cards.map((card) => [
-          card.slug,
-          {
-            power: card.power,
-            l10Average: card.l10Average,
-            anyPlayer: card.anyPlayer,
-          } as Record<string, unknown>,
-        ])
-      ),
+    () => new Map(cards.map((card): [string, Card] => [card.slug, card])),
     [cards]
   );
 
@@ -615,12 +603,7 @@ export function SavedLineups() {
 
       for (const card of formation.cards) {
         const cardData = currentCardsMap.get(card.slug);
-        const anyPlayer = cardData?.anyPlayer as
-          | {
-              nextGame?: { date?: string | null } | null;
-            }
-          | undefined;
-        const nextGameDate = anyPlayer?.nextGame?.date;
+        const nextGameDate = cardData?.anyPlayer?.nextGame?.date;
         if (nextGameDate) {
           const date = new Date(nextGameDate);
           if (!earliestDate || date < earliestDate) {

@@ -1,6 +1,6 @@
 "use client";
 
-import { Star, Trophy, Users } from "lucide-react";
+import { Star, Trophy } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { LoadingSpinner } from "@/components/loading-spinner";
 import { graphqlProxy } from "@/lib/api-server";
@@ -42,7 +42,13 @@ async function fetchSo5Fixtures(): Promise<FixtureOption[]> {
   }
 
   return result.data.so5.allSo5Fixtures.nodes.map(
-    (node: { slug: string; gameWeek: number; displayName: string; startDate?: string; endDate?: string }) => ({
+    (node: {
+      slug: string;
+      gameWeek: number;
+      displayName: string;
+      startDate?: string;
+      endDate?: string;
+    }) => ({
       slug: node.slug,
       gameWeek: node.gameWeek,
       displayName: node.displayName,
@@ -216,27 +222,29 @@ export function ResultsView({ initialGameWeek }: ResultsViewProps) {
   const [error, setError] = useState<string | null>(null);
 
   // Trova la game week corrente basata sulla data
-  const findCurrentGameWeek = (fixturesData: FixtureOption[]): FixtureOption | null => {
+  const findCurrentGameWeek = (
+    fixturesData: FixtureOption[]
+  ): FixtureOption | null => {
     const now = new Date();
-    
+
     // Cerca una fixture dove la data corrente è compresa tra startDate e endDate
     const current = fixturesData.find((f) => {
-      if (!f.startDate || !f.endDate) return false;
+      if (!(f.startDate && f.endDate)) return false;
       const start = new Date(f.startDate);
       const end = new Date(f.endDate);
       return now >= start && now <= end;
     });
-    
+
     if (current) return current;
-    
+
     // Se non siamo in nessuna GW attiva, trova la più vicina
     // (la più recente conclusa o la prossima che inizia)
     const sorted = [...fixturesData].sort((a, b) => b.gameWeek - a.gameWeek);
-    
+
     // Cerca la prima fixture che finisce dopo adesso (prossima)
     const next = sorted.find((f) => f.endDate && new Date(f.endDate) > now);
     if (next) return next;
-    
+
     // Altrimenti prendi la più recente (quella con gameWeek più alto)
     return sorted[0] ?? null;
   };

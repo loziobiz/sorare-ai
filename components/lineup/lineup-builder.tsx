@@ -16,6 +16,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { showToast, ToastContainer } from "@/components/ui/toast";
 import { useKvCards } from "@/hooks/use-kv-cards";
+import { calculateFormationSlotsL10Total } from "@/lib/cards-utils";
 import { db } from "@/lib/db";
 import type { UnifiedCard } from "@/lib/kv-types";
 import type { CardData } from "@/lib/sorare-api";
@@ -159,6 +160,32 @@ const GAME_MODE_OPTIONS: { value: GameMode; label: string }[] = [
   { value: "gas_arena_nocap", label: "GAS ARENA NOCAP" },
   { value: "gas_classic", label: "GAS CLASSIC" },
 ];
+
+function hydrateFormationWithFreshCards(
+  loadedFormation: FormationSlot[],
+  cardsBySlug: Map<string, Card>
+): {
+  formation: FormationSlot[];
+  missingSlugs: string[];
+} {
+  const missingSlugs: string[] = [];
+  const hydratedFormation = loadedFormation.map((slot) => {
+    const slug = slot.card?.slug;
+    if (!slug) {
+      return slot;
+    }
+
+    const freshCard = cardsBySlug.get(slug);
+    if (!freshCard) {
+      missingSlugs.push(slug);
+      return { ...slot, card: null };
+    }
+
+    return { ...slot, card: freshCard };
+  });
+
+  return { formation: hydratedFormation, missingSlugs };
+}
 
 function getInitialFormation(mode: GameMode): FormationSlot[] {
   const config = GAME_MODES[mode] ?? GAME_MODES["gas_arena_260"];
@@ -314,6 +341,10 @@ export function LineupBuilder() {
     isLoading: isCardsLoading,
     isRefreshing: isCardsRefreshing,
   } = useKvCards();
+  const currentCardsMap = useMemo<Map<string, Card>>(
+    () => new Map(cards.map((card): [string, Card] => [card.slug, card])),
+    [cards]
+  );
   const [error, setError] = useState("");
   const [gameMode, setGameMode] = useState<GameMode>("gas_arena_260");
   const [formation, setFormation] = useState<FormationSlot[]>(
@@ -384,11 +415,10 @@ export function LineupBuilder() {
   );
 
   // Calcola residuo CAP L10
-  const l10Used = useMemo(() => {
-    return formation.reduce((sum, slot) => {
-      return sum + (slot.card?.l10Average ?? 0);
-    }, 0);
-  }, [formation]);
+  const l10Used = useMemo(
+    () => calculateFormationSlotsL10Total(formation),
+    [formation]
+  );
 
   const gameModeConfig = GAME_MODES[gameMode];
   const l10Cap =
@@ -429,9 +459,7 @@ export function LineupBuilder() {
 
     // Verifica CAP L10
     if (gameModeConfig.cap !== null) {
-      const totalL10 = formation.reduce((sum, slot) => {
-        return sum + (slot.card?.l10Average ?? 0);
-      }, 0);
+      const totalL10 = calculateFormationSlotsL10Total(formation);
       if (totalL10 > gameModeConfig.cap) {
         return false;
       }
@@ -488,7 +516,15 @@ export function LineupBuilder() {
           };
           const savedGameMode = mapLegacyGameMode(saved.gameMode);
           setGameMode(savedGameMode);
-          setFormation(loadSavedFormation(saved));
+          const loadedFormation = loadSavedFormation(saved);
+          const { formation: hydratedFormation, missingSlugs } =
+            hydrateFormationWithFreshCards(loadedFormation, currentCardsMap);
+          setFormation(hydratedFormation);
+          if (missingSlugs.length > 0) {
+            setError(
+              `Alcune carte non sono disponibili nei dati correnti: ${missingSlugs.join(", ")}`
+            );
+          }
         }
       } catch (err) {
         console.error("Error loading formation:", err);
@@ -496,7 +532,7 @@ export function LineupBuilder() {
     };
 
     loadFormation();
-  }, [searchParams, cards]);
+  }, [searchParams, cards, currentCardsMap]);
 
   const handleSlotClick = (position: SlotPosition) => {
     const slot = formation.find((s) => s.position === position);
@@ -573,9 +609,7 @@ export function LineupBuilder() {
 
     // Validazione CAP L10
     if (gameModeConfig.cap !== null) {
-      const totalL10 = formation.reduce((sum, slot) => {
-        return sum + (slot.card?.l10Average ?? 0);
-      }, 0);
+      const totalL10 = calculateFormationSlotsL10Total(formation);
       if (totalL10 > gameModeConfig.cap) {
         setError(
           `Totale L10 (${totalL10.toFixed(0)}) supera il CAP (${gameModeConfig.cap})`
@@ -598,9 +632,18 @@ export function LineupBuilder() {
     }
 
     try {
-      const formationCards = formation
-        .map((s) => s.card)
-        .filter((c): c is Card => c !== null);
+      const formationCardSlugs = formation
+        .map((s) => s.card?.slug)
+        .filter((slug): slug is string => typeof slug === "string");
+      const formationCards = formationCardSlugs
+        .map((slug) => currentCardsMap.get(slug))
+        .filter((card): card is Card => card !== undefined);
+      if (formationCards.length !== formationCardSlugs.length) {
+        setError(
+          "Impossibile salvare: alcune carte non sono disponibili nel KV"
+        );
+        return;
+      }
 
       // Save slot positions to preserve formation layout
       const slots = formation

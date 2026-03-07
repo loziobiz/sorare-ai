@@ -16,6 +16,7 @@ import {
   useMemo,
   useState,
 } from "react";
+import { calculateCardsL10Total, getL10RawValue } from "@/lib/cards-utils";
 import type { SavedFormation } from "@/lib/db";
 import type { UnifiedCard } from "@/lib/kv-types";
 import type { CardData } from "@/lib/sorare-api";
@@ -323,11 +324,12 @@ function isL10Compatible(
     outCard: Card,
     inCard: Card
   ): number => {
-    const currentL10 = formation.cards.reduce(
-      (sum, c) => sum + (c.l10Average ?? 0),
-      0
+    const currentL10 = calculateCardsL10Total(formation.cards);
+    return (
+      currentL10 -
+      getL10RawValue(outCard.l10Average) +
+      getL10RawValue(inCard.l10Average)
     );
-    return currentL10 - (outCard.l10Average ?? 0) + (inCard.l10Average ?? 0);
   };
 
   // Helper per ottenere il CAP
@@ -337,8 +339,14 @@ function isL10Compatible(
       "260": 260,
       "220": 220,
       pro_gas: null,
+      mls_arena_260: 260,
+      mls_in_season: null,
+      gas_arena_260: 260,
+      gas_arena_220: 220,
+      gas_arena_nocap: null,
+      gas_classic: null,
     };
-    return modeLabels[formation.gameMode] ?? 260;
+    return modeLabels[formation.gameMode] ?? null;
   };
 
   // Check formazione sorgente: rimuove dragged, aggiunge target

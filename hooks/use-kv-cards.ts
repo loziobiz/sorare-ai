@@ -143,6 +143,7 @@ export function useKvCards(): UseKvCardsReturn {
       }));
 
       const sorareResult = await fetchAllCards({
+        useCache: false, // Sync autoritativo: fetch live da Sorare, nessuna cache
         onProgress: (page, total) => {
           setState((prev) => ({
             ...prev,
@@ -170,7 +171,16 @@ export function useKvCards(): UseKvCardsReturn {
         loadingProgress: "Aggiornamento dati...",
       }));
 
-      const cards = await fetchAllUserCards(userId);
+      const cards = await fetchAllUserCards(userId, {
+        skipCache: true, // Reload autorevole post-sync, bypassa cache worker
+      });
+
+      // Verifica read-after-write: il numero di carte caricate deve coincidere con quelle salvate
+      if (cards.length !== sorareResult.cards.length) {
+        throw new Error(
+          `Verifica sync fallita: salvate ${sorareResult.cards.length} carte, caricate ${cards.length}. Riprova il refresh.`
+        );
+      }
 
       setState((prev) => ({
         ...prev,

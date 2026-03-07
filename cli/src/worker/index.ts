@@ -11,11 +11,14 @@
  * - SORARE_API_KEY: API key per Sorare GraphQL
  */
 
+import { KV_CARDS_BATCH_SIZE } from "../../../shared/kv-constants.js";
 import { analyzeAAHandler } from "./handlers/analyze-aa.js";
 import { analyzeHomeAwayHandler } from "./handlers/analyze-homeaway.js";
 import { analyzeOddsHandler } from "./handlers/analyze-odds.js";
 import { extractPlayersHandler } from "./handlers/extract-players.js";
 import { syncExtraPlayersHandler } from "./handlers/sync-extra-players.js";
+import { syncUserCardsHandler } from "./handlers/sync-user-cards.js";
+import { saveUserJWT, getUserSyncStatus } from "./handlers/user-jwt.js";
 import {
   countUserCards,
   deleteUserCard,
@@ -59,6 +62,12 @@ async function handleCron(cron: string, env: Env): Promise<void> {
       await extractPlayersHandler(repository, client);
       console.log("🌐 Running sync-extra-players...");
       await syncExtraPlayersHandler(repository, client);
+      break;
+
+    // Martedì 06:00 UTC - Sync user cards (prima di extract-players)
+    case "0 6 * * 2":
+      console.log("🔄 Running sync-user-cards...");
+      await syncUserCardsHandler(env.SORARE_AI_DATA, client);
       break;
 
     // Mercoledì 08:00 UTC - Analyze home/away + AA
@@ -175,11 +184,77 @@ async function handleFetch(
       );
     }
 
+    // POST /api/user/jwt - Salva il JWT dell'utente
+    if (path === "/api/user/jwt" && request.method === "POST") {
+      const body = (await request.json<{ userId?: string; token?: string }>().catch(() => ({}))) as {
+        userId?: string;
+        token?: string;
+      };
+
+      if (!body.userId || !body.token) {
+        return json({ error: "Required: userId, token" }, headers, 400);
+      }
+
+      try {
+        await saveUserJWT(env.SORARE_AI_DATA, body.userId, body.token);
+        return json({ success: true, message: "JWT saved successfully" }, headers);
+      } catch (error) {
+        const msg = error instanceof Error ? error.message : String(error);
+        return json({ error: msg }, headers, 500);
+      }
+    }
+
+    // GET /api/user/sync-status?userId=xxx - Stato sincronizzazione
+    if (path === "/api/user/sync-status" && request.method === "GET") {
+      const userId = url.searchParams.get("userId");
+      if (!userId) {
+        return json({ error: "Missing userId parameter" }, headers, 400);
+      }
+
+      const status = await getUserSyncStatus(env.SORARE_AI_DATA, userId);
+      if (!status) {
+        return json({ error: "No JWT found for user" }, headers, 404);
+      }
+
+      return json({ userId, ...status }, headers);
+    }
+
+    // POST /api/user/refresh-cards - Forza aggiornamento carte (user chiama con JWT)
+    if (path === "/api/user/refresh-cards" && request.method === "POST") {
+      const body = (await request.json<{ userId?: string; token?: string }>().catch(() => ({}))) as {
+        userId?: string;
+        token?: string;
+      };
+
+      if (!body.userId || !body.token) {
+        return json({ error: "Required: userId, token" }, headers, 400);
+      }
+
+      // Esegui sync immediato
+      const { syncSingleUserCards } = await import("./handlers/sync-user-cards.js");
+      const result = await syncSingleUserCards(env.SORARE_AI_DATA, body.userId, body.token);
+      
+      // Salva anche il JWT per future sincronizzazioni
+      if (result.success) {
+        await saveUserJWT(env.SORARE_AI_DATA, body.userId, body.token);
+      }
+      
+      return json(
+        { 
+          success: result.success,
+          userId: body.userId,
+          cardsFound: result.cardsFound,
+          cardsSaved: result.cardsSaved,
+          error: result.error,
+        }, 
+        headers,
+        result.success ? 200 : 500
+      );
+    }
+
     // Trigger manuale (richiede metodo POST)
     if (path === "/trigger" && request.method === "POST") {
-      const body = (await request
-        .json<{ job?: string }>()
-        .catch(() => ({}))) as { job?: string };
+      const body = (await request.json<{ job?: string }>().catch(() => ({}))) as { job?: string };
       const job = body.job;
 
       if (
@@ -188,6 +263,7 @@ async function handleFetch(
           [
             "extract-players",
             "sync-extra-players",
+            "sync-user-cards",
             "analyze-homeaway",
             "analyze-aa",
             "analyze-odds",
@@ -197,7 +273,7 @@ async function handleFetch(
         return json(
           {
             error:
-              "Unknown job. Use: extract-players, sync-extra-players, analyze-homeaway, analyze-aa, analyze-odds",
+              "Unknown job. Use: extract-players, sync-extra-players, sync-user-cards, analyze-homeaway, analyze-aa, analyze-odds",
           },
           headers,
           400
@@ -215,6 +291,9 @@ async function handleFetch(
           break;
         case "sync-extra-players":
           result = await syncExtraPlayersHandler(repository, client);
+          break;
+        case "sync-user-cards":
+          result = await syncUserCardsHandler(env.SORARE_AI_DATA, client);
           break;
         case "analyze-homeaway":
           result = await analyzeHomeAwayHandler(repository, client);
@@ -325,11 +404,11 @@ async function handleFetch(
         );
       }
 
-      // Limite batch per sicurezza
-      if (body.cards.length > 500) {
+      // Limite batch per sicurezza (allineato a lib/kv-api)
+      if (body.cards.length > KV_CARDS_BATCH_SIZE) {
         return json(
           {
-            error: "Batch too large. Max 500 cards per request.",
+            error: `Batch too large. Max ${KV_CARDS_BATCH_SIZE} cards per request.`,
           },
           headers,
           400

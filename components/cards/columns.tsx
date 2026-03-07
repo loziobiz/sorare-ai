@@ -297,7 +297,7 @@ export function getLineupColumns(
         if (l10 === undefined || l10 === null) {
           return <div className="font-medium">-</div>;
         }
-        const l10Value = Math.round(l10);
+        const l10Value = l10;
         let colorClass = "";
         if (l10Value === 0) {
           colorClass = "bg-white/10 text-slate-400";
@@ -492,9 +492,7 @@ export function getDashboardColumns(): ColumnDef<Card>[] {
       header: "L10",
       size: DASHBOARD_COLUMN_WIDTHS.l10,
       cell: ({ row }) => (
-        <div className="font-medium">
-          {row.original.l10Average?.toFixed(0) ?? "-"}
-        </div>
+        <div className="font-medium">{row.original.l10Average ?? "-"}</div>
       ),
     },
     {

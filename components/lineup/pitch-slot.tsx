@@ -81,7 +81,7 @@ export function PitchSlot({ label, card, isActive, onClick }: PitchSlotProps) {
                 className={`inline-flex w-11 items-center justify-center gap-0.5 rounded px-1 py-0.5 font-medium text-[9px] ${colors.bg} ${colors.text}`}
               >
                 <span>📊</span>
-                {card.l10Average?.toFixed(0) ?? "-"}
+                {card.l10Average ?? "-"}
               </span>
             );
           })()}
