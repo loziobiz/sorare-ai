@@ -292,20 +292,40 @@ export function ResultsView({ initialGameWeek }: ResultsViewProps) {
       .finally(() => setIsLoadingResults(false));
   }, [selectedSlug]);
 
-  // Associa ogni lineup al suo ranking e ordina per slug
-  const lineupsWithRankings = useMemo(() => {
-    if (!fixture) {
-      return [];
-    }
+  const RARITY_CONFIG: { key: string; label: string; order: number }[] = [
+    { key: "limited", label: "Limited", order: 0 },
+    { key: "rare", label: "Rare", order: 1 },
+    { key: "common", label: "Common", order: 2 },
+  ];
 
-    return fixture.mySo5Lineups
-      .map((lineup, idx) => ({
-        lineup,
-        ranking: fixture.mySo5Rankings[idx],
-      }))
-      .sort((a, b) =>
-        b.lineup.so5Leaderboard.slug.localeCompare(a.lineup.so5Leaderboard.slug)
-      );
+  function getRarityConfig(slug: string): { label: string; order: number } {
+    const lower = slug.toLowerCase();
+    const match = RARITY_CONFIG.find((r) => lower.includes(r.key));
+    return match ?? { label: "Altro", order: 3 };
+  }
+
+  // Associa ogni lineup al suo ranking, aggiunge label rarità e raggruppa
+  const rarityGroups = useMemo(() => {
+    if (!fixture) return [];
+
+    const items = fixture.mySo5Lineups.map((lineup, idx) => ({
+      lineup,
+      ranking: fixture.mySo5Rankings[idx],
+      ...getRarityConfig(lineup.so5Leaderboard.slug),
+    }));
+
+    items.sort((a, b) => a.order - b.order);
+
+    const groups: { label: string; order: number; items: typeof items }[] = [];
+    for (const item of items) {
+      const last = groups[groups.length - 1];
+      if (last && last.label === item.label) {
+        last.items.push(item);
+      } else {
+        groups.push({ label: item.label, order: item.order, items: [item] });
+      }
+    }
+    return groups;
   }, [fixture]);
 
   if (isLoadingFixtures) {
@@ -361,11 +381,19 @@ export function ResultsView({ initialGameWeek }: ResultsViewProps) {
         </div>
       ) : fixture ? (
         <>
-          {/* Lineups - stesso layout saved-lineups */}
-          {lineupsWithRankings.length > 0 && (
-            <div className="flex flex-wrap items-start gap-5">
-              {lineupsWithRankings.map(({ lineup, ranking }) => (
-                <LineupRow key={lineup.id} lineup={lineup} ranking={ranking} />
+          {rarityGroups.length > 0 && (
+            <div className="space-y-8">
+              {rarityGroups.map((group) => (
+                <div key={group.label}>
+                  <h2 className="mb-3 font-bold text-slate-400 text-xs uppercase tracking-widest">
+                    {group.label}
+                  </h2>
+                  <div className="flex flex-wrap items-start gap-5">
+                    {group.items.map(({ lineup, ranking }) => (
+                      <LineupRow key={lineup.id} lineup={lineup} ranking={ranking} />
+                    ))}
+                  </div>
+                </div>
               ))}
             </div>
           )}
