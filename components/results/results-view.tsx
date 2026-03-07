@@ -143,6 +143,18 @@ function PlayerCard({ appearance }: { appearance: So5Appearance }) {
   );
 }
 
+const POSITION_ORDER: Record<string, number> = {
+  Goalkeeper: 0,
+  Defender: 1,
+  Midfielder: 2,
+  Forward: 3,
+};
+
+function getPositionOrder(appearance: So5Appearance): number {
+  const pos = appearance.anyCard?.anyPositions?.[0];
+  return pos !== undefined ? (POSITION_ORDER[pos] ?? 4) : 4;
+}
+
 function LineupRow({
   lineup,
   ranking,
@@ -151,6 +163,9 @@ function LineupRow({
   ranking?: So5Ranking;
 }) {
   const sortedAppearances = [...lineup.so5Appearances].sort((a, b) => {
+    const posA = getPositionOrder(a);
+    const posB = getPositionOrder(b);
+    if (posA !== posB) return posA - posB;
     return (b.score ?? 0) - (a.score ?? 0);
   });
 
