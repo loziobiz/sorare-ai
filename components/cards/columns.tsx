@@ -164,15 +164,15 @@ export interface LineupColumnOptions {
 
 // Larghezze colonne per lineup-builder
 export const LINEUP_COLUMN_WIDTHS = {
-  name: 310,
+  name: 220,
   starterOdds: 65,
-  team: 160,
+  team: 150,
   match: 80,
-  spacer: 30,
-  forma: 100,
+  spacer: 16,
+  forma: 90,
   aa15: 50,
   l5: 40,
-  l10: 80,
+  l10: 65,
   l40: 40,
 } as const;
 
