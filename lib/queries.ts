@@ -25,6 +25,7 @@ export const GET_SO5_RESULTS_QUERY = `
               name
               rarityTyped
               pictureUrl
+              anyPositions
             }
             anyPlayer {
               ... on Player {

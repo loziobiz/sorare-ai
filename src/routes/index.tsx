@@ -1,4 +1,4 @@
-import { createFileRoute, redirect, useRouter } from "@tanstack/react-router";
+import { createFileRoute, redirect } from "@tanstack/react-router";
 import { useState } from "react";
 import { LoginForm } from "@/components/login-form";
 import { TwoFactorAuthForm } from "@/components/TwoFactorAuthForm";
@@ -17,12 +17,11 @@ export const Route = createFileRoute("/")({
 });
 
 function Home() {
-  const router = useRouter();
   const [authStep, setAuthStep] = useState<AuthStep>("login");
   const [, setError] = useState("");
 
   const handleLoginSuccess = () => {
-    router.navigate({ to: "/cards" });
+    window.location.href = "/cards";
   };
 
   const handleTwoFactorRequired = () => {
@@ -30,7 +29,7 @@ function Home() {
   };
 
   const handleTwoFactorSuccess = () => {
-    router.navigate({ to: "/cards" });
+    window.location.href = "/cards";
   };
 
   const handleBackToLogin = () => {

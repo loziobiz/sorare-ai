@@ -143,6 +143,18 @@ function PlayerCard({ appearance }: { appearance: So5Appearance }) {
   );
 }
 
+const POSITION_ORDER: Record<string, number> = {
+  Goalkeeper: 0,
+  Defender: 1,
+  Midfielder: 2,
+  Forward: 3,
+};
+
+function getPositionOrder(appearance: So5Appearance): number {
+  const pos = appearance.anyCard?.anyPositions?.[0];
+  return pos !== undefined ? (POSITION_ORDER[pos] ?? 4) : 4;
+}
+
 function LineupRow({
   lineup,
   ranking,
@@ -151,6 +163,9 @@ function LineupRow({
   ranking?: So5Ranking;
 }) {
   const sortedAppearances = [...lineup.so5Appearances].sort((a, b) => {
+    const posA = getPositionOrder(a);
+    const posB = getPositionOrder(b);
+    if (posA !== posB) return posA - posB;
     return (b.score ?? 0) - (a.score ?? 0);
   });
 
@@ -277,20 +292,61 @@ export function ResultsView({ initialGameWeek }: ResultsViewProps) {
       .finally(() => setIsLoadingResults(false));
   }, [selectedSlug]);
 
-  // Associa ogni lineup al suo ranking e ordina per slug
-  const lineupsWithRankings = useMemo(() => {
-    if (!fixture) {
-      return [];
-    }
+  const RARITY_CONFIG: { key: string; label: string; order: number }[] = [
+    { key: "limited", label: "Limited", order: 0 },
+    { key: "rare", label: "Rare", order: 1 },
+    { key: "common", label: "Common", order: 2 },
+  ];
 
-    return fixture.mySo5Lineups
-      .map((lineup, idx) => ({
-        lineup,
-        ranking: fixture.mySo5Rankings[idx],
-      }))
-      .sort((a, b) =>
-        b.lineup.so5Leaderboard.slug.localeCompare(a.lineup.so5Leaderboard.slug)
+  function getRarityConfig(slug: string): { label: string; order: number } {
+    const lower = slug.toLowerCase();
+    const match = RARITY_CONFIG.find((r) => lower.includes(r.key));
+    return match ?? { label: "Altro", order: 3 };
+  }
+
+  // Associa ogni lineup al suo ranking, aggiunge label rarità e raggruppa per rarità → leaderboard
+  const rarityGroups = useMemo(() => {
+    if (!fixture) return [];
+
+    type Item = {
+      lineup: So5Lineup;
+      ranking: So5Ranking | undefined;
+      label: string;
+      order: number;
+    };
+
+    const items: Item[] = fixture.mySo5Lineups.map((lineup, idx) => ({
+      lineup,
+      ranking: fixture.mySo5Rankings[idx],
+      ...getRarityConfig(lineup.so5Leaderboard.slug),
+    }));
+
+    items.sort((a, b) => {
+      if (a.order !== b.order) return a.order - b.order;
+      return a.lineup.so5Leaderboard.displayName.localeCompare(
+        b.lineup.so5Leaderboard.displayName
       );
+    });
+
+    type LeaderboardGroup = { leaderboardName: string; items: Item[] };
+    type RarityGroup = { label: string; order: number; leaderboards: LeaderboardGroup[] };
+
+    const groups: RarityGroup[] = [];
+    for (const item of items) {
+      let rarityGroup = groups.find((g) => g.label === item.label);
+      if (!rarityGroup) {
+        rarityGroup = { label: item.label, order: item.order, leaderboards: [] };
+        groups.push(rarityGroup);
+      }
+      const lbName = item.lineup.so5Leaderboard.displayName;
+      let lbGroup = rarityGroup.leaderboards.find((l) => l.leaderboardName === lbName);
+      if (!lbGroup) {
+        lbGroup = { leaderboardName: lbName, items: [] };
+        rarityGroup.leaderboards.push(lbGroup);
+      }
+      lbGroup.items.push(item);
+    }
+    return groups;
   }, [fixture]);
 
   if (isLoadingFixtures) {
@@ -346,11 +402,28 @@ export function ResultsView({ initialGameWeek }: ResultsViewProps) {
         </div>
       ) : fixture ? (
         <>
-          {/* Lineups - stesso layout saved-lineups */}
-          {lineupsWithRankings.length > 0 && (
-            <div className="flex flex-wrap items-start gap-5">
-              {lineupsWithRankings.map(({ lineup, ranking }) => (
-                <LineupRow key={lineup.id} lineup={lineup} ranking={ranking} />
+          {rarityGroups.length > 0 && (
+            <div className="space-y-8">
+              {rarityGroups.map((group) => (
+                <div key={group.label}>
+                  <h2 className="mb-4 font-bold text-slate-400 text-xs uppercase tracking-widest">
+                    {group.label}
+                  </h2>
+                  <div className="space-y-4">
+                    {group.leaderboards.map((lb) => (
+                      <div key={lb.leaderboardName}>
+                        <h3 className="mb-2 font-semibold text-slate-500 text-xs">
+                          {lb.leaderboardName}
+                        </h3>
+                        <div className="flex flex-wrap items-start gap-5">
+                          {lb.items.map(({ lineup, ranking }) => (
+                            <LineupRow key={lineup.id} lineup={lineup} ranking={ranking} />
+                          ))}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
               ))}
             </div>
           )}
