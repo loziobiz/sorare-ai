@@ -62,10 +62,15 @@ export function useFilteredCards(options: UseFilteredCardsOptions): Card[] {
   return useMemo(() => {
     let filtered = cards.filter((card) => !usedCardSlugs.has(card.slug));
 
-    // Esclude giocatori senza squadra
-    filtered = filtered.filter((card) =>
-      Boolean(card.anyPlayer?.activeClub?.name?.trim())
-    );
+    // Esclude giocatori senza squadra o con dati incompleti
+    filtered = filtered.filter((card) => {
+      const clubName = card.anyPlayer?.activeClub?.name?.trim();
+      const clubCode = card.anyPlayer?.activeClub?.code?.trim();
+      // Esclude carte con club "Unknown" o nessun dato valido
+      if (!clubName && !clubCode) return false;
+      if (clubName?.toLowerCase().startsWith("unk")) return false;
+      return true;
+    });
 
     // Filtra le carte in cassaforte (mostra solo carte libere)
     filtered = filtered.filter((card) => card.sealed !== true);
