@@ -18,7 +18,6 @@ import { analyzeOddsHandler } from "./handlers/analyze-odds.js";
 import { extractPlayersHandler } from "./handlers/extract-players.js";
 import { syncExtraPlayersHandler } from "./handlers/sync-extra-players.js";
 import { syncUserCardsHandler } from "./handlers/sync-user-cards.js";
-import { saveUserJWT, getUserSyncStatus } from "./handlers/user-jwt.js";
 import {
   countUserCards,
   deleteUserCard,
@@ -31,6 +30,7 @@ import {
   saveUserCard,
   saveUserCardsBatch,
 } from "./handlers/user-cards.js";
+import { getUserSyncStatus, saveUserJWT } from "./handlers/user-jwt.js";
 import { createKVRepository } from "./lib/kv-repository.js";
 import { createSorareClient } from "./lib/sorare-client.js";
 
@@ -186,18 +186,23 @@ async function handleFetch(
 
     // POST /api/user/jwt - Salva il JWT dell'utente
     if (path === "/api/user/jwt" && request.method === "POST") {
-      const body = (await request.json<{ userId?: string; token?: string }>().catch(() => ({}))) as {
+      const body = (await request
+        .json<{ userId?: string; token?: string }>()
+        .catch(() => ({}))) as {
         userId?: string;
         token?: string;
       };
 
-      if (!body.userId || !body.token) {
+      if (!(body.userId && body.token)) {
         return json({ error: "Required: userId, token" }, headers, 400);
       }
 
       try {
         await saveUserJWT(env.SORARE_AI_DATA, body.userId, body.token);
-        return json({ success: true, message: "JWT saved successfully" }, headers);
+        return json(
+          { success: true, message: "JWT saved successfully" },
+          headers
+        );
       } catch (error) {
         const msg = error instanceof Error ? error.message : String(error);
         return json({ error: msg }, headers, 500);
@@ -221,40 +226,74 @@ async function handleFetch(
 
     // POST /api/user/refresh-cards - Forza aggiornamento carte (user chiama con JWT)
     if (path === "/api/user/refresh-cards" && request.method === "POST") {
-      const body = (await request.json<{ userId?: string; token?: string }>().catch(() => ({}))) as {
+      const body = (await request
+        .json<{ userId?: string; token?: string }>()
+        .catch(() => ({}))) as {
         userId?: string;
         token?: string;
       };
 
-      if (!body.userId || !body.token) {
+      if (!(body.userId && body.token)) {
         return json({ error: "Required: userId, token" }, headers, 400);
       }
 
+      // Salva JWT prima di sync (necessario per aggiornare lastSyncAt)
+      await saveUserJWT(env.SORARE_AI_DATA, body.userId, body.token);
+
       // Esegui sync immediato
-      const { syncSingleUserCards } = await import("./handlers/sync-user-cards.js");
-      const result = await syncSingleUserCards(env.SORARE_AI_DATA, body.userId, body.token);
-      
-      // Salva anche il JWT per future sincronizzazioni
-      if (result.success) {
-        await saveUserJWT(env.SORARE_AI_DATA, body.userId, body.token);
-      }
-      
+      const { syncSingleUserCards } = await import(
+        "./handlers/sync-user-cards.js"
+      );
+      const result = await syncSingleUserCards(
+        env.SORARE_AI_DATA,
+        body.userId,
+        body.token
+      );
+
       return json(
-        { 
+        {
           success: result.success,
           userId: body.userId,
           cardsFound: result.cardsFound,
           cardsSaved: result.cardsSaved,
           error: result.error,
-        }, 
+        },
         headers,
         result.success ? 200 : 500
       );
     }
 
+    // POST /api/user/cleanup - Cancella tutte le carte di un utente (TEMP)
+    if (path === "/api/user/cleanup" && request.method === "POST") {
+      const body = (await request.json<{ userId?: string }>().catch(() => ({}))) as {
+        userId?: string;
+      };
+      
+      if (!body.userId) {
+        return json({ error: "Required: userId" }, headers, 400);
+      }
+      
+      const prefix = `USR_${body.userId}:`;
+      let deleted = 0;
+      let cursor: string | undefined;
+      
+      do {
+        const listResult = await env.SORARE_AI_DATA.list({ prefix, cursor, limit: 1000 });
+        for (const key of listResult.keys) {
+          await env.SORARE_AI_DATA.delete(key.name);
+          deleted++;
+        }
+        cursor = listResult.list_complete ? undefined : listResult.cursor;
+      } while (cursor);
+      
+      return json({ success: true, userId: body.userId, deleted }, headers);
+    }
+
     // Trigger manuale (richiede metodo POST)
     if (path === "/trigger" && request.method === "POST") {
-      const body = (await request.json<{ job?: string }>().catch(() => ({}))) as { job?: string };
+      const body = (await request
+        .json<{ job?: string }>()
+        .catch(() => ({}))) as { job?: string };
       const job = body.job;
 
       if (
@@ -828,7 +867,7 @@ async function getCachedOrFetch(
  * Invalida la cache per un utente specifico
  * Invalida SOLO /api/cards/with-players?userId={userId}
  */
-async function invalidateUserCache(
+export async function invalidateUserCache(
   kv: KVNamespace,
   userId: string
 ): Promise<string[]> {

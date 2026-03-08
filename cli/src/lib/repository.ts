@@ -80,6 +80,7 @@ export interface NextFixtureOdds {
   isHome: boolean;
   startingOdds: StartingOdds | null;
   teamWinOdds: WinOdds | null;
+  projectedScore?: number | null; // Punteggio proiettato per la prossima partita (Sorare)
 }
 
 /**

@@ -33,7 +33,7 @@ async function encryptJWT(token: string): Promise<string> {
  */
 async function decryptJWT(encrypted: string): Promise<string> {
   const decoder = new TextDecoder();
-  const data = Uint8Array.from(atob(encrypted), c => c.charCodeAt(0));
+  const data = Uint8Array.from(atob(encrypted), (c) => c.charCodeAt(0));
   return decoder.decode(data);
 }
 
@@ -57,16 +57,18 @@ export async function saveUserJWT(
   while (payload.length % 4 !== 0) {
     payload += "=";
   }
-  
+
   const decoded = JSON.parse(atob(payload));
-  const expiresAt = decoded.exp ? new Date(decoded.exp * 1000).toISOString() : null;
-  
+  const expiresAt = decoded.exp
+    ? new Date(decoded.exp * 1000).toISOString()
+    : null;
+
   if (!expiresAt) {
     throw new Error("JWT missing exp claim");
   }
 
   const encrypted = await encryptJWT(token);
-  
+
   const data: UserJWTData = {
     token: encrypted,
     expiresAt,
@@ -85,17 +87,21 @@ export async function saveUserJWT(
 export async function getUserJWT(
   kv: KVNamespace,
   userId: string
-): Promise<{ token: string; expiresAt: string; lastSyncAt: string | null } | null> {
+): Promise<{
+  token: string;
+  expiresAt: string;
+  lastSyncAt: string | null;
+} | null> {
   const value = await kv.get(`${JWT_KEY_PREFIX}${userId}`);
   if (!value) return null;
 
   try {
     const data = JSON.parse(value) as UserJWTData;
-    
+
     // Verifica scadenza
     const now = new Date();
     const expiresAt = new Date(data.expiresAt);
-    
+
     if (now >= expiresAt) {
       console.log(`[UserJWT] Token expired for ${userId}`);
       return null;
@@ -132,10 +138,20 @@ export async function updateLastSync(
 /**
  * Lista tutti gli utenti con JWT salvato
  */
-export async function listUsersWithJWT(
-  kv: KVNamespace
-): Promise<Array<{ userId: string; expiresAt: string; lastSyncAt: string | null; isValid: boolean }>> {
-  const users: Array<{ userId: string; expiresAt: string; lastSyncAt: string | null; isValid: boolean }> = [];
+export async function listUsersWithJWT(kv: KVNamespace): Promise<
+  Array<{
+    userId: string;
+    expiresAt: string;
+    lastSyncAt: string | null;
+    isValid: boolean;
+  }>
+> {
+  const users: Array<{
+    userId: string;
+    expiresAt: string;
+    lastSyncAt: string | null;
+    isValid: boolean;
+  }> = [];
   let cursor: string | undefined;
 
   do {
@@ -186,11 +202,11 @@ export async function getUserSyncStatus(
   lastSyncAt: string | null;
 } | null> {
   const jwtData = await getUserJWT(kv, userId);
-  
+
   if (!jwtData) {
     const keyExists = await kv.get(`${JWT_KEY_PREFIX}${userId}`);
     if (!keyExists) return null;
-    
+
     // Token esiste ma è scaduto
     const data = JSON.parse(keyExists) as UserJWTData;
     return {

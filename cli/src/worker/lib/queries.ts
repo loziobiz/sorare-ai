@@ -142,6 +142,7 @@ export const GET_PLAYER_ODDS = `
         activeClub {
           name
         }
+        nextClassicFixtureProjectedScore
         nextClassicFixturePlayingStatusOdds {
           starterOddsBasisPoints
         }

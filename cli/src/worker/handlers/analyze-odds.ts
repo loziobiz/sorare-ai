@@ -26,6 +26,7 @@ interface GraphQLPlayerOdds {
   slug: string;
   displayName: string;
   activeClub: { name: string } | null;
+  nextClassicFixtureProjectedScore: number | null;
   nextClassicFixturePlayingStatusOdds: {
     starterOddsBasisPoints: number;
   } | null;
@@ -147,6 +148,7 @@ async function fetchPlayersOddsBatch(
           isHome,
           startingOdds,
           teamWinOdds,
+          projectedScore: playerData.nextClassicFixtureProjectedScore,
         };
       }
 
