@@ -1,37 +1,54 @@
 "use client";
 
-import { LogOut, RefreshCw } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { logout } from "@/lib/auth-server";
+import { AlertTriangle } from "lucide-react";
 import { formatLastUpdate } from "@/lib/cards-utils";
-import { clearUserEmail } from "@/lib/user-id";
+import type { SyncStatusResponse } from "@/lib/kv-types";
+
+const STALE_DATA_DAYS = 7;
+
+function isLastSyncStale(lastSyncAt: string | null): boolean {
+  if (!lastSyncAt) {
+    return true;
+  }
+  const syncDate = new Date(lastSyncAt);
+  const cutoff = new Date();
+  cutoff.setDate(cutoff.getDate() - STALE_DATA_DAYS);
+  return syncDate < cutoff;
+}
 
 interface DashboardHeaderProps {
   userSlug: string;
   lastUpdate: Date | null;
-  isLoading: boolean;
-  isSyncing: boolean;
-  onSync: () => void;
+  syncStatus: SyncStatusResponse | null;
 }
 
 export function DashboardHeader({
   userSlug,
   lastUpdate,
-  isLoading,
-  isSyncing,
-  onSync,
+  syncStatus,
 }: DashboardHeaderProps) {
-  const handleLogout = async () => {
-    await logout();
-    clearUserEmail();
-    document.cookie = "sorare_jwt_token=; path=/; max-age=0";
-    window.location.href = "/";
-  };
-
-  const isDisabled = isSyncing || isLoading;
+  const tokenExpiringSoon =
+    syncStatus?.hasToken && syncStatus.expiresInDays < 3;
+  const dataStale = syncStatus && isLastSyncStale(syncStatus.lastSyncAt);
 
   return (
-    <div className="flex items-center justify-between">
+    <div className="space-y-2">
+      {(tokenExpiringSoon || dataStale) && (
+        <div className="flex flex-col gap-2 rounded-lg border border-amber-500/50 bg-amber-500/10 p-3">
+          {tokenExpiringSoon && (
+            <p className="flex items-center gap-2 text-amber-600 text-sm dark:text-amber-400">
+              <AlertTriangle className="h-4 w-4 shrink-0" />
+              Token in scadenza, rieffettua il login
+            </p>
+          )}
+          {dataStale && !tokenExpiringSoon && (
+            <p className="flex items-center gap-2 text-amber-600 text-sm dark:text-amber-400">
+              <AlertTriangle className="h-4 w-4 shrink-0" />
+              Dati obsoleti, aggiorna ora
+            </p>
+          )}
+        </div>
+      )}
       <div>
         <h1 className="font-bold text-3xl">YASM Dashboard</h1>
         <p className="text-muted-foreground">
@@ -42,27 +59,6 @@ export function DashboardHeader({
             </span>
           )}
         </p>
-      </div>
-      <div className="flex gap-2">
-        <Button
-          className="border-white/10 bg-white/5 text-slate-200 hover:bg-white/10 hover:text-white"
-          disabled={isDisabled}
-          onClick={onSync}
-          variant="outline"
-        >
-          <RefreshCw
-            className={`mr-2 h-4 w-4 ${isSyncing ? "animate-spin" : ""}`}
-          />
-          Aggiorna carte
-        </Button>
-        <Button
-          className="border-white/10 bg-white/5 text-slate-200 hover:bg-white/10 hover:text-white"
-          onClick={handleLogout}
-          variant="outline"
-        >
-          <LogOut className="mr-2 h-4 w-4" />
-          Logout
-        </Button>
       </div>
     </div>
   );

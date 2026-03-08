@@ -1,6 +1,8 @@
 import { createFileRoute, redirect } from "@tanstack/react-router";
+import { LogOut, RefreshCw } from "lucide-react";
 import { ExportTokenButton } from "@/components/export-token-button";
 import { PageLayout } from "@/components/layout/page-layout";
+import { Button } from "@/components/ui/button";
 import {
   Card,
   CardContent,
@@ -8,7 +10,10 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { logout } from "@/lib/auth-server";
 import { isAuthenticated } from "@/lib/auth-server";
+import { clearUserEmail } from "@/lib/user-id";
+import { useKvCards } from "@/hooks/use-kv-cards";
 
 export const Route = createFileRoute("/settings")({
   component: SettingsPage,
@@ -21,6 +26,16 @@ export const Route = createFileRoute("/settings")({
 });
 
 function SettingsPage() {
+  const { isSyncing, isLoading, syncWithSorare } = useKvCards();
+  const isDisabled = isSyncing || isLoading;
+
+  const handleLogout = async () => {
+    await logout();
+    clearUserEmail();
+    document.cookie = "sorare_jwt_token=; path=/; max-age=0";
+    window.location.href = "/";
+  };
+
   return (
     <PageLayout containerSize="default" showNav>
       <div className="space-y-6">
@@ -34,6 +49,54 @@ function SettingsPage() {
         <div className="h-px bg-slate-200" />
 
         <div className="grid gap-6">
+          {/* Logout Section */}
+          <Card className="border-white/10 bg-[#1A1B23] text-slate-200">
+            <CardHeader>
+              <CardTitle>Sessione</CardTitle>
+              <CardDescription className="text-slate-400">
+                Gestisci la tua sessione attuale.
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <Button
+                className="border-white/10 bg-white/5 text-slate-200 hover:bg-white/10 hover:text-white"
+                onClick={handleLogout}
+                variant="outline"
+              >
+                <LogOut className="mr-2 h-4 w-4" />
+                Logout
+              </Button>
+            </CardContent>
+          </Card>
+
+          {/* Cards Sync Section */}
+          <Card className="border-white/10 bg-[#1A1B23] text-slate-200">
+            <CardHeader>
+              <CardTitle>Sincronizzazione Carte</CardTitle>
+              <CardDescription className="text-slate-400">
+                Aggiorna manualmente i dati delle carte dalla API Sorare.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <p className="text-slate-400 text-sm">
+                Le carte vengono automaticamente aggiornate due volte al giorno.
+                Usa questo pulsante solo se noti incongruenze nei dati o se hai
+                appena acquistato/venduto giocatori.
+              </p>
+              <Button
+                className="border-white/10 bg-white/5 text-slate-200 hover:bg-white/10 hover:text-white"
+                disabled={isDisabled}
+                onClick={syncWithSorare}
+                variant="outline"
+              >
+                <RefreshCw
+                  className={`mr-2 h-4 w-4 ${isSyncing ? "animate-spin" : ""}`}
+                />
+                Aggiorna Carte
+              </Button>
+            </CardContent>
+          </Card>
+
           {/* CLI Tools Section */}
           <Card className="border-white/10 bg-[#1A1B23] text-slate-200">
             <CardHeader>
@@ -106,6 +169,7 @@ function SettingsPage() {
               </div>
             </CardContent>
           </Card>
+
         </div>
       </div>
     </PageLayout>

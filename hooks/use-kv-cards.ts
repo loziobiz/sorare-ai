@@ -1,16 +1,26 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+import { refreshUserCardsFromWorker } from "@/lib/auth-server";
 import {
   fetchAllUserCards,
+  fetchSyncStatus,
   fetchUserCardsWithPlayers,
   mapKvCardToUnifiedCard,
-  syncCardsToKv,
 } from "@/lib/kv-api";
-import type { UnifiedCard } from "@/lib/kv-types";
+import type { SyncStatusResponse, UnifiedCard } from "@/lib/kv-types";
 import { UserIdError } from "@/lib/kv-types";
-import { fetchAllCards } from "@/lib/sorare-api";
 import { getCurrentUserId, getCurrentUserIdSafe } from "@/lib/user-id";
+
+// ============================================================================
+// Helpers
+// ============================================================================
+
+function getSyncErrorMessage(err: unknown): string {
+  if (err instanceof UserIdError) return err.message;
+  if (err instanceof Error) return err.message;
+  return "Errore nella sincronizzazione";
+}
 
 // ============================================================================
 // Types
@@ -25,10 +35,11 @@ interface KvCardsState {
   error: string;
   loadingProgress: string;
   lastUpdate: Date | null;
+  syncStatus: SyncStatusResponse | null;
 }
 
 interface UseKvCardsReturn extends KvCardsState {
-  refresh: () => void;
+  refresh: (options?: { skipCache?: boolean }) => void;
   syncWithSorare: () => Promise<void>;
   clearError: () => void;
 }
@@ -47,10 +58,11 @@ export function useKvCards(): UseKvCardsReturn {
     error: "",
     loadingProgress: "",
     lastUpdate: null,
+    syncStatus: null,
   });
 
   // Carica le carte dal KV
-  const loadCards = useCallback(async () => {
+  const loadCards = useCallback(async (options?: { skipCache?: boolean }) => {
     setState((prev) => ({
       ...prev,
       isLoading: true,
@@ -61,7 +73,9 @@ export function useKvCards(): UseKvCardsReturn {
     try {
       const userId = getCurrentUserId();
 
-      const response = await fetchUserCardsWithPlayers(userId);
+      const response = await fetchUserCardsWithPlayers(userId, {
+        skipCache: options?.skipCache,
+      });
 
       // Mappa le carte
       const cards = response.cards
@@ -75,6 +89,12 @@ export function useKvCards(): UseKvCardsReturn {
         })
         .filter((c): c is UnifiedCard => c !== null);
 
+      const [syncStatusRes] = await Promise.allSettled([
+        fetchSyncStatus(userId),
+      ]);
+      const syncStatus =
+        syncStatusRes.status === "fulfilled" ? syncStatusRes.value : null;
+
       setState((prev) => ({
         ...prev,
         cards,
@@ -82,6 +102,7 @@ export function useKvCards(): UseKvCardsReturn {
         isLoading: false,
         loadingProgress: "",
         lastUpdate: new Date(),
+        syncStatus: syncStatus && !("error" in syncStatus) ? syncStatus : null,
       }));
     } catch (err) {
       let errorMessage: string;
@@ -108,79 +129,61 @@ export function useKvCards(): UseKvCardsReturn {
   }, [loadCards]);
 
   // Refresh: ricarica dal KV
-  const refresh = useCallback(() => {
-    setState((prev) => ({
-      ...prev,
-      isRefreshing: true,
-      error: "",
-    }));
-
-    loadCards().finally(() => {
+  const refresh = useCallback(
+    (options?: { skipCache?: boolean }) => {
       setState((prev) => ({
         ...prev,
-        isRefreshing: false,
+        isRefreshing: true,
+        error: "",
       }));
-    });
-  }, [loadCards]);
 
-  // Sync: scarica da Sorare e salva su KV
+      loadCards(options).finally(() => {
+        setState((prev) => ({
+          ...prev,
+          isRefreshing: false,
+        }));
+      });
+    },
+    [loadCards]
+  );
+
+  // Sync: richiede al worker di scaricare le carte da Sorare e salvarle su KV
   const syncWithSorare = useCallback(async () => {
     setState((prev) => ({
       ...prev,
       isSyncing: true,
       isRefreshing: true,
       error: "",
-      loadingProgress: "Connessione a Sorare...",
+      loadingProgress: "Connessione al worker...",
     }));
 
     try {
       const userId = getCurrentUserId();
 
-      // 1. Scarica da Sorare
       setState((prev) => ({
         ...prev,
-        loadingProgress: "Scaricamento carte da Sorare...",
+        loadingProgress: "Aggiornamento carte...",
       }));
 
-      const sorareResult = await fetchAllCards({
-        useCache: false, // Sync autoritativo: fetch live da Sorare, nessuna cache
-        onProgress: (page, total) => {
-          setState((prev) => ({
-            ...prev,
-            loadingProgress: `Pagina ${page}... (${total} carte)`,
-          }));
-        },
-      });
+      const result = await refreshUserCardsFromWorker({ data: { userId } });
 
-      // 2. Salva su KV
+      if (!result.success) {
+        const msg =
+          result.error?.toLowerCase().includes("expired") ||
+          result.error?.toLowerCase().includes("invalid")
+            ? "Token scaduto, rieffettua il login"
+            : (result.error ?? "Errore nella sincronizzazione");
+        throw new Error(msg);
+      }
+
       setState((prev) => ({
         ...prev,
-        loadingProgress: `Sincronizzazione ${sorareResult.cards.length} carte...`,
-      }));
-
-      await syncCardsToKv(userId, sorareResult.cards, (saved, total) => {
-        setState((prev) => ({
-          ...prev,
-          loadingProgress: `Salvate ${saved}/${total} carte...`,
-        }));
-      });
-
-      // 3. Ricarica dal KV
-      setState((prev) => ({
-        ...prev,
-        loadingProgress: "Aggiornamento dati...",
+        loadingProgress: "Caricamento dati aggiornati...",
       }));
 
       const cards = await fetchAllUserCards(userId, {
-        skipCache: true, // Reload autorevole post-sync, bypassa cache worker
+        skipCache: true,
       });
-
-      // Verifica read-after-write: il numero di carte caricate deve coincidere con quelle salvate
-      if (cards.length !== sorareResult.cards.length) {
-        throw new Error(
-          `Verifica sync fallita: salvate ${sorareResult.cards.length} carte, caricate ${cards.length}. Riprova il refresh.`
-        );
-      }
 
       setState((prev) => ({
         ...prev,
@@ -192,18 +195,9 @@ export function useKvCards(): UseKvCardsReturn {
         lastUpdate: new Date(),
       }));
     } catch (err) {
-      let errorMessage: string;
-      if (err instanceof UserIdError) {
-        errorMessage = err.message;
-      } else if (err instanceof Error) {
-        errorMessage = err.message;
-      } else {
-        errorMessage = "Errore nella sincronizzazione";
-      }
-
       setState((prev) => ({
         ...prev,
-        error: errorMessage,
+        error: getSyncErrorMessage(err),
         isSyncing: false,
         isRefreshing: false,
         loadingProgress: "",

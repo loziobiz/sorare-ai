@@ -337,17 +337,27 @@ export function ResultsView({ initialGameWeek }: ResultsViewProps) {
     });
 
     type LeaderboardGroup = { leaderboardName: string; items: Item[] };
-    type RarityGroup = { label: string; order: number; leaderboards: LeaderboardGroup[] };
+    type RarityGroup = {
+      label: string;
+      order: number;
+      leaderboards: LeaderboardGroup[];
+    };
 
     const groups: RarityGroup[] = [];
     for (const item of items) {
       let rarityGroup = groups.find((g) => g.label === item.label);
       if (!rarityGroup) {
-        rarityGroup = { label: item.label, order: item.order, leaderboards: [] };
+        rarityGroup = {
+          label: item.label,
+          order: item.order,
+          leaderboards: [],
+        };
         groups.push(rarityGroup);
       }
       const lbName = item.lineup.so5Leaderboard.displayName;
-      let lbGroup = rarityGroup.leaderboards.find((l) => l.leaderboardName === lbName);
+      let lbGroup = rarityGroup.leaderboards.find(
+        (l) => l.leaderboardName === lbName
+      );
       if (!lbGroup) {
         lbGroup = { leaderboardName: lbName, items: [] };
         rarityGroup.leaderboards.push(lbGroup);
@@ -425,7 +435,11 @@ export function ResultsView({ initialGameWeek }: ResultsViewProps) {
                         </h3>
                         <div className="flex flex-wrap items-start gap-5">
                           {lb.items.map(({ lineup, ranking }) => (
-                            <LineupRow key={lineup.id} lineup={lineup} ranking={ranking} />
+                            <LineupRow
+                              key={lineup.id}
+                              lineup={lineup}
+                              ranking={ranking}
+                            />
                           ))}
                         </div>
                       </div>

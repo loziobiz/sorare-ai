@@ -14,6 +14,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { login } from "@/lib/auth-server";
+import { saveUserJwt } from "@/lib/kv-api";
 
 interface LoginFormProps {
   onSuccess?: () => void;
@@ -36,9 +37,16 @@ export function LoginForm({ onSuccess, onTwoFactorRequired }: LoginFormProps) {
 
       if (result.success) {
         // Salva email per identificare l'utente nelle chiamate KV
-        localStorage.setItem("sorare_user_email", email.toLowerCase().trim());
+        const trimmedEmail = email.toLowerCase().trim();
+        localStorage.setItem("sorare_user_email", trimmedEmail);
         if (result.token) {
           document.cookie = `sorare_jwt_token=${result.token}; path=/; max-age=${30 * 24 * 60 * 60}; SameSite=Lax`;
+          const userId = trimmedEmail.split("@")[0];
+          if (userId) {
+            await saveUserJwt(userId, result.token).catch(() => {
+              // Non bloccare il login se il salvataggio JWT fallisce
+            });
+          }
         }
         onSuccess?.();
       } else if (result.requiresTwoFactor) {

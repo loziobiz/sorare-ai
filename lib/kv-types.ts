@@ -47,6 +47,22 @@ export interface KvSingleSaveResponse {
   error?: string;
 }
 
+export interface SyncStatusResponse {
+  userId: string;
+  hasToken: boolean;
+  isValid: boolean;
+  expiresInDays: number;
+  lastSyncAt: string | null;
+}
+
+export interface RefreshCardsResponse {
+  success: boolean;
+  userId: string;
+  cardsFound: number;
+  cardsSaved: number;
+  error?: string;
+}
+
 // ============================================================================
 // Card Value Types (ciò che viene salvato nel KV)
 // ============================================================================
@@ -219,6 +235,7 @@ export interface KvNextFixture {
   opponent: string;
   opponentCode: string;
   isHome: boolean;
+  projectedScore?: number;
   startingOdds: {
     starterOddsBasisPoints: number;
   };
@@ -383,6 +400,7 @@ export interface UnifiedCard {
       drawOddsBasisPoints: number;
       loseOddsBasisPoints: number;
     };
+    projectedScore?: number;
   };
 
   // Starter odds (mappato da playerData.stats.odds.nextFixture.startingOdds)

@@ -14,6 +14,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { loginWithTwoFactor } from "@/lib/auth-server";
+import { saveUserJwt } from "@/lib/kv-api";
 
 interface TwoFactorAuthFormProps {
   onSuccess?: () => void;
@@ -34,12 +35,22 @@ export function TwoFactorAuthForm({
     setError("");
 
     try {
-      const otpChallenge = localStorage.getItem("sorare_otp_challenge") ?? undefined;
-      const result = await loginWithTwoFactor({ data: { otpCode, otpChallenge } });
+      const otpChallenge =
+        localStorage.getItem("sorare_otp_challenge") ?? undefined;
+      const result = await loginWithTwoFactor({
+        data: { otpCode, otpChallenge },
+      });
 
       if (result.success) {
         if (result.token) {
           document.cookie = `sorare_jwt_token=${result.token}; path=/; max-age=${30 * 24 * 60 * 60}; SameSite=Lax`;
+          const email = localStorage.getItem("sorare_user_email");
+          const userId = email?.split("@")[0];
+          if (userId) {
+            await saveUserJwt(userId, result.token).catch(() => {
+              // Non bloccare il login se il salvataggio JWT fallisce
+            });
+          }
         }
         localStorage.removeItem("sorare_otp_challenge");
         onSuccess?.();
@@ -47,7 +58,9 @@ export function TwoFactorAuthForm({
         setError(result.error || "Two-factor authentication failed");
       }
     } catch (_err) {
-      setError(`Errore: ${_err instanceof Error ? _err.message : String(_err)}`);
+      setError(
+        `Errore: ${_err instanceof Error ? _err.message : String(_err)}`
+      );
     } finally {
       setIsLoading(false);
     }

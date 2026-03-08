@@ -275,6 +275,7 @@ function extractNextGame(
       drawOddsBasisPoints: nextFixture.teamWinOdds.drawOddsBasisPoints,
       loseOddsBasisPoints: nextFixture.teamWinOdds.loseOddsBasisPoints,
     },
+    projectedScore: nextFixture.projectedScore,
   };
 }
 
@@ -504,6 +505,32 @@ export function countUserCards(
     userId,
     ...(clubCode && { clubCode }),
   });
+}
+
+/**
+ * Salva il JWT dell'utente nel worker per sincronizzazioni automatiche.
+ * Da chiamare dopo login (con o senza 2FA).
+ */
+export function saveUserJwt(
+  userId: string,
+  token: string
+): Promise<{ success: boolean; message?: string; error?: string }> {
+  return httpPost<{ success: boolean; message?: string; error?: string }>(
+    "/api/user/jwt",
+    { userId, token }
+  );
+}
+
+/**
+ * Recupera lo stato di sincronizzazione (token, scadenza, ultimo sync).
+ */
+export function fetchSyncStatus(
+  userId: string
+): Promise<SyncStatusResponse & { error?: string }> {
+  return httpGet<SyncStatusResponse & { error?: string }>(
+    "/api/user/sync-status",
+    { userId }
+  );
 }
 
 /**

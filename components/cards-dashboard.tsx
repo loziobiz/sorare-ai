@@ -1,6 +1,6 @@
 "use client";
 
-import { RefreshCw } from "lucide-react";
+
 import { useState } from "react";
 import { CardsGrid } from "@/components/cards/card-grid";
 import { CardsFilters } from "@/components/cards/cards-filters";
@@ -13,7 +13,7 @@ import { DashboardHeader } from "@/components/cards/dashboard-header";
 import { type ViewMode, ViewToggle } from "@/components/cards/view-toggle";
 import { LoadingSpinner } from "@/components/loading-spinner";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { Button } from "@/components/ui/button";
+
 import { useCardFilters } from "@/hooks/use-card-filters";
 import { useKvCards } from "@/hooks/use-kv-cards";
 
@@ -31,7 +31,7 @@ export function CardsDashboard() {
     error,
     loadingProgress,
     lastUpdate,
-    syncWithSorare,
+    syncStatus,
   } = useKvCards();
 
   const {
@@ -74,10 +74,8 @@ export function CardsDashboard() {
       <div className="sticky top-0 z-20 bg-transparent pb-2">
         <div className="mt-6">
           <DashboardHeader
-            isLoading={isLoading}
-            isSyncing={isSyncing}
             lastUpdate={lastUpdate}
-            onSync={syncWithSorare}
+            syncStatus={syncStatus}
             userSlug={userId}
           />
         </div>
@@ -104,18 +102,7 @@ export function CardsDashboard() {
 
         {error && (
           <Alert className="mt-4" variant="destructive">
-            <AlertDescription className="flex items-center justify-between">
-              <span>{error}</span>
-              <Button
-                className="ml-4 shrink-0"
-                onClick={syncWithSorare}
-                size="sm"
-                variant="outline"
-              >
-                <RefreshCw className="mr-2 h-4 w-4" />
-                Riprova
-              </Button>
-            </AlertDescription>
+            <AlertDescription>{error}</AlertDescription>
           </Alert>
         )}
 

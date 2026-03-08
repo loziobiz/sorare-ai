@@ -16,6 +16,9 @@ Always refer to the following resources for Sorare API and GraphQL documentation
 - [Routing](./docs/routing.md)
 - [Architecture & Data Flow](./docs/architecture.md) - KV Store, useKvCards hook, data flow
 
+### GraphQL queries:
+Before writing any GQL query you must check the Sorare GraphQL Schema and verify correctess BEFORE implementing!
+
 ## Ultracite Code Standards
 
 This project uses **Ultracite**, a zero-config Biome preset that enforces strict code quality standards through automated formatting and linting.
@@ -30,7 +33,7 @@ With Biome, most issues are automatically fixable.
 
 ---
 
-### Core Principles
+### Code formatting and architecture Principles
 
 Write code that is **accessible, performant, type-safe, and maintainable**. Focus on clarity and explicit intent over brevity.
 

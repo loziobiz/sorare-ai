@@ -173,7 +173,7 @@ export const LINEUP_COLUMN_WIDTHS = {
   aa15: 50,
   l5: 40,
   l10: 65,
-  l40: 40,
+  proj: 50,
 } as const;
 
 // Larghezze colonne per cards-dashboard
@@ -268,7 +268,7 @@ export function getLineupColumns(
     },
     {
       id: "starterOdds",
-      header: "Starter %",
+      header: "Start %",
       size: LINEUP_COLUMN_WIDTHS.starterOdds,
       accessorFn: (row) =>
         row.anyPlayer?.nextClassicFixturePlayingStatusOdds
@@ -347,6 +347,17 @@ export function getLineupColumns(
       },
     },
     {
+      id: "proj",
+      header: "Proj",
+      size: LINEUP_COLUMN_WIDTHS.proj,
+      accessorFn: (row) =>
+        (row as UnifiedCard).nextGame?.projectedScore ?? null,
+      cell: ({ row }) => {
+        const proj = (row.original as UnifiedCard).nextGame?.projectedScore;
+        return <div className="font-medium">{proj?.toFixed(1) ?? "-"}</div>;
+      },
+    },
+    {
       id: "match",
       header: "Prossima",
       size: LINEUP_COLUMN_WIDTHS.match,
@@ -383,16 +394,6 @@ export function getLineupColumns(
       cell: ({ row }) => (
         <div className="font-medium">
           {row.original.l5Average?.toFixed(0) ?? "-"}
-        </div>
-      ),
-    },
-    {
-      accessorKey: "l40Average",
-      header: "L40",
-      size: LINEUP_COLUMN_WIDTHS.l40,
-      cell: ({ row }) => (
-        <div className="font-medium">
-          {row.original.l40Average?.toFixed(0) ?? "-"}
         </div>
       ),
     },

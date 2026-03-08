@@ -12,6 +12,7 @@ import type { SignInInput, SignInResponse } from "./types";
 const COOKIE_NAME = "sorare_jwt_token";
 const COOKIE_OTP_CHALLENGE = "sorare_otp_challenge";
 const SORARE_API_BASE = "https://api.sorare.com";
+const KV_WORKER_URL = "https://sorare-mls-sync.loziobiz.workers.dev";
 const INVALID_CREDENTIALS_MESSAGE =
   "Credenziali non valide. Usa la tua email Sorare (non username) e verifica la password.";
 const TWO_FACTOR_ERROR_REGEX = /2fa|two[- ]factor|otp/i;
@@ -167,7 +168,11 @@ export const login = createServerFn({ method: "POST" })
 
       if (signInData.otpSessionChallenge) {
         setOtpChallenge(signInData.otpSessionChallenge);
-        return { success: false, requiresTwoFactor: true, otpChallenge: signInData.otpSessionChallenge };
+        return {
+          success: false,
+          requiresTwoFactor: true,
+          otpChallenge: signInData.otpSessionChallenge,
+        };
       }
 
       if (signInData.errors?.length) {
@@ -179,7 +184,11 @@ export const login = createServerFn({ method: "POST" })
 
       if (signInData.jwtToken?.token && signInData.currentUser) {
         setAuthToken(signInData.jwtToken.token);
-        return { success: true, token: signInData.jwtToken.token, user: { slug: signInData.currentUser.slug } };
+        return {
+          success: true,
+          token: signInData.jwtToken.token,
+          user: { slug: signInData.currentUser.slug },
+        };
       }
       return { success: false, error: "Unexpected response" };
     } catch (error) {
@@ -221,7 +230,11 @@ export const loginWithTwoFactor = createServerFn({ method: "POST" })
       if (signInData.jwtToken?.token && signInData.currentUser) {
         setAuthToken(signInData.jwtToken.token);
         deleteCookie(COOKIE_OTP_CHALLENGE);
-        return { success: true, token: signInData.jwtToken.token, user: { slug: signInData.currentUser.slug } };
+        return {
+          success: true,
+          token: signInData.jwtToken.token,
+          user: { slug: signInData.currentUser.slug },
+        };
       }
       return { success: false, error: "Unexpected response" };
     } catch (error) {
@@ -236,3 +249,54 @@ export const logout = createServerFn({ method: "POST" }).handler(() => {
   deleteCookie(COOKIE_NAME);
   deleteCookie(COOKIE_OTP_CHALLENGE);
 });
+
+export interface RefreshCardsResult {
+  success: boolean;
+  userId: string;
+  cardsFound: number;
+  cardsSaved: number;
+  error?: string;
+}
+
+export const refreshUserCardsFromWorker = createServerFn({ method: "POST" })
+  .inputValidator((data: { userId: string }) => data)
+  .handler(async ({ data }): Promise<RefreshCardsResult> => {
+    const token = await getCookie(COOKIE_NAME);
+    if (!token) {
+      return {
+        success: false,
+        userId: data.userId,
+        cardsFound: 0,
+        cardsSaved: 0,
+        error: "Effettua nuovamente il login",
+      };
+    }
+
+    const response = await fetch(`${KV_WORKER_URL}/api/user/refresh-cards`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ userId: data.userId, token }),
+    });
+
+    const result = (await response.json()) as RefreshCardsResult & {
+      error?: string;
+    };
+
+    if (!response.ok) {
+      return {
+        success: false,
+        userId: data.userId,
+        cardsFound: result.cardsFound ?? 0,
+        cardsSaved: result.cardsSaved ?? 0,
+        error: result.error ?? `HTTP ${response.status}`,
+      };
+    }
+
+    return {
+      success: result.success ?? false,
+      userId: result.userId ?? data.userId,
+      cardsFound: result.cardsFound ?? 0,
+      cardsSaved: result.cardsSaved ?? 0,
+      error: result.error,
+    };
+  });
