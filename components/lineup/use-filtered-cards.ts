@@ -14,7 +14,7 @@ interface UseFilteredCardsOptions {
   rarityFilter: "all" | "limited" | "rare";
   activeSlot: SlotPosition | null;
   searchQuery: string;
-  sortBy: "name" | "team" | "l5" | "l10" | "l15" | "l40";
+  sortBy: "name" | "team" | "l5" | "l10" | "l15";
   inSeasonOnly: boolean;
   homeOnly: boolean;
   starterOnly: boolean;
@@ -159,8 +159,6 @@ export function useFilteredCards(options: UseFilteredCardsOptions): Card[] {
           return (b.l10Average ?? 0) - (a.l10Average ?? 0);
         case "l15":
           return (b.l15Average ?? 0) - (a.l15Average ?? 0);
-        case "l40":
-          return (b.l40Average ?? 0) - (a.l40Average ?? 0);
         default:
           return 0;
       }

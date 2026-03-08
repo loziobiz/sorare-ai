@@ -172,7 +172,6 @@ export const LINEUP_COLUMN_WIDTHS = {
   aa15: 50,
   l5: 40,
   l10: 65,
-  l40: 40,
 } as const;
 
 // Larghezze colonne per cards-dashboard
@@ -372,16 +371,6 @@ export function getLineupColumns(
       cell: ({ row }) => (
         <div className="font-medium">
           {row.original.l5Average?.toFixed(0) ?? "-"}
-        </div>
-      ),
-    },
-    {
-      accessorKey: "l40Average",
-      header: "L40",
-      size: LINEUP_COLUMN_WIDTHS.l40,
-      cell: ({ row }) => (
-        <div className="font-medium">
-          {row.original.l40Average?.toFixed(0) ?? "-"}
         </div>
       ),
     },

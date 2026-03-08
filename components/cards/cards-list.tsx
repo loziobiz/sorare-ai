@@ -37,7 +37,6 @@ export const COLUMN_WIDTHS = {
   forma: 120,
   l5: 50,
   l10: 50,
-  l40: 50,
 } as const;
 
 export const COLUMN_WIDTHS_STANDALONE = {
@@ -47,7 +46,6 @@ export const COLUMN_WIDTHS_STANDALONE = {
   price: 400,
   l5: 50,
   l10: 50,
-  l40: 50,
 } as const;
 
 // Types per retrocompatibilità
@@ -59,10 +57,9 @@ export interface ColumnWidths {
   price?: number;
   l5: number;
   l10: number;
-  l40: number;
 }
 
-export type SortKey = "name" | "team" | "aa15" | "l5" | "l10" | "l40";
+export type SortKey = "name" | "team" | "aa15" | "l5" | "l10";
 export type SortDirection = "asc" | "desc";
 
 export interface CardsListProps {
@@ -88,7 +85,6 @@ function convertSortKey(key: SortKey): string {
     aa15: "aa15",
     l5: "l5Average",
     l10: "l10Average",
-    l40: "l40Average",
   };
   return mapping[key];
 }
@@ -154,7 +150,6 @@ export function CardsList({
       aa15: "aa15",
       l5Average: "l5",
       l10Average: "l10",
-      l40Average: "l40",
     };
 
     const newKey = reverseMapping[firstSort.id];

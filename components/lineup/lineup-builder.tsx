@@ -37,7 +37,7 @@ interface LeagueOption {
 }
 
 type RarityFilter = "all" | "limited" | "rare";
-type SortOption = "name" | "team" | "l5" | "l10" | "l15" | "l40";
+type SortOption = "name" | "team" | "l5" | "l10" | "l15";
 
 // Posizioni disponibili nel campo (base 5)
 export type SlotPosition5 = "ATT" | "EX" | "DIF" | "CEN" | "POR";
