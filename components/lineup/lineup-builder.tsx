@@ -366,6 +366,10 @@ export function LineupBuilder() {
       const formations = await db.savedFormations.toArray();
       const slugToFormation = new Map<string, string>();
       for (const formation of formations) {
+        // Esclude la formazione in edit per permettere il reinserimento delle carte rimosse
+        if (editingId !== null && formation.id === editingId) {
+          continue;
+        }
         for (const card of formation.cards) {
           if (card.slug) {
             slugToFormation.set(card.slug, formation.name);
@@ -375,7 +379,7 @@ export function LineupBuilder() {
       setSavedFormationsCards(slugToFormation);
     };
     loadSavedFormations();
-  }, []);
+  }, [editingId]);
 
   // Carte già usate nella formazione
   const usedCardSlugs = useMemo(
