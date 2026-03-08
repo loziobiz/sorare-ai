@@ -38,7 +38,7 @@ interface LeagueOption {
 }
 
 type RarityFilter = "all" | "limited" | "rare";
-type SortOption = "name" | "team" | "l5" | "l10" | "l15" | "l40";
+type SortOption = "name" | "team" | "l5" | "l10" | "l15";
 
 // Posizioni disponibili nel campo (base 5)
 export type SlotPosition5 = "ATT" | "EX" | "DIF" | "CEN" | "POR";
@@ -397,6 +397,10 @@ export function LineupBuilder() {
       const formations = await db.savedFormations.toArray();
       const slugToFormation = new Map<string, string>();
       for (const formation of formations) {
+        // Esclude la formazione in edit per permettere il reinserimento delle carte rimosse
+        if (editingId !== null && formation.id === editingId) {
+          continue;
+        }
         for (const card of formation.cards) {
           if (card.slug) {
             slugToFormation.set(card.slug, formation.name);
@@ -406,7 +410,7 @@ export function LineupBuilder() {
       setSavedFormationsCards(slugToFormation);
     };
     loadSavedFormations();
-  }, []);
+  }, [editingId]);
 
   // Carte già usate nella formazione
   const usedCardSlugs = useMemo(

@@ -14,7 +14,7 @@ interface UseFilteredCardsOptions {
   rarityFilter: "all" | "limited" | "rare";
   activeSlot: SlotPosition | null;
   searchQuery: string;
-  sortBy: "name" | "team" | "l5" | "l10" | "l15" | "l40";
+  sortBy: "name" | "team" | "l5" | "l10" | "l15";
   inSeasonOnly: boolean;
   homeOnly: boolean;
   starterOnly: boolean;
@@ -62,10 +62,15 @@ export function useFilteredCards(options: UseFilteredCardsOptions): Card[] {
   return useMemo(() => {
     let filtered = cards.filter((card) => !usedCardSlugs.has(card.slug));
 
-    // Esclude giocatori senza squadra
-    filtered = filtered.filter((card) =>
-      Boolean(card.anyPlayer?.activeClub?.name?.trim())
-    );
+    // Esclude giocatori senza squadra o con dati incompleti
+    filtered = filtered.filter((card) => {
+      const clubName = card.anyPlayer?.activeClub?.name?.trim();
+      const clubCode = card.anyPlayer?.activeClub?.code?.trim();
+      // Esclude carte con club "Unknown" o nessun dato valido
+      if (!clubName && !clubCode) return false;
+      if (clubName?.toLowerCase().startsWith("unk")) return false;
+      return true;
+    });
 
     // Filtra le carte in cassaforte (mostra solo carte libere)
     filtered = filtered.filter((card) => card.sealed !== true);
@@ -154,8 +159,6 @@ export function useFilteredCards(options: UseFilteredCardsOptions): Card[] {
           return (b.l10Average ?? 0) - (a.l10Average ?? 0);
         case "l15":
           return (b.l15Average ?? 0) - (a.l15Average ?? 0);
-        case "l40":
-          return (b.l40Average ?? 0) - (a.l40Average ?? 0);
         default:
           return 0;
       }
