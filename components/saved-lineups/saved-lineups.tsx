@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter } from "@tanstack/react-router";
-import { AlertTriangle, Pencil, Trash2 } from "lucide-react";
+import { AlertTriangle, Pencil, Trash2, Trash } from "lucide-react";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { LoadingSpinner } from "@/components/loading-spinner";
 
@@ -465,6 +465,7 @@ export function SavedLineups() {
   const [isLoading, setIsLoading] = useState(true);
   const [formations, setFormations] = useState<SavedFormation[]>([]);
   const [deleteConfirm, setDeleteConfirm] = useState<number | null>(null);
+  const [deleteAllConfirm, setDeleteAllConfirm] = useState(false);
 
   // Create a map of current cards for quick lookup
   const currentCardsMap = useMemo(
@@ -513,6 +514,16 @@ export function SavedLineups() {
       setDeleteConfirm(null);
     } catch (err) {
       console.error("Error deleting formation:", err);
+    }
+  };
+
+  const handleConfirmDeleteAll = async () => {
+    try {
+      await db.savedFormations.clear();
+      setFormations([]);
+      setDeleteAllConfirm(false);
+    } catch (err) {
+      console.error("Error deleting all formations:", err);
     }
   };
 
@@ -662,6 +673,23 @@ export function SavedLineups() {
 
   return (
     <div className="space-y-6">
+      {/* Header con pulsante Cancella tutte */}
+      {formations.length > 0 && (
+        <div className="flex items-center justify-between">
+          <h1 className="font-bold text-2xl text-slate-200">
+            Formazioni salvate
+          </h1>
+          <Button
+            className="border-white/10 bg-white/5 text-rose-400 hover:bg-rose-500/20 hover:text-rose-300"
+            onClick={() => setDeleteAllConfirm(true)}
+            variant="outline"
+          >
+            <Trash className="mr-2 h-4 w-4" />
+            Cancella tutte
+          </Button>
+        </div>
+      )}
+
       <SavedLineupsDnDProvider onSwap={handleSwapCards}>
         {formations.length === 0 ? (
           <div className="py-12 text-center text-slate-400">
@@ -700,7 +728,7 @@ export function SavedLineups() {
         )}
       </SavedLineupsDnDProvider>
 
-      {/* Modale conferma cancellazione */}
+      {/* Modale conferma cancellazione singola */}
       {deleteConfirm !== null && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4">
           <div className="w-full max-w-sm overflow-hidden rounded-xl border border-white/10 bg-[#1A1B23] shadow-2xl">
@@ -740,6 +768,56 @@ export function SavedLineups() {
                 variant="destructive"
               >
                 Cancella
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modale conferma cancellazione tutte */}
+      {deleteAllConfirm && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4">
+          <div className="w-full max-w-md overflow-hidden rounded-xl border border-white/10 bg-[#1A1B23] shadow-2xl">
+            {/* Header con icona */}
+            <div className="flex flex-col items-center border-white/10 border-b bg-red-500/10 px-6 pt-6 pb-4">
+              <div className="mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-red-500/20">
+                <AlertTriangle className="h-6 w-6 text-red-400" />
+              </div>
+              <h3 className="font-semibold text-lg text-red-400">
+                Attenzione: azione irreversibile
+              </h3>
+            </div>
+
+            {/* Contenuto */}
+            <div className="px-6 py-5">
+              <p className="text-center text-slate-300 text-sm leading-relaxed">
+                Stai per cancellare <strong>{formations.length}</strong> formazioni salvate.
+              </p>
+              <div className="mt-4 rounded-lg border border-red-500/30 bg-red-500/10 p-3">
+                <p className="text-center font-medium text-red-400 text-sm">
+                  Questa operazione è definitiva e non può essere annullata.
+                </p>
+              </div>
+              <p className="mt-4 text-center text-slate-500 text-xs">
+                Tutte le tue formazioni andranno perse permanentemente.
+              </p>
+            </div>
+
+            {/* Azioni */}
+            <div className="flex gap-3 border-white/10 border-t bg-white/5 px-6 py-4">
+              <Button
+                className="h-10 flex-1 border-white/10 bg-white/5 text-slate-200 hover:bg-white/10 hover:text-white"
+                onClick={() => setDeleteAllConfirm(false)}
+                variant="outline"
+              >
+                Annulla
+              </Button>
+              <Button
+                className="h-10 flex-1 bg-red-600 hover:bg-red-700"
+                onClick={handleConfirmDeleteAll}
+                variant="destructive"
+              >
+                Sì, cancella tutte
               </Button>
             </div>
           </div>
