@@ -165,7 +165,6 @@ export interface LineupColumnOptions {
 // Larghezze colonne per lineup-builder
 export const LINEUP_COLUMN_WIDTHS = {
   name: 220,
-  starterOdds: 65,
   team: 150,
   match: 80,
   spacer: 16,
@@ -235,6 +234,29 @@ export function getLineupColumns(
                   {" • XP "}
                   {getXP(card) || "-"}
                   {"%"}
+                  {card.anyPlayer?.nextClassicFixturePlayingStatusOdds &&
+                    (() => {
+                      const starterOdds = Math.round(
+                        card.anyPlayer.nextClassicFixturePlayingStatusOdds
+                          .starterOddsBasisPoints / 100
+                      );
+                      let colorClass = "";
+                      if (starterOdds < 50) {
+                        colorClass = "bg-red-500/20 text-red-400";
+                      } else if (starterOdds <= 70) {
+                        colorClass = "bg-orange-500/20 text-orange-400";
+                      } else {
+                        colorClass = "bg-emerald-500/20 text-emerald-400";
+                      }
+                      return (
+                        <span
+                          className={`ml-1.5 inline-flex items-center gap-0.5 rounded px-1 py-0.5 font-medium text-[11px] ${colorClass}`}
+                        >
+                          <span>👕</span>
+                          {starterOdds}%
+                        </span>
+                      );
+                    })()}
                   {(() => {
                     const clubName = card.anyPlayer?.activeClub?.name;
                     const nextGame = card.anyPlayer?.nextGame;
