@@ -2,9 +2,10 @@
  * Cloudflare Worker - MLS Player Data Sync
  *
  * Schedulazione:
- * - Martedì 08:00 UTC: extract-players (nuovi giocatori)
- * - Mercoledì 08:00 UTC: analyze-homeaway + analyze-aa
- * - Giovedì-Domenica ogni 4h: analyze-odds
+ * - Tutti i giorni 06:00, 18:00 UTC: sync-user-cards (sync carte ogni 12 ore)
+ * - Mercoledì 08:00 UTC: extract-players (nuovi giocatori MLS)
+ * - Martedì e Venerdì 16:00 UTC: analyze-homeaway + analyze-aa
+ * - Tutti i giorni 00:00, 08:00, 16:00 UTC: analyze-odds (ogni 8 ore)
  *
  * Environment:
  * - SORARE_AI_DATA: KV Namespace per i dati giocatori
@@ -56,56 +57,25 @@ async function handleCron(cron: string, env: Env): Promise<void> {
   }
 
   switch (cron) {
-    // Martedì 08:00 UTC - Extract players (MLS)
-    case "0 8 * * 2":
+    // Mercoledì 08:00 UTC - Extract players (MLS)
+    case "0 8 * * 3":
       console.log("📋 Running extract-players...");
       await extractPlayersHandler(repository, client);
       console.log("🌐 Running sync-extra-players...");
       await syncExtraPlayersHandler(repository, client);
       break;
 
-    // Martedì 06:00 UTC - Sync user cards (prima di extract-players)
-    case "0 6 * * 2":
-      console.log("🔄 Running sync-user-cards...");
-      await syncUserCardsHandler(env.SORARE_AI_DATA, client);
-      break;
-
-    // Mercoledì 08:00 UTC - Analyze home/away + AA
-    case "0 8 * * 3":
+    // Martedì e Venerdì 16:00 UTC - Analyze home/away + AA
+    case "0 16 * * 2":
+    case "0 16 * * 5":
       console.log("📊 Running analyze-homeaway...");
       await analyzeHomeAwayHandler(repository, client);
       console.log("📊 Running analyze-aa...");
       await analyzeAAHandler(repository, client);
       break;
 
-    // Giovedì 00:00, 04:00, 08:00, 12:00, 16:00, 20:00 UTC - Odds
-    case "0 0 * * 4":
-    case "0 4 * * 4":
-    case "0 8 * * 4":
-    case "0 12 * * 4":
-    case "0 16 * * 4":
-    case "0 20 * * 4":
-    // Venerdì
-    case "0 0 * * 5":
-    case "0 4 * * 5":
-    case "0 8 * * 5":
-    case "0 12 * * 5":
-    case "0 16 * * 5":
-    case "0 20 * * 5":
-    // Sabato
-    case "0 0 * * 6":
-    case "0 4 * * 6":
-    case "0 8 * * 6":
-    case "0 12 * * 6":
-    case "0 16 * * 6":
-    case "0 20 * * 6":
-    // Domenica
-    case "0 0 * * 7":
-    case "0 4 * * 7":
-    case "0 8 * * 7":
-    case "0 12 * * 7":
-    case "0 16 * * 7":
-    case "0 20 * * 7":
+    // Ogni giorno alle 00:00, 08:00, 16:00 UTC - Odds (ogni 8 ore)
+    case "0 0,8,16 * * *":
       console.log("🎲 Running analyze-odds...");
       await analyzeOddsHandler(repository, client);
       break;

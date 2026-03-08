@@ -69,6 +69,17 @@ export function NextMatchBlock({ card }: NextMatchBlockProps) {
     );
   }
 
+  // Nascondi se la partita è già stata giocata (data precedente a ora attuale)
+  const matchDate = new Date(nextGame.date);
+  const now = new Date();
+  if (matchDate < now) {
+    return (
+      <div className="flex flex-col items-center justify-center text-muted-foreground">
+        <span className="text-[10px] uppercase">-</span>
+      </div>
+    );
+  }
+
   const formatted = formatMatchDate(nextGame.date);
   if (!formatted) {
     return (

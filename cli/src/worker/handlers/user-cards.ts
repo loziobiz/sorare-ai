@@ -103,8 +103,7 @@ export function extractCorrectPlayerSlug(
 
 /**
  * Pulisce i dati della carta per la risposta API
- * - Rimuove: activeCompetitions, ownershipHistory
- * - Aggiunge: leagueName (estratto da activeCompetitions[0].name)
+ * - Rimuove: ownershipHistory
  * - Assicura: name (fallback se mancante)
  * - In so5Scores tiene solo: score, projectedScore, scoreStatus
  */
@@ -141,26 +140,7 @@ function sanitizeCardData(
     }
   }
 
-  // Estrai nome lega (cerca MLS in activeCompetitions)
-  if (Array.isArray(sanitized.activeCompetitions)) {
-    const mlsComp = sanitized.activeCompetitions.find((comp: unknown) => {
-      const c = comp as Record<string, unknown>;
-      const name = String(c.name || "").toLowerCase();
-      const slug = String(c.slug || "").toLowerCase();
-      return (
-        name.includes("major league soccer") ||
-        name.includes("mls") ||
-        slug.includes("mls")
-      );
-    }) as Record<string, unknown> | undefined;
-
-    if (mlsComp?.name) {
-      sanitized.leagueName = mlsComp.name;
-    }
-  }
-
   // Rimuovi campi non necessari
-  delete sanitized.activeCompetitions;
   delete sanitized.ownershipHistory;
 
   // Filtra so5Scores

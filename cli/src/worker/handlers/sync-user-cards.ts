@@ -52,6 +52,9 @@ const GET_USER_CARDS = `
                 slug
                 name
                 code
+                domesticLeague {
+                  name
+                }
               }
             }
             so5Scores(last: 10) {
@@ -107,6 +110,9 @@ interface SorareCard {
       slug: string;
       name: string;
       code?: string;
+      domesticLeague?: {
+        name: string;
+      } | null;
     } | null;
   };
   so5Scores?: Array<{
@@ -274,6 +280,7 @@ function convertToSaveCardRequest(
       anyPositions: card.anyPositions || [],
       playerSlug: correctPlayerSlug,
       clubName: card.player.activeClub?.name,
+      leagueName: card.player.activeClub?.domesticLeague?.name,
       player: {
         slug: card.player.slug,
         displayName: card.player.displayName,
@@ -286,7 +293,6 @@ function convertToSaveCardRequest(
           game: s.game,
         })) || [],
       ownershipHistory: card.ownershipHistory || [],
-      activeCompetitions: card.activeCompetitions || [],
     },
   };
 }
