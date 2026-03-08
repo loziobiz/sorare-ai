@@ -60,14 +60,6 @@ export interface ColumnWidths {
 }
 
 export type SortKey = "name" | "team" | "aa15" | "l5" | "l10";
-export type SortKey =
-  | "name"
-  | "team"
-  | "aa15"
-  | "l5"
-  | "l10"
-  | "l40"
-  | "starterOdds";
 export type SortDirection = "asc" | "desc";
 
 export interface CardsListProps {
