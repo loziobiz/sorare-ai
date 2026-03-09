@@ -12,7 +12,8 @@ import type { SignInInput, SignInResponse } from "./types";
 const COOKIE_NAME = "sorare_jwt_token";
 const COOKIE_OTP_CHALLENGE = "sorare_otp_challenge";
 const SORARE_API_BASE = "https://api.sorare.com";
-const KV_WORKER_URL = "https://sorare-mls-sync.loziobiz.workers.dev";
+const DEFAULT_KV_WORKER_URL = "https://mls-sync.alebisi.it";
+const KV_WORKER_URL = process.env.KV_WORKER_URL ?? DEFAULT_KV_WORKER_URL;
 const INVALID_CREDENTIALS_MESSAGE =
   "Credenziali non valide. Usa la tua email Sorare (non username) e verifica la password.";
 const TWO_FACTOR_ERROR_REGEX = /2fa|two[- ]factor|otp/i;
@@ -272,31 +273,52 @@ export const refreshUserCardsFromWorker = createServerFn({ method: "POST" })
       };
     }
 
-    const response = await fetch(`${KV_WORKER_URL}/api/user/refresh-cards`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ userId: data.userId, token }),
-    });
+    try {
+      const response = await fetch(`${KV_WORKER_URL}/api/user/refresh-cards`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ userId: data.userId, token }),
+      });
 
-    const result = (await response.json()) as RefreshCardsResult & {
-      error?: string;
-    };
+      const responseText = await response.text();
+      let result: Partial<RefreshCardsResult> & { error?: string } = {};
+      if (responseText) {
+        try {
+          result = JSON.parse(responseText) as Partial<RefreshCardsResult> & {
+            error?: string;
+          };
+        } catch {
+          result = { error: responseText };
+        }
+      }
 
-    if (!response.ok) {
+      if (!response.ok) {
+        return {
+          success: false,
+          userId: data.userId,
+          cardsFound: result.cardsFound ?? 0,
+          cardsSaved: result.cardsSaved ?? 0,
+          error: result.error ?? `HTTP ${response.status}`,
+        };
+      }
+
+      return {
+        success: result.success ?? false,
+        userId: result.userId ?? data.userId,
+        cardsFound: result.cardsFound ?? 0,
+        cardsSaved: result.cardsSaved ?? 0,
+        error: result.error,
+      };
+    } catch (error) {
       return {
         success: false,
         userId: data.userId,
-        cardsFound: result.cardsFound ?? 0,
-        cardsSaved: result.cardsSaved ?? 0,
-        error: result.error ?? `HTTP ${response.status}`,
+        cardsFound: 0,
+        cardsSaved: 0,
+        error:
+          error instanceof Error
+            ? error.message
+            : "Errore di rete durante la sincronizzazione",
       };
     }
-
-    return {
-      success: result.success ?? false,
-      userId: result.userId ?? data.userId,
-      cardsFound: result.cardsFound ?? 0,
-      cardsSaved: result.cardsSaved ?? 0,
-      error: result.error,
-    };
   });

@@ -24,7 +24,7 @@ L'applicazione utilizza un sistema di **cache distribuita** con Cloudflare KV co
 
 ## KV Store
 
-Il KV Store è gestito dal worker `sorare-mls-sync.loziobiz.workers.dev`.
+Il KV Store è gestito dal worker Sorare sync (preferibilmente esposto su custom domain).
 
 ### Formato Chiavi Carte Utente
 
@@ -189,7 +189,8 @@ Le variabili d'ambiente necessarie:
 
 ```
 VITE_SORARE_GRAPHQL_URL=https://api.sorare.com/graphql
-KV_WORKER_URL=https://sorare-mls-sync.loziobiz.workers.dev
+VITE_KV_WORKER_URL=https://mls-sync.alebisi.it
+KV_WORKER_URL=https://mls-sync.alebisi.it
 ```
 
 ## Note

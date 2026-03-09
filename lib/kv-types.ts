@@ -1,6 +1,6 @@
 /**
  * Tipi per l'integrazione con il KV Store remoto
- * https://sorare-mls-sync.loziobiz.workers.dev
+ * URL configurabile via variabili d'ambiente (KV_WORKER_URL / VITE_KV_WORKER_URL).
  */
 
 // ============================================================================

@@ -1,6 +1,6 @@
 /**
  * Client API per il KV Store remoto.
- * Base URL: https://sorare-mls-sync.loziobiz.workers.dev
+ * Base URL configurabile via VITE_KV_WORKER_URL.
  */
 
 import { KV_CARDS_BATCH_SIZE } from "../shared/kv-constants.js";
@@ -20,7 +20,9 @@ import type {
 import { KvApiError, KvSyncError } from "./kv-types";
 import type { CardData } from "./sorare-api";
 
-const API_BASE_URL = "https://sorare-mls-sync.loziobiz.workers.dev";
+const DEFAULT_KV_WORKER_URL = "https://mls-sync.alebisi.it";
+const API_BASE_URL =
+  import.meta.env.VITE_KV_WORKER_URL ?? DEFAULT_KV_WORKER_URL;
 
 // Regex per estrarre l'anno dallo slug della carta
 const YEAR_REGEX = /^\d{4}$/;

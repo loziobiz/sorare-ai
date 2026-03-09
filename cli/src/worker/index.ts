@@ -196,12 +196,19 @@ async function handleFetch(
 
     // POST /api/user/refresh-cards - Forza aggiornamento carte (user chiama con JWT)
     if (path === "/api/user/refresh-cards" && request.method === "POST") {
-      const body = (await request
-        .json<{ userId?: string; token?: string }>()
-        .catch(() => ({}))) as {
-        userId?: string;
-        token?: string;
-      };
+      console.log(">>> /api/user/refresh-cards called");
+      
+      const bodyText = await request.text().catch(() => "{}");
+      console.log(">>> Raw body:", bodyText.substring(0, 500));
+      console.log(">>> Content-Type:", request.headers.get("content-type"));
+      
+      let body: { userId?: string; token?: string };
+      try {
+        body = JSON.parse(bodyText);
+      } catch (e) {
+        console.error(">>> JSON parse error:", e);
+        return json({ error: "Invalid JSON body", raw: bodyText.substring(0, 200) }, headers, 400);
+      }
 
       if (!(body.userId && body.token)) {
         return json({ error: "Required: userId, token" }, headers, 400);

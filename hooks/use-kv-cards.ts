@@ -17,8 +17,12 @@ import { getCurrentUserId, getCurrentUserIdSafe } from "@/lib/user-id";
 // ============================================================================
 
 function getSyncErrorMessage(err: unknown): string {
-  if (err instanceof UserIdError) return err.message;
-  if (err instanceof Error) return err.message;
+  if (err instanceof UserIdError) {
+    return err.message;
+  }
+  if (err instanceof Error) {
+    return err.message;
+  }
   return "Errore nella sincronizzazione";
 }
 
@@ -168,11 +172,19 @@ export function useKvCards(): UseKvCardsReturn {
       const result = await refreshUserCardsFromWorker({ data: { userId } });
 
       if (!result.success) {
-        const msg =
-          result.error?.toLowerCase().includes("expired") ||
-          result.error?.toLowerCase().includes("invalid")
-            ? "Token scaduto, rieffettua il login"
-            : (result.error ?? "Errore nella sincronizzazione");
+        const normalizedError = result.error?.toLowerCase() ?? "";
+        let msg = result.error ?? "Errore nella sincronizzazione";
+
+        if (normalizedError.includes("error code: 1042")) {
+          msg =
+            "Errore Cloudflare (1042): usa un custom domain per il worker KV o abilita global_fetch_strictly_public nel deploy.";
+        } else if (
+          normalizedError.includes("expired") ||
+          normalizedError.includes("invalid")
+        ) {
+          msg = "Token scaduto, rieffettua il login";
+        }
+
         throw new Error(msg);
       }
 
