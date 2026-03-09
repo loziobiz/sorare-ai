@@ -235,27 +235,33 @@ async function handleFetch(
 
     // POST /api/user/cleanup - Cancella tutte le carte di un utente (TEMP)
     if (path === "/api/user/cleanup" && request.method === "POST") {
-      const body = (await request.json<{ userId?: string }>().catch(() => ({}))) as {
+      const body = (await request
+        .json<{ userId?: string }>()
+        .catch(() => ({}))) as {
         userId?: string;
       };
-      
+
       if (!body.userId) {
         return json({ error: "Required: userId" }, headers, 400);
       }
-      
+
       const prefix = `USR_${body.userId}:`;
       let deleted = 0;
       let cursor: string | undefined;
-      
+
       do {
-        const listResult = await env.SORARE_AI_DATA.list({ prefix, cursor, limit: 1000 });
+        const listResult = await env.SORARE_AI_DATA.list({
+          prefix,
+          cursor,
+          limit: 1000,
+        });
         for (const key of listResult.keys) {
           await env.SORARE_AI_DATA.delete(key.name);
           deleted++;
         }
         cursor = listResult.list_complete ? undefined : listResult.cursor;
       } while (cursor);
-      
+
       return json({ success: true, userId: body.userId, deleted }, headers);
     }
 

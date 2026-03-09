@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter } from "@tanstack/react-router";
-import { AlertTriangle, Pencil, Trash2, Trash } from "lucide-react";
+import { AlertTriangle, Pencil, Trash, Trash2 } from "lucide-react";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { LoadingSpinner } from "@/components/loading-spinner";
 
@@ -791,7 +791,8 @@ export function SavedLineups() {
             {/* Contenuto */}
             <div className="px-6 py-5">
               <p className="text-center text-slate-300 text-sm leading-relaxed">
-                Stai per cancellare <strong>{formations.length}</strong> formazioni salvate.
+                Stai per cancellare <strong>{formations.length}</strong>{" "}
+                formazioni salvate.
               </p>
               <div className="mt-4 rounded-lg border border-red-500/30 bg-red-500/10 p-3">
                 <p className="text-center font-medium text-red-400 text-sm">

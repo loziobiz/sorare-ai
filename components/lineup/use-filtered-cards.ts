@@ -67,7 +67,7 @@ export function useFilteredCards(options: UseFilteredCardsOptions): Card[] {
       const clubName = card.anyPlayer?.activeClub?.name?.trim();
       const clubCode = card.anyPlayer?.activeClub?.code?.trim();
       // Esclude carte con club "Unknown" o nessun dato valido
-      if (!clubName && !clubCode) return false;
+      if (!(clubName || clubCode)) return false;
       if (clubName?.toLowerCase().startsWith("unk")) return false;
       return true;
     });

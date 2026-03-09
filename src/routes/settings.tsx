@@ -10,10 +10,9 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { logout } from "@/lib/auth-server";
-import { isAuthenticated } from "@/lib/auth-server";
-import { clearUserEmail } from "@/lib/user-id";
 import { useKvCards } from "@/hooks/use-kv-cards";
+import { isAuthenticated, logout } from "@/lib/auth-server";
+import { clearUserEmail } from "@/lib/user-id";
 
 export const Route = createFileRoute("/settings")({
   component: SettingsPage,
@@ -169,7 +168,6 @@ function SettingsPage() {
               </div>
             </CardContent>
           </Card>
-
         </div>
       </div>
     </PageLayout>

@@ -7,10 +7,10 @@
  * - Salva le carte nel KV usando la stessa struttura del client
  */
 
+import { invalidateUserCache } from "../index.js";
 import { SorareWorkerClient } from "../lib/sorare-client.js";
 import { extractCorrectPlayerSlug, saveUserCard } from "./user-cards.js";
 import { getUserJWT, listUsersWithJWT, updateLastSync } from "./user-jwt.js";
-import { invalidateUserCache } from "../index.js";
 
 // Query GraphQL per ottenere le carte dell'utente corrente
 const GET_USER_CARDS = `
@@ -175,13 +175,16 @@ async function fetchUserCards(token: string): Promise<SorareCard[]> {
   while (hasNextPage) {
     try {
       console.log(`  📄 Fetching page ${pageCount + 1}...`);
-      
+
       // Timeout di 30 secondi per pagina
       const fetchPromise = userClient.query<UserCardsResponse>(GET_USER_CARDS, {
         cursor,
       });
-      const timeoutPromise = new Promise<never>((_, reject) => 
-        setTimeout(() => reject(new Error('Timeout: GraphQL query took too long')), 30000)
+      const timeoutPromise = new Promise<never>((_, reject) =>
+        setTimeout(
+          () => reject(new Error("Timeout: GraphQL query took too long")),
+          30_000
+        )
       );
       const data = await Promise.race([fetchPromise, timeoutPromise]);
 
@@ -198,7 +201,9 @@ async function fetchUserCards(token: string): Promise<SorareCard[]> {
       cursor = data.currentUser.cards.pageInfo.endCursor;
       pageCount++;
 
-      console.log(`  📊 Total: ${cards.length} cards, hasNextPage: ${hasNextPage}, cursor: ${cursor}`);
+      console.log(
+        `  📊 Total: ${cards.length} cards, hasNextPage: ${hasNextPage}, cursor: ${cursor}`
+      );
 
       // Delay tra pagine per rispettare rate limit
       if (hasNextPage) {
@@ -211,12 +216,12 @@ async function fetchUserCards(token: string): Promise<SorareCard[]> {
   }
 
   // Filtra solo LIMITED e RARE, e escludi carte SEALED (come nel client web)
-  const allowedRarities = ['limited', 'rare'];
-  const filteredCards = cards.filter(c => {
+  const allowedRarities = ["limited", "rare"];
+  const filteredCards = cards.filter((c) => {
     const rarity = c.rarityTyped?.toLowerCase();
     const isAllowedRarity = allowedRarities.includes(rarity);
     const isSealed = c.sealed === true;
-    
+
     if (!isAllowedRarity) {
       console.log(`  ⛔ Filtering out: ${c.slug} (rarity: ${c.rarityTyped})`);
       return false;
@@ -227,7 +232,9 @@ async function fetchUserCards(token: string): Promise<SorareCard[]> {
     }
     return true;
   });
-  console.log(`📊 Filtered: ${filteredCards.length}/${cards.length} cards (limited/rare, not sealed)`);
+  console.log(
+    `📊 Filtered: ${filteredCards.length}/${cards.length} cards (limited/rare, not sealed)`
+  );
   return filteredCards;
 }
 
@@ -248,7 +255,7 @@ function convertToSaveCardRequest(
     console.log(`  ⚠️ Skipping card ${card.slug}: no player data`);
     return null;
   }
-  
+
   const clubCode = card.player.activeClub?.code || "UNK";
 
   // Estrai lo slug corretto del giocatore
@@ -355,10 +362,10 @@ export async function syncUserCardsHandler(
         // Salva le carte con limitazione concorrenza (max 5 parallelo)
         let cardsSaved = 0;
         const concurrency = 5;
-        
+
         for (let i = 0; i < cards.length; i += concurrency) {
           const batch = cards.slice(i, i + concurrency);
-          
+
           const results = await Promise.all(
             batch.map(async (card) => {
               const request = convertToSaveCardRequest(card, user.userId);
@@ -366,12 +373,12 @@ export async function syncUserCardsHandler(
               return saveUserCard(kv, request);
             })
           );
-          
-          cardsSaved += results.filter(r => r.success).length;
-          
+
+          cardsSaved += results.filter((r) => r.success).length;
+
           // Delay tra batch per rate limit KV
           if (i + concurrency < cards.length) {
-            await new Promise(r => setTimeout(r, 100));
+            await new Promise((r) => setTimeout(r, 100));
           }
         }
 
@@ -414,11 +421,14 @@ export async function syncUserCardsHandler(
 /**
  * Cancella tutte le carte di un utente da KV (cleanup prima di sync)
  */
-async function cleanupUserCards(kv: KVNamespace, userId: string): Promise<number> {
+async function cleanupUserCards(
+  kv: KVNamespace,
+  userId: string
+): Promise<number> {
   const prefix = `USR_${userId}:`;
   let deleted = 0;
   let cursor: string | undefined;
-  
+
   do {
     const listResult = await kv.list({ prefix, cursor, limit: 1000 });
     for (const key of listResult.keys) {
@@ -427,7 +437,7 @@ async function cleanupUserCards(kv: KVNamespace, userId: string): Promise<number
     }
     cursor = listResult.list_complete ? undefined : listResult.cursor;
   } while (cursor);
-  
+
   return deleted;
 }
 
@@ -436,7 +446,7 @@ async function cleanupUserCards(kv: KVNamespace, userId: string): Promise<number
  */
 function extractUserIdFromToken(token: string): string | null {
   try {
-    const parts = token.split('.');
+    const parts = token.split(".");
     if (parts.length !== 3) return null;
     const payload = JSON.parse(atob(parts[1]));
     return payload.sub || null;
@@ -464,9 +474,11 @@ export async function syncSingleUserCards(
   // Verifica che il token corrisponda allo userId
   const tokenUserId = extractUserIdFromToken(token);
   console.log(`🔐 Token userId: ${tokenUserId}, Request userId: ${userId}`);
-  
+
   if (tokenUserId && tokenUserId !== userId) {
-    console.warn(`⚠️ MISMATCH! Token belongs to ${tokenUserId} but saving as ${userId}`);
+    console.warn(
+      `⚠️ MISMATCH! Token belongs to ${tokenUserId} but saving as ${userId}`
+    );
   }
 
   try {
@@ -481,12 +493,14 @@ export async function syncSingleUserCards(
     // Salva le carte con limitazione concorrenza (max 5 parallelo per rispettare limiti KV)
     let cardsSaved = 0;
     const concurrency = 5;
-    
-    console.log(`💾 Saving ${cards.length} cards with max ${concurrency} concurrent...`);
-    
+
+    console.log(
+      `💾 Saving ${cards.length} cards with max ${concurrency} concurrent...`
+    );
+
     for (let i = 0; i < cards.length; i += concurrency) {
       const batch = cards.slice(i, i + concurrency);
-      
+
       // Processa batch con limitata concorrenza
       const results = await Promise.all(
         batch.map(async (card) => {
@@ -495,17 +509,17 @@ export async function syncSingleUserCards(
           return saveUserCard(kv, request);
         })
       );
-      
+
       // Conta i successi
-      const batchSaved = results.filter(r => r.success).length;
+      const batchSaved = results.filter((r) => r.success).length;
       cardsSaved += batchSaved;
-      
+
       // Piccolo delay tra batch per rispettare rate limit KV
       if (i + concurrency < cards.length) {
-        await new Promise(r => setTimeout(r, 100));
+        await new Promise((r) => setTimeout(r, 100));
       }
     }
-    
+
     console.log(`✅ Total saved: ${cardsSaved}/${cards.length} cards`);
 
     // Aggiorna timestamp
@@ -514,9 +528,11 @@ export async function syncSingleUserCards(
     // Invalida cache per forzare refresh dei dati
     console.log(`🗑️ Invalidating cache for ${userId}...`);
     const invalidatedUrls = await invalidateUserCache(kv, userId);
-    console.log(`✅ Cache invalidated: ${invalidatedUrls.join(', ')}`);
+    console.log(`✅ Cache invalidated: ${invalidatedUrls.join(", ")}`);
 
-    console.log(`✅ Total saved: ${cardsSaved}/${cards.length} cards for ${userId}`);
+    console.log(
+      `✅ Total saved: ${cardsSaved}/${cards.length} cards for ${userId}`
+    );
 
     return {
       success: true,
