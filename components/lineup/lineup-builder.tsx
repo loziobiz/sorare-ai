@@ -16,10 +16,12 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { showToast, ToastContainer } from "@/components/ui/toast";
 import { useKvCards } from "@/hooks/use-kv-cards";
+import { useKVFormations } from "@/hooks/use-kv-formations";
 import { calculateFormationSlotsL10Total } from "@/lib/cards-utils";
-import { db } from "@/lib/db";
+import { KV_WORKER_URL } from "@/lib/kv-api";
 import type { UnifiedCard } from "@/lib/kv-types";
 import type { CardData } from "@/lib/sorare-api";
+import { getCurrentUserId } from "@/lib/user-id";
 
 type Card = CardData | UnifiedCard;
 
@@ -364,7 +366,7 @@ export function LineupBuilder() {
     Map<string, string>
   >(new Map());
   const [formationName, setFormationName] = useState("");
-  const [editingId, setEditingId] = useState<number | null>(null);
+  const [editingId, setEditingId] = useState<string | null>(null);
   const [viewMode, setViewMode] = useState<ViewMode>("list");
   const [tableSortKey, setTableSortKey] = useState<SortKey>("l10");
   const [tableSortDirection, setTableSortDirection] =
@@ -391,12 +393,13 @@ export function LineupBuilder() {
     []
   );
 
+  const { formations: savedFormations, getFormation } = useKVFormations();
+
   // Carica le formazioni salvate per identificare giocatori già utilizzati
   useEffect(() => {
     const loadSavedFormations = async () => {
-      const formations = await db.savedFormations.toArray();
       const slugToFormation = new Map<string, string>();
-      for (const formation of formations) {
+      for (const formation of savedFormations) {
         // Esclude la formazione in edit per permettere il reinserimento delle carte rimosse
         if (editingId !== null && formation.id === editingId) {
           continue;
@@ -410,7 +413,7 @@ export function LineupBuilder() {
       setSavedFormationsCards(slugToFormation);
     };
     loadSavedFormations();
-  }, [editingId]);
+  }, [editingId, savedFormations]);
 
   // Carte già usate nella formazione
   const usedCardSlugs = useMemo(
@@ -496,11 +499,10 @@ export function LineupBuilder() {
 
     const loadFormation = async () => {
       try {
-        const id = Number.parseInt(editId, 10);
-        const saved = await db.savedFormations.get(id);
+        const saved = await getFormation(editId);
         if (saved) {
           formationLoadedRef.current = true;
-          setEditingId(id);
+          setEditingId(editId);
           setFormationName(saved.name);
           setLeagueFilter(saved.league);
           // Mappa vecchi gameMode ai nuovi per retrocompatibilità
@@ -659,33 +661,50 @@ export function LineupBuilder() {
 
       if (editingId) {
         // Update existing formation
-        await db.savedFormations.update(editingId, {
-          name: effectiveName,
-          league: leagueFilter,
-          cards: formationCards,
-          slots,
-          gameMode,
+        await fetch(`${KV_WORKER_URL}/api/formations/${editingId}`, {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            userId: getCurrentUserId(),
+            data: {
+              name: effectiveName,
+              formation: gameMode,
+              league: leagueFilter,
+              players: formationCards,
+              cards: formationCards,
+              slots,
+              gameMode,
+            },
+          }),
         });
         showToast(setToasts, "Formazione aggiornata con successo!", "success");
       } else {
         // Create new formation
-        await db.savedFormations.add({
-          name: effectiveName,
-          league: leagueFilter,
-          cards: formationCards,
-          slots,
-          gameMode,
-          createdAt: Date.now(),
+        await fetch(`${KV_WORKER_URL}/api/formations`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            userId: getCurrentUserId(),
+            data: {
+              name: effectiveName,
+              formation: gameMode,
+              league: leagueFilter,
+              players: formationCards,
+              cards: formationCards,
+              slots,
+              gameMode,
+            },
+          }),
         });
         showToast(setToasts, "Formazione salvata con successo!", "success");
       }
 
-      // Reset and redirect
+      // Reset form but stay on builder
       setFormationName("");
       setFormation(getInitialFormation(gameMode));
       setEditingId(null);
       setError("");
-      router.navigate({ to: "/saved-lineups" });
+      // Show success and stay on page - user can create another formation
     } catch (err) {
       setError(err instanceof Error ? err.message : "Errore nel salvataggio");
     }

@@ -229,6 +229,40 @@ export async function analyzeOddsHandler(
         const odds = batchOddsMap.get(player.slug);
 
         if (odds) {
+          // --- CONTROLLO DATA EVENTO ---
+          // Se l'evento è passato, cancella le odds invece di mantenerle
+          const fixtureDate = odds.nextFixture?.fixtureDate;
+          const now = new Date();
+          const isEventPassed = fixtureDate && new Date(fixtureDate) < now;
+
+          if (isEventPassed) {
+            console.log(
+              `   🗑️ ${player.name}: Event passed (${fixtureDate}), clearing odds`
+            );
+            try {
+              // Cancella le odds impostando nextFixture a null
+              await repository.updatePlayerStats(
+                player.slug,
+                {
+                  odds: {
+                    calculatedAt: new Date().toISOString(),
+                    nextFixture: null,
+                  },
+                },
+                new DefaultUpdateStrategy()
+              );
+              result.updated++;
+            } catch (err) {
+              console.error(
+                `   ❌ Failed to clear odds for ${player.slug}:`,
+                err
+              );
+              result.errors++;
+            }
+            result.processed++;
+            continue;
+          }
+
           // --- LOGICA DI ESCLUSIONE (Risparmio scritture KV) ---
           const startingOddsBP =
             odds.nextFixture?.startingOdds?.starterOddsBasisPoints;

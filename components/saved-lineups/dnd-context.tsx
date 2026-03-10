@@ -16,8 +16,8 @@ import {
   useMemo,
   useState,
 } from "react";
+import type { SavedFormation } from "@/hooks/use-kv-formations";
 import { calculateCardsL10Total, getL10RawValue } from "@/lib/cards-utils";
-import type { SavedFormation } from "@/lib/db";
 import type { UnifiedCard } from "@/lib/kv-types";
 import type { CardData } from "@/lib/sorare-api";
 
@@ -27,7 +27,7 @@ export type CompatibilityStatus = "compatible" | "warning" | "incompatible";
 
 interface DragItem {
   card: Card;
-  formationId: number;
+  formationId: string;
   slotPosition: string;
 }
 
@@ -58,8 +58,8 @@ export function useSavedLineupsDnD() {
 interface SavedLineupsDnDProviderProps {
   children: React.ReactNode;
   onSwap: (
-    source: { formationId: number; card: Card; slotPosition: string },
-    target: { formationId: number; card: Card; slotPosition: string }
+    source: { formationId: string; card: Card; slotPosition: string },
+    target: { formationId: string; card: Card; slotPosition: string }
   ) => void;
 }
 
@@ -309,8 +309,8 @@ function isL10Compatible(
   targetCard: Card,
   sourceSlot: string,
   targetSlot: string,
-  sourceFormationId: number,
-  targetFormationId: number,
+  sourceFormationId: string,
+  targetFormationId: string,
   formations: SavedFormation[]
 ): boolean {
   const sourceFormation = formations.find((f) => f.id === sourceFormationId);

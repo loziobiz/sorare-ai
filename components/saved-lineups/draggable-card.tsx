@@ -12,7 +12,7 @@ import { type CompatibilityStatus, useSavedLineupsDnD } from "./dnd-context";
 
 interface DraggableCardProps {
   card: Card;
-  formationId: number;
+  formationId: string;
   slotPosition: string;
   children: React.ReactNode;
 }

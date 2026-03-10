@@ -21,8 +21,11 @@ import { KvApiError, KvSyncError } from "./kv-types";
 import type { CardData } from "./sorare-api";
 
 const DEFAULT_KV_WORKER_URL = "https://mls-sync.alebisi.it";
-const API_BASE_URL =
+export const KV_WORKER_URL =
   import.meta.env.VITE_KV_WORKER_URL ?? DEFAULT_KV_WORKER_URL;
+
+// Alias per compatibilità interna
+const API_BASE_URL = KV_WORKER_URL;
 
 // Regex per estrarre l'anno dallo slug della carta
 const YEAR_REGEX = /^\d{4}$/;

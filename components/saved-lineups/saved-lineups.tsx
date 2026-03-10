@@ -4,14 +4,17 @@ import { useRouter } from "@tanstack/react-router";
 import { AlertTriangle, Pencil, Trash, Trash2 } from "lucide-react";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { LoadingSpinner } from "@/components/loading-spinner";
-
 import { Button } from "@/components/ui/button";
 import { useKvCards } from "@/hooks/use-kv-cards";
+import {
+  type SavedFormation,
+  useKVFormations,
+} from "@/hooks/use-kv-formations";
 import { calculateCardsL10Total } from "@/lib/cards-utils";
-import type { SavedFormation } from "@/lib/db";
-import { db } from "@/lib/db";
+import { KV_WORKER_URL } from "@/lib/kv-api";
 import type { UnifiedCard } from "@/lib/kv-types";
 import type { CardData } from "@/lib/sorare-api";
+import { getCurrentUserId } from "@/lib/user-id";
 
 type Card = CardData | UnifiedCard;
 
@@ -175,7 +178,7 @@ function CompactCard({
   slotPosition,
   isDragging,
 }: CompactCardProps & {
-  formationId: number;
+  formationId: string;
   slotPosition: string;
   isDragging?: boolean;
 }) {
@@ -249,7 +252,7 @@ interface FormationCardProps {
   formation: SavedFormation;
   allFormations: SavedFormation[];
   onEdit: (formation: SavedFormation) => void;
-  onDelete: (id: number) => void;
+  onDelete: (id: string) => void;
   currentCardsMap: Map<string, Card>;
 }
 
@@ -410,7 +413,7 @@ function FormationCard({
             </Button>
             <Button
               className="h-8 w-8 p-0 hover:bg-white/10 hover:text-red-400"
-              onClick={() => formation.id && onDelete(formation.id)}
+              onClick={() => onDelete(formation.id)}
               size="icon"
               variant="ghost"
             >
@@ -436,13 +439,13 @@ function FormationCard({
           return (
             <DraggableCard
               card={card}
-              formationId={formation.id ?? 0}
+              formationId={formation.id}
               key={card.slug}
               slotPosition={slotPosition}
             >
               <CompactCard
                 card={card}
-                formationId={formation.id ?? 0}
+                formationId={formation.id}
                 isDragging={isDragging}
                 slotPosition={slotPosition}
               />
@@ -462,9 +465,14 @@ function FormationCard({
 export function SavedLineups() {
   const router = useRouter();
   const { cards } = useKvCards();
-  const [isLoading, setIsLoading] = useState(true);
-  const [formations, setFormations] = useState<SavedFormation[]>([]);
-  const [deleteConfirm, setDeleteConfirm] = useState<number | null>(null);
+  const {
+    formations,
+    isLoading,
+    deleteFormation,
+    deleteAllFormations,
+    loadFormations,
+  } = useKVFormations();
+  const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null);
   const [deleteAllConfirm, setDeleteAllConfirm] = useState(false);
 
   // Create a map of current cards for quick lookup
@@ -473,34 +481,12 @@ export function SavedLineups() {
     [cards]
   );
 
-  const loadFormations = useCallback(async () => {
-    try {
-      const all = await db.savedFormations.toArray();
-      // Sort by league, then by createdAt (oldest first)
-      const sorted = all.sort((a, b) => {
-        if (a.league !== b.league) {
-          return a.league.localeCompare(b.league);
-        }
-        return a.createdAt - b.createdAt;
-      });
-      setFormations(sorted);
-    } catch (err) {
-      console.error("Error loading formations:", err);
-    } finally {
-      setIsLoading(false);
-    }
-  }, []);
-
-  useEffect(() => {
-    loadFormations();
-  }, [loadFormations]);
-
   const handleEdit = (formation: SavedFormation) => {
     // Pass the formation data to the edit page via router state
     router.navigate({ to: "/lineup", search: { edit: formation.id } });
   };
 
-  const handleDeleteClick = (id: number) => {
+  const handleDeleteClick = (id: string) => {
     setDeleteConfirm(id);
   };
 
@@ -509,8 +495,7 @@ export function SavedLineups() {
       return;
     }
     try {
-      await db.savedFormations.delete(deleteConfirm);
-      setFormations((prev) => prev.filter((f) => f.id !== deleteConfirm));
+      await deleteFormation(deleteConfirm);
       setDeleteConfirm(null);
     } catch (err) {
       console.error("Error deleting formation:", err);
@@ -519,8 +504,7 @@ export function SavedLineups() {
 
   const handleConfirmDeleteAll = async () => {
     try {
-      await db.savedFormations.clear();
-      setFormations([]);
+      await deleteAllFormations();
       setDeleteAllConfirm(false);
     } catch (err) {
       console.error("Error deleting all formations:", err);
@@ -529,8 +513,8 @@ export function SavedLineups() {
 
   const handleSwapCards = useCallback(
     async (
-      source: { formationId: number; card: Card; slotPosition: string },
-      target: { formationId: number; card: Card; slotPosition: string }
+      source: { formationId: string; card: Card; slotPosition: string },
+      target: { formationId: string; card: Card; slotPosition: string }
     ) => {
       try {
         // Trova le formazioni coinvolte
@@ -565,43 +549,52 @@ export function SavedLineups() {
           return s;
         });
 
-        // Aggiorna nel database
+        // Aggiorna sul server KV (usando updateFormation)
+        // Nota: le formazioni vengono aggiornate ricaricando dal server
         await Promise.all([
-          db.savedFormations.update(source.formationId, {
-            cards: updatedSourceCards,
-            slots: updatedSourceSlots,
+          // Update source formation
+          fetch(`${KV_WORKER_URL}/api/formations/${source.formationId}`, {
+            method: "PUT",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              userId: getCurrentUserId(),
+              data: {
+                name: sourceFormation.name,
+                formation: sourceFormation.gameMode,
+                league: sourceFormation.league,
+                players: updatedSourceCards,
+                cards: updatedSourceCards,
+                slots: updatedSourceSlots,
+                gameMode: sourceFormation.gameMode,
+              },
+            }),
           }),
-          db.savedFormations.update(target.formationId, {
-            cards: updatedTargetCards,
-            slots: updatedTargetSlots,
+          // Update target formation
+          fetch(`${KV_WORKER_URL}/api/formations/${target.formationId}`, {
+            method: "PUT",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              userId: getCurrentUserId(),
+              data: {
+                name: targetFormation.name,
+                formation: targetFormation.gameMode,
+                league: targetFormation.league,
+                players: updatedTargetCards,
+                cards: updatedTargetCards,
+                slots: updatedTargetSlots,
+                gameMode: targetFormation.gameMode,
+              },
+            }),
           }),
         ]);
 
-        // Aggiorna stato locale
-        setFormations((prev) =>
-          prev.map((f) => {
-            if (f.id === source.formationId) {
-              return {
-                ...f,
-                cards: updatedSourceCards,
-                slots: updatedSourceSlots,
-              };
-            }
-            if (f.id === target.formationId) {
-              return {
-                ...f,
-                cards: updatedTargetCards,
-                slots: updatedTargetSlots,
-              };
-            }
-            return f;
-          })
-        );
+        // Ricarica le formazioni per aggiornare lo stato
+        await loadFormations();
       } catch (err) {
         console.error("Error swapping cards:", err);
       }
     },
-    [formations]
+    [formations, loadFormations]
   );
 
   /**

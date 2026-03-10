@@ -17,6 +17,13 @@ import { analyzeAAHandler } from "./handlers/analyze-aa.js";
 import { analyzeHomeAwayHandler } from "./handlers/analyze-homeaway.js";
 import { analyzeOddsHandler } from "./handlers/analyze-odds.js";
 import { extractPlayersHandler } from "./handlers/extract-players.js";
+import {
+  createFormation,
+  deleteFormation,
+  listFormations,
+  type SaveFormationRequest,
+  updateFormation,
+} from "./handlers/formations.js";
 import { syncExtraPlayersHandler } from "./handlers/sync-extra-players.js";
 import { syncUserCardsHandler } from "./handlers/sync-user-cards.js";
 import {
@@ -100,7 +107,7 @@ async function handleFetch(
   const headers = {
     "Content-Type": "application/json",
     "Access-Control-Allow-Origin": "*",
-    "Access-Control-Allow-Methods": "GET, POST, DELETE, OPTIONS",
+    "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS",
     "Access-Control-Allow-Headers": "Content-Type, Accept",
   };
 
@@ -197,17 +204,21 @@ async function handleFetch(
     // POST /api/user/refresh-cards - Forza aggiornamento carte (user chiama con JWT)
     if (path === "/api/user/refresh-cards" && request.method === "POST") {
       console.log(">>> /api/user/refresh-cards called");
-      
+
       const bodyText = await request.text().catch(() => "{}");
       console.log(">>> Raw body:", bodyText.substring(0, 500));
       console.log(">>> Content-Type:", request.headers.get("content-type"));
-      
+
       let body: { userId?: string; token?: string };
       try {
         body = JSON.parse(bodyText);
       } catch (e) {
         console.error(">>> JSON parse error:", e);
-        return json({ error: "Invalid JSON body", raw: bodyText.substring(0, 200) }, headers, 400);
+        return json(
+          { error: "Invalid JSON body", raw: bodyText.substring(0, 200) },
+          headers,
+          400
+        );
       }
 
       if (!(body.userId && body.token)) {
@@ -620,6 +631,134 @@ async function handleFetch(
       }
 
       return json(result, headers, result.success ? 200 : 400);
+    }
+
+    // ============================================
+    // FORMATIONS API
+    // ============================================
+
+    // GET /api/formations?userId=xxx - Lista tutte le formazioni dell'utente
+    if (path === "/api/formations" && request.method === "GET") {
+      const userId = url.searchParams.get("userId");
+
+      if (!userId) {
+        return json(
+          { error: "Missing required parameter: userId" },
+          headers,
+          400
+        );
+      }
+
+      const result = await listFormations(env.SORARE_AI_DATA, userId);
+
+      if (!result.success) {
+        return json({ error: result.error }, headers, 500);
+      }
+
+      return json(
+        {
+          userId,
+          count: result.formations.length,
+          formations: result.formations,
+        },
+        headers
+      );
+    }
+
+    // POST /api/formations - Crea nuova formazione
+    if (path === "/api/formations" && request.method === "POST") {
+      const body = await request.json<SaveFormationRequest>().catch(() => null);
+
+      if (!(body && body.userId && body.data)) {
+        return json(
+          { error: "Invalid request. Required: userId, data" },
+          headers,
+          400
+        );
+      }
+
+      const result = await createFormation(
+        env.SORARE_AI_DATA,
+        body.userId,
+        body.data
+      );
+
+      if (!result.success) {
+        return json({ error: result.error }, headers, 500);
+      }
+
+      return json({ success: true, formation: result.formation }, headers, 201);
+    }
+
+    // PUT /api/formations/:id - Aggiorna formazione esistente
+    if (path.startsWith("/api/formations/") && request.method === "PUT") {
+      const formationId = path.replace("/api/formations/", "");
+
+      if (!formationId) {
+        return json({ error: "Missing formation ID in URL" }, headers, 400);
+      }
+
+      const body = await request.json<SaveFormationRequest>().catch(() => null);
+
+      if (!(body && body.userId && body.data)) {
+        return json(
+          { error: "Invalid request. Required: userId, data" },
+          headers,
+          400
+        );
+      }
+
+      const result = await updateFormation(
+        env.SORARE_AI_DATA,
+        body.userId,
+        formationId,
+        body.data
+      );
+
+      if (!result.success) {
+        return json(
+          { error: result.error },
+          headers,
+          result.notFound ? 404 : 500
+        );
+      }
+
+      return json({ success: true, formation: result.formation }, headers);
+    }
+
+    // DELETE /api/formations/:id - Elimina formazione
+    if (path.startsWith("/api/formations/") && request.method === "DELETE") {
+      const formationId = path.replace("/api/formations/", "");
+
+      if (!formationId) {
+        return json({ error: "Missing formation ID in URL" }, headers, 400);
+      }
+
+      const userId = url.searchParams.get("userId");
+
+      if (!userId) {
+        return json(
+          { error: "Missing required query parameter: userId" },
+          headers,
+          400
+        );
+      }
+
+      const result = await deleteFormation(
+        env.SORARE_AI_DATA,
+        userId,
+        formationId
+      );
+
+      if (!result.success) {
+        return json(
+          { error: result.error },
+          headers,
+          result.notFound ? 404 : 500
+        );
+      }
+
+      return json({ success: true, message: "Formation deleted" }, headers);
     }
 
     // POST /api/admin/rebuild-extra-queue - Ricostruisce la coda extra da tutte le carte

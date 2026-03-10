@@ -2,8 +2,7 @@
 
 import { Link, useLocation } from "@tanstack/react-router";
 import { CreditCard, Layers, Save, Settings, Trophy } from "lucide-react";
-import { useEffect, useState } from "react";
-import { db } from "@/lib/db";
+import { useKVFormations } from "@/hooks/use-kv-formations";
 import { cn } from "@/lib/utils";
 
 interface NavItem {
@@ -24,21 +23,8 @@ interface SiteNavProps {
 export function SiteNav({ className }: SiteNavProps) {
   const location = useLocation();
   const pathname = location.pathname;
-  const [savedLineupsCount, setSavedLineupsCount] = useState<number | null>(
-    null
-  );
-
-  useEffect(() => {
-    const loadCount = async () => {
-      try {
-        const formations = await db.savedFormations.toArray();
-        setSavedLineupsCount(formations.length);
-      } catch {
-        setSavedLineupsCount(null);
-      }
-    };
-    loadCount();
-  }, []);
+  const { formations, isLoading } = useKVFormations();
+  const savedLineupsCount = isLoading ? null : formations.length;
 
   const navItems: NavItem[] = [
     { href: "/cards", label: "My Cards", icon: CreditCard },
