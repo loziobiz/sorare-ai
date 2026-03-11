@@ -310,7 +310,9 @@ export function useKVFormations(): UseKVFormationsReturn {
       }
 
       // Update global and local state
-      globalState.formations = globalState.formations.filter((f) => f.id !== id);
+      globalState.formations = globalState.formations.filter(
+        (f) => f.id !== id
+      );
       setFormations(globalState.formations);
     },
     [getUserId]

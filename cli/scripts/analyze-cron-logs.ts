@@ -1,27 +1,28 @@
 #!/usr/bin/env tsx
+
 /**
  * Analyze Cron Logs - CLI Tool
- * 
+ *
  * NOTA: L'API Cloudflare Workers Logs richiede query salvate (saved queries).
  * Questo script fornisce strumenti alternativi per il debug dei cron.
- * 
+ *
  * Usage:
  *   npx tsx scripts/analyze-cron-logs.ts [command] [options]
- * 
+ *
  * Commands:
  *   dashboard          Apre il link al dashboard Cloudflare
  *   trigger <job>      Esegue manualmente un job e mostra i risultati
  *   status             Mostra lo stato attuale del worker
  *   help               Mostra questo help
- * 
+ *
  * Jobs per trigger:
- *   sync-user-cards, analyze-odds, analyze-homeaway, analyze-aa, 
+ *   sync-user-cards, analyze-odds, analyze-homeaway, analyze-aa,
  *   extract-players, sync-extra-players
- * 
+ *
  * Environment:
  *   CLOUDFLARE_ACCOUNT_ID    - Il tuo Account ID Cloudflare
  *   CLOUDFLARE_API_TOKEN     - API Token con permesso Workers:Read
- * 
+ *
  * Esempi:
  *   npx tsx scripts/analyze-cron-logs.ts dashboard
  *   npx tsx scripts/analyze-cron-logs.ts trigger analyze-odds
@@ -29,8 +30,8 @@
  *   npx tsx scripts/analyze-cron-logs.ts status
  */
 
-import { config } from "dotenv";
 import { execSync } from "child_process";
+import { config } from "dotenv";
 
 // Load environment variables
 config({ path: ".env.local" });
@@ -90,7 +91,7 @@ Esempi:
 
 async function openDashboard(): Promise<void> {
   console.log("\n📊 Dashboard Cloudflare Workers Logs");
-  console.log("=" .repeat(60));
+  console.log("=".repeat(60));
   console.log(`\nURL: ${DASHBOARD_URL}`);
   console.log("\nIstruzioni:");
   console.log("1. Clicca sul link sopra (o copia-incolla nel browser)");
@@ -99,8 +100,8 @@ async function openDashboard(): Promise<void> {
   console.log("   • $cloudflare.outcome = 'error' (per vedere errori)");
   console.log("   • timestamp > '2026-03-...' (per filtrare per data)");
   console.log("\n3. Oppure vai su 'Invocations' per vedere l'elenco cron");
-  console.log("=" .repeat(60));
-  
+  console.log("=".repeat(60));
+
   // Tenta di aprire il browser automaticamente
   try {
     const platform = process.platform;
@@ -121,11 +122,11 @@ async function openDashboard(): Promise<void> {
 async function triggerJob(job: string): Promise<void> {
   const validJobs = [
     "sync-user-cards",
-    "analyze-odds", 
+    "analyze-odds",
     "analyze-homeaway",
     "analyze-aa",
     "extract-players",
-    "sync-extra-players"
+    "sync-extra-players",
   ];
 
   if (!validJobs.includes(job)) {
@@ -135,11 +136,13 @@ async function triggerJob(job: string): Promise<void> {
   }
 
   console.log(`\n🚀 Triggering job: ${job}`);
-  console.log("=" .repeat(60));
-  console.log("⏳ Attendi il completamento (può richiedere diversi minuti)...\n");
+  console.log("=".repeat(60));
+  console.log(
+    "⏳ Attendi il completamento (può richiedere diversi minuti)...\n"
+  );
 
   const startTime = Date.now();
-  
+
   try {
     const response = await fetch(`${WORKER_URL}/trigger`, {
       method: "POST",
@@ -155,7 +158,7 @@ async function triggerJob(job: string): Promise<void> {
       process.exit(1);
     }
 
-    const result = await response.json() as TriggerResult;
+    const result = (await response.json()) as TriggerResult;
 
     console.log(`✅ Job completato in ${duration}s\n`);
     console.log("Risultato:");
@@ -163,20 +166,37 @@ async function triggerJob(job: string): Promise<void> {
 
     // Analisi specifica per job
     console.log("\n📊 Analisi risultato:");
-    if (job === "analyze-odds" && result.result && typeof result.result === "object") {
-      const r = result.result as { processed?: number; updated?: number; errors?: number };
+    if (
+      job === "analyze-odds" &&
+      result.result &&
+      typeof result.result === "object"
+    ) {
+      const r = result.result as {
+        processed?: number;
+        updated?: number;
+        errors?: number;
+      };
       console.log(`   • Giocatori processati: ${r.processed || 0}`);
       console.log(`   • Aggiornamenti: ${r.updated || 0}`);
       console.log(`   • Errori: ${r.errors || 0}`);
     }
-    if (job === "sync-user-cards" && result.result && typeof result.result === "object") {
-      const r = result.result as { totalCards?: number; usersProcessed?: number };
+    if (
+      job === "sync-user-cards" &&
+      result.result &&
+      typeof result.result === "object"
+    ) {
+      const r = result.result as {
+        totalCards?: number;
+        usersProcessed?: number;
+      };
       console.log(`   • Carte sincronizzate: ${r.totalCards || 0}`);
       console.log(`   • Utenti processati: ${r.usersProcessed || 0}`);
     }
-
   } catch (error) {
-    console.error("❌ Errore:", error instanceof Error ? error.message : String(error));
+    console.error(
+      "❌ Errore:",
+      error instanceof Error ? error.message : String(error)
+    );
     process.exit(1);
   }
 }
@@ -186,7 +206,11 @@ async function checkStatus(): Promise<void> {
 
   try {
     const response = await fetch(`${WORKER_URL}/health`);
-    const data = await response.json() as { status: string; players: number; timestamp: string };
+    const data = (await response.json()) as {
+      status: string;
+      players: number;
+      timestamp: string;
+    };
 
     console.log("✅ Worker is running\n");
     console.log("Stato:", data.status);
@@ -197,15 +221,19 @@ async function checkStatus(): Promise<void> {
     console.log("\n📅 Cron configurati:");
     console.log("   • 0 6,18 * * *   - Sync user cards (ogni 12 ore)");
     console.log("   • 0 8 * * 3      - Extract MLS players (mercoledì)");
-    console.log("   • 0 16 * * 2,5   - Analyze home/away + AA (martedì/venerdì)");
+    console.log(
+      "   • 0 16 * * 2,5   - Analyze home/away + AA (martedì/venerdì)"
+    );
     console.log("   • 0 0,8,16 * * * - Analyze odds (ogni 8 ore)");
 
     // Prossimi cron
     const now = new Date();
     console.log("\n📆 Orario attuale UTC:", now.toISOString());
-
   } catch (error) {
-    console.error("❌ Worker non raggiungibile:", error instanceof Error ? error.message : String(error));
+    console.error(
+      "❌ Worker non raggiungibile:",
+      error instanceof Error ? error.message : String(error)
+    );
     process.exit(1);
   }
 }
@@ -213,7 +241,7 @@ async function checkStatus(): Promise<void> {
 function startTail(): void {
   console.log("\n📜 Avvio tail per log in tempo reale...");
   console.log("Premi Ctrl+C per interrompere\n");
-  
+
   try {
     execSync("npx wrangler tail --format pretty", { stdio: "inherit" });
   } catch {
@@ -226,7 +254,12 @@ async function main(): Promise<void> {
   const args = process.argv.slice(2);
   const command = args[0];
 
-  if (!command || command === "help" || command === "--help" || command === "-h") {
+  if (
+    !command ||
+    command === "help" ||
+    command === "--help" ||
+    command === "-h"
+  ) {
     showHelp();
     return;
   }
@@ -238,7 +271,9 @@ async function main(): Promise<void> {
     case "trigger":
       if (!args[1]) {
         console.error("❌ Specifica il job da eseguire");
-        console.log("Usage: npx tsx scripts/analyze-cron-logs.ts trigger <job>");
+        console.log(
+          "Usage: npx tsx scripts/analyze-cron-logs.ts trigger <job>"
+        );
         process.exit(1);
       }
       await triggerJob(args[1]);

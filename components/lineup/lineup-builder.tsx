@@ -18,20 +18,20 @@ import { showToast, ToastContainer } from "@/components/ui/toast";
 import { useKvCards } from "@/hooks/use-kv-cards";
 import { useKVFormations } from "@/hooks/use-kv-formations";
 import { calculateFormationSlotsL10Total } from "@/lib/cards-utils";
+import type { UnifiedCard } from "@/lib/kv-types";
 import {
+  completePartialLineup,
+  type FilledSlots,
   generateOptimalLineup,
   generateOptimalLineupNocap,
   type OptimizerCard,
 } from "@/lib/lineup-optimizer";
-import { KV_WORKER_URL } from "@/lib/kv-api";
-import type { UnifiedCard } from "@/lib/kv-types";
 import type { CardData } from "@/lib/sorare-api";
-import { getCurrentUserId } from "@/lib/user-id";
 
 type Card = CardData | UnifiedCard;
 
 // Type guard per UnifiedCard
-function isUnifiedCard(card: Card): card is UnifiedCard {
+function _isUnifiedCard(card: Card): card is UnifiedCard {
   return "clubName" in card && "clubCode" in card;
 }
 
@@ -195,7 +195,7 @@ function hydrateFormationWithFreshCards(
 }
 
 function getInitialFormation(mode: GameMode): FormationSlot[] {
-  const config = GAME_MODES[mode] ?? GAME_MODES["gas_arena_260"];
+  const config = GAME_MODES[mode] ?? GAME_MODES.gas_arena_260;
   return config.formation.map((pos: SlotPosition) => ({
     position: pos,
     card: null,
@@ -218,7 +218,7 @@ function getEmptyMessage(
 /**
  * Verifica se una carta è della MLS
  */
-function isMlsCard(card: Card): boolean {
+function _isMlsCard(card: Card): boolean {
   // Usa leagueName se disponibile (dal KV)
   if ("leagueName" in card && card.leagueName) {
     return card.leagueName === "MLS";
@@ -248,7 +248,7 @@ function restoreFormationFromSlots(
 
   // Se vuota, ritorna formazione default a 5
   if (newFormation.length === 0) {
-    return GAME_MODES["gas_arena_260"].formation.map((pos: SlotPosition) => ({
+    return GAME_MODES.gas_arena_260.formation.map((pos: SlotPosition) => ({
       position: pos,
       card: null,
     }));
@@ -275,7 +275,7 @@ function restoreFormationLegacy(
   saved: SavedFormationWithSlots
 ): FormationSlot[] {
   // Legacy: usa sempre formazione a 5
-  const newFormation = GAME_MODES["gas_arena_260"].formation.map(
+  const newFormation = GAME_MODES.gas_arena_260.formation.map(
     (pos: SlotPosition) => ({
       position: pos,
       card: null as Card | null,
@@ -326,7 +326,7 @@ function getPositionForCard(card: Card): SlotPosition | null {
 /**
  * Trova il valore della lega MLS dalle carte disponibili
  */
-function findMlsLeagueValue(cards: Card[]): string | null {
+function _findMlsLeagueValue(cards: Card[]): string | null {
   for (const card of cards) {
     for (const competition of card.anyPlayer?.activeClub?.activeCompetitions ??
       []) {
@@ -339,7 +339,7 @@ function findMlsLeagueValue(cards: Card[]): string | null {
 }
 
 export function LineupBuilder() {
-  const router = useRouter();
+  const _router = useRouter();
   const search = useSearch({ from: "/lineup" });
   const searchParams = new URLSearchParams(search as Record<string, string>);
   const {
@@ -398,7 +398,12 @@ export function LineupBuilder() {
     []
   );
 
-  const { formations: savedFormations, getFormation } = useKVFormations();
+  const {
+    formations: savedFormations,
+    getFormation,
+    saveFormation: hookSaveFormation,
+    updateFormation: hookUpdateFormation,
+  } = useKVFormations();
 
   // Carica le formazioni salvate per identificare giocatori già utilizzati
   useEffect(() => {
@@ -429,7 +434,12 @@ export function LineupBuilder() {
   // Calcola residuo CAP L10
   const l10Used = useMemo(() => {
     const total = calculateFormationSlotsL10Total(formation);
-    console.log("[DEBUG] Calculated l10Used:", total, "from formation:", formation.map(s => s.card?.l10Average));
+    console.log(
+      "[DEBUG] Calculated l10Used:",
+      total,
+      "from formation:",
+      formation.map((s) => s.card?.l10Average)
+    );
     return total;
   }, [formation]);
 
@@ -515,15 +525,27 @@ export function LineupBuilder() {
           const mapLegacyGameMode = (
             mode: GameMode | string | number | undefined
           ): GameMode => {
-            if (!mode) return "gas_arena_260";
+            if (!mode) {
+              return "gas_arena_260";
+            }
             // Vecchie modalità numeriche
-            if (mode === 260) return "gas_arena_260";
-            if (mode === 220) return "gas_arena_220";
+            if (mode === 260) {
+              return "gas_arena_260";
+            }
+            if (mode === 220) {
+              return "gas_arena_220";
+            }
             // Vecchie modalità stringa
-            if (mode === "uncapped") return "gas_arena_nocap";
-            if (mode === "pro_gas") return "gas_classic";
+            if (mode === "uncapped") {
+              return "gas_arena_nocap";
+            }
+            if (mode === "pro_gas") {
+              return "gas_classic";
+            }
             // Nuove modalità
-            if (mode in GAME_MODES) return mode as GameMode;
+            if (mode in GAME_MODES) {
+              return mode as GameMode;
+            }
             return "gas_arena_260";
           };
           const savedGameMode = mapLegacyGameMode(saved.gameMode);
@@ -544,7 +566,7 @@ export function LineupBuilder() {
     };
 
     loadFormation();
-  }, [searchParams, cards, currentCardsMap]);
+  }, [searchParams, cards, currentCardsMap, getFormation]);
 
   const handleSlotClick = (position: SlotPosition) => {
     const slot = formation.find((s) => s.position === position);
@@ -615,56 +637,77 @@ export function LineupBuilder() {
    */
   const handleGenerateOptimalLineup = () => {
     console.log("[DEBUG] Generate lineup clicked");
-    
+
     const config = GAME_MODES[gameMode];
-    console.log("[DEBUG] Game mode config:", { 
-      gameMode, 
-      slotCount: config.slotCount, 
-      cap: config.cap, 
-      requiredLeague: config.requiredLeague 
+    console.log("[DEBUG] Game mode config:", {
+      gameMode,
+      slotCount: config.slotCount,
+      cap: config.cap,
+      requiredLeague: config.requiredLeague,
     });
-    
+
     // Solo per modalità a 5 carte con CAP (per ora)
     if (config.slotCount !== 5) {
-      setError("Generazione automatica disponibile solo per formazioni a 5 giocatori");
+      setError(
+        "Generazione automatica disponibile solo per formazioni a 5 giocatori"
+      );
       console.log("[DEBUG] Abort: slotCount !== 5");
       return;
     }
-    
+
     // Usa tutte le carte disponibili (UnifiedCard dal KV)
     const allCards = cards as OptimizerCard[];
     console.log("[DEBUG] Total cards:", allCards.length);
-    
+
     if (allCards.length === 0) {
       setError("Nessuna carta disponibile");
       console.log("[DEBUG] Abort: no cards");
       return;
     }
-    
+
     const constraints = {
       cap: config.cap ?? Number.POSITIVE_INFINITY,
       requiredLeague: config.requiredLeague,
       editingFormationId: editingId,
       rarityFilter: rarityFilter !== "all" ? rarityFilter : undefined,
     };
-    console.log("[DEBUG] Constraints:", constraints);
-    console.log("[DEBUG] Saved formations count:", savedFormations.length);
-    
-    const result =
-      config.cap === null
-        ? generateOptimalLineupNocap(allCards, savedFormations, constraints)
-        : generateOptimalLineup(allCards, savedFormations, constraints);
-    
-    console.log("[DEBUG] Optimizer result:", result);
-    
+
+    // Rileva slot già compilati
+    const filled: FilledSlots = {};
+    let filledCount = 0;
+    for (const slot of formation) {
+      if (slot.card) {
+        filled[slot.position as keyof FilledSlots] = slot.card as OptimizerCard;
+        filledCount++;
+      }
+    }
+
+    const isPartial = filledCount > 0 && filledCount < 5;
+
+    const result = (() => {
+      if (isPartial && config.cap !== null) {
+        return completePartialLineup(
+          allCards,
+          savedFormations,
+          constraints,
+          filled
+        );
+      }
+      if (config.cap === null) {
+        return generateOptimalLineupNocap(
+          allCards,
+          savedFormations,
+          constraints
+        );
+      }
+      return generateOptimalLineup(allCards, savedFormations, constraints);
+    })();
+
     if (!result.success) {
       setError(`Impossibile generare formazione: ${result.reason}`);
-      console.log("[DEBUG] Failed:", result.reason);
       return;
     }
-    
-    console.log("[DEBUG] Success! Lineup L10:", result.totalL10);
-    
+
     // Popola la formazione con il risultato
     const newFormation: FormationSlot[] = [
       { position: "POR", card: result.lineup.POR },
@@ -673,23 +716,17 @@ export function LineupBuilder() {
       { position: "ATT", card: result.lineup.ATT },
       { position: "EX", card: result.lineup.EX },
     ];
-    
-    // Debug: verifica L10 delle carte
-    console.log("[DEBUG] Generated lineup L10s:", newFormation.map(s => ({
-      pos: s.position,
-      name: s.card?.name,
-      l10: s.card?.l10Average
-    })));
-    
+
     setFormation(newFormation);
     setActiveSlot(null);
     setError("");
     showToast(
       setToasts,
-      `Formazione generata! L10 totale: ${result.totalL10.toFixed(0)}`,
+      isPartial
+        ? `Lineup completata! L10: ${result.totalL10.toFixed(0)} | Proj: ${result.projectedScore.toFixed(1)}`
+        : `Formazione generata! L10: ${result.totalL10.toFixed(0)} | Proj: ${result.projectedScore.toFixed(1)}`,
       "success"
     );
-    console.log("[DEBUG] Formation set");
   };
 
   const handleConfirmFormation = async () => {
@@ -747,43 +784,19 @@ export function LineupBuilder() {
 
       const effectiveName = getEffectiveFormationName();
 
+      const formationData = {
+        name: effectiveName,
+        league: leagueFilter,
+        cards: formationCards as CardData[],
+        slots,
+        gameMode,
+      };
+
       if (editingId) {
-        // Update existing formation
-        await fetch(`${KV_WORKER_URL}/api/formations/${editingId}`, {
-          method: "PUT",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            userId: getCurrentUserId(),
-            data: {
-              name: effectiveName,
-              formation: gameMode,
-              league: leagueFilter,
-              players: formationCards,
-              cards: formationCards,
-              slots,
-              gameMode,
-            },
-          }),
-        });
+        await hookUpdateFormation(editingId, formationData);
         showToast(setToasts, "Formazione aggiornata con successo!", "success");
       } else {
-        // Create new formation
-        await fetch(`${KV_WORKER_URL}/api/formations`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            userId: getCurrentUserId(),
-            data: {
-              name: effectiveName,
-              formation: gameMode,
-              league: leagueFilter,
-              players: formationCards,
-              cards: formationCards,
-              slots,
-              gameMode,
-            },
-          }),
-        });
+        await hookSaveFormation(formationData);
         showToast(setToasts, "Formazione salvata con successo!", "success");
       }
 
@@ -792,13 +805,12 @@ export function LineupBuilder() {
       setFormation(getInitialFormation(gameMode));
       setEditingId(null);
       setError("");
-      // Show success and stay on page - user can create another formation
     } catch (err) {
       setError(err instanceof Error ? err.message : "Errore nel salvataggio");
     }
   };
 
-  const displayError = error || cardsError;
+  const _displayError = error || cardsError;
 
   if (isCardsLoading || isCardsRefreshing) {
     return (
@@ -882,7 +894,9 @@ export function LineupBuilder() {
                       ).length;
                       const remaining =
                         gameModeConfig.minInSeasonCount - inSeasonCount;
-                      if (remaining > 0) return "text-red-600";
+                      if (remaining > 0) {
+                        return "text-red-600";
+                      }
                       return "text-emerald-600";
                     })()
                   )}
@@ -910,7 +924,9 @@ export function LineupBuilder() {
               variant="outline"
             >
               <Sparkles className="h-5 w-5" />
-              Genera Lineup
+              {formation.some((s) => s.card) && !formation.every((s) => s.card)
+                ? "Completa Lineup"
+                : "Genera Lineup"}
             </Button>
           )}
 

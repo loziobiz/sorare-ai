@@ -243,16 +243,16 @@ export async function analyzeOddsHandler(
             );
             cleanedCount++;
           } catch (err) {
-            console.error(
-              `   ❌ Failed to clear odds for ${player.slug}:`
-            );
+            console.error(`   ❌ Failed to clear odds for ${player.slug}:`);
             cleanErrors++;
           }
         }
       }
     }
 
-    console.log(`✅ Cleanup complete: ${cleanedCount} cleared, ${cleanErrors} errors\n`);
+    console.log(
+      `✅ Cleanup complete: ${cleanedCount} cleared, ${cleanErrors} errors\n`
+    );
     result.updated += cleanedCount;
     result.errors += cleanErrors;
 
@@ -260,7 +260,7 @@ export async function analyzeOddsHandler(
     // FASE 2: FETCH NUOVE ODDS
     // ============================================================
     console.log("🎲 Phase 2: Fetching new odds...");
-    
+
     // Processa in batch per evitare rate limits (max 1000 subrequests per worker)
     const BATCH_SIZE = 50;
 

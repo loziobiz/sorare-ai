@@ -116,11 +116,11 @@ export async function cleanupExpiredOddsHandler(
               );
 
               result.cleared++;
-              console.log(`      ✅ Cleared`);
+              console.log("      ✅ Cleared");
             } catch (err) {
               result.errors++;
               console.error(
-                `      ❌ Failed to clear:`,
+                "      ❌ Failed to clear:",
                 err instanceof Error ? err.message : String(err)
               );
             }

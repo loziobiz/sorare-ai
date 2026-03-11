@@ -99,12 +99,12 @@ async function handleCron(cron: string, env: Env): Promise<void> {
     // Cloudflare passa i cron espansi individualmente
     case "0 0 * * *":
     case "0 8 * * *":
-    case "0 16 * * *":
+    case "0 16 * * *": {
       // Evita di eseguire alle 8 del mercoledì (già gestito sopra) e alle 16 di martedì/venerdì
       const now = new Date();
       const dayOfWeek = now.getUTCDay();
       const hour = now.getUTCHours();
-      
+
       // Salta se è mercoledì 8:00 (extract-players) o martedì/venerdì 16:00 (analyze-homeaway)
       if (hour === 8 && dayOfWeek === 3) {
         console.log("⏭️ Skipping odds analysis - extract-players slot");
@@ -114,10 +114,11 @@ async function handleCron(cron: string, env: Env): Promise<void> {
         console.log("⏭️ Skipping odds analysis - homeaway/aa slot");
         break;
       }
-      
+
       console.log("🎲 Running analyze-odds...");
       await analyzeOddsHandler(repository, client);
       break;
+    }
 
     default:
       console.log(`⚠️ Unknown cron: ${cron}`);
