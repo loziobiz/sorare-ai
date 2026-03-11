@@ -21,6 +21,7 @@ import { calculateFormationSlotsL10Total } from "@/lib/cards-utils";
 import type { UnifiedCard } from "@/lib/kv-types";
 import {
   completePartialLineup,
+  derivePlayerSlug,
   type FilledSlots,
   generateOptimalLineup,
   generateOptimalLineupNocap,
@@ -434,6 +435,19 @@ export function LineupBuilder() {
     [formation]
   );
 
+  // Giocatori già usati nella formazione (dedup per player, non per card)
+  const usedPlayerSlugs = useMemo(
+    () =>
+      new Set(
+        formation
+          .filter((s): s is typeof s & { card: NonNullable<typeof s.card> } =>
+            Boolean(s.card)
+          )
+          .map((s) => derivePlayerSlug(s.card))
+      ),
+    [formation]
+  );
+
   // Calcola residuo CAP L10
   const l10Used = useMemo(() => {
     const total = calculateFormationSlotsL10Total(formation);
@@ -455,6 +469,7 @@ export function LineupBuilder() {
   const filteredCards = useFilteredCards({
     cards,
     usedCardSlugs,
+    usedPlayerSlugs,
     leagueFilter,
     rarityFilter,
     activeSlot,
@@ -596,6 +611,23 @@ export function LineupBuilder() {
 
   const handleCardSelect = (card: Card) => {
     if (!activeSlot) {
+      return;
+    }
+
+    // Impedisci di inserire lo stesso giocatore con carta diversa
+    const playerSlug = derivePlayerSlug(card);
+    const currentSlotCard = formation.find(
+      (s) => s.position === activeSlot
+    )?.card;
+    const currentSlotPlayerSlug = currentSlotCard
+      ? derivePlayerSlug(currentSlotCard)
+      : null;
+    // Permetti sostituzione nello stesso slot (stesso giocatore OK se rimpiazza sé stesso)
+    if (
+      usedPlayerSlugs.has(playerSlug) &&
+      playerSlug !== currentSlotPlayerSlug
+    ) {
+      showToast(setToasts, "Giocatore già presente nella lineup", "warning");
       return;
     }
 

@@ -392,6 +392,7 @@ export function mapKvCardToUnifiedCard(kvCard: KvCardResponse): UnifiedCard {
   return {
     // Dati base
     slug: value.slug,
+    playerSlug: value.playerSlug,
     name: value.name,
     rarityTyped: value.rarityTyped,
     anyPositions: value.anyPositions,

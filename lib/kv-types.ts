@@ -280,6 +280,7 @@ export interface KvSingleSaveRequest {
 export interface UnifiedCard {
   // Identificativi
   slug: string;
+  playerSlug: string;
   name: string;
 
   // Dati carta

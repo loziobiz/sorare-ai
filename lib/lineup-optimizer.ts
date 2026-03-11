@@ -47,6 +47,27 @@ export type OptimizerResult =
 const MAX_CARDS_PER_POSITION = 40;
 
 /**
+ * Ricava il playerSlug dalla carta. Usa il campo diretto se disponibile,
+ * altrimenti lo estrae dal card slug (parte prima dell'anno YYYY).
+ */
+const YEAR_PATTERN = /^\d{4}$/;
+export function derivePlayerSlug(card: {
+  playerSlug?: string;
+  slug: string;
+}): string {
+  if (card.playerSlug) {
+    return card.playerSlug;
+  }
+  const parts = card.slug.split("-");
+  for (let i = 0; i < parts.length; i++) {
+    if (YEAR_PATTERN.test(parts[i] ?? "")) {
+      return parts.slice(0, i).join("-");
+    }
+  }
+  return card.slug;
+}
+
+/**
  * Verifica se una carta può giocare in una posizione
  */
 function canPlayPosition(card: OptimizerCard, position: string): boolean {
@@ -374,7 +395,7 @@ function findBestCombination(
     const porEff = getEffectiveScore(por);
 
     for (const dif of difCards) {
-      if (dif.slug === por.slug) {
+      if (dif.playerSlug === por.playerSlug) {
         continue;
       }
       const difL10 = getL10(dif);
@@ -385,7 +406,10 @@ function findBestCombination(
       const sum2Eff = porEff + getEffectiveScore(dif);
 
       for (const cen of cenCards) {
-        if (cen.slug === por.slug || cen.slug === dif.slug) {
+        if (
+          cen.playerSlug === por.playerSlug ||
+          cen.playerSlug === dif.playerSlug
+        ) {
           continue;
         }
         const cenL10 = getL10(cen);
@@ -397,9 +421,9 @@ function findBestCombination(
 
         for (const att of attCards) {
           if (
-            att.slug === por.slug ||
-            att.slug === dif.slug ||
-            att.slug === cen.slug
+            att.playerSlug === por.playerSlug ||
+            att.playerSlug === dif.playerSlug ||
+            att.playerSlug === cen.playerSlug
           ) {
             continue;
           }
@@ -412,10 +436,10 @@ function findBestCombination(
 
           for (const ex of exCards) {
             if (
-              ex.slug === por.slug ||
-              ex.slug === dif.slug ||
-              ex.slug === cen.slug ||
-              ex.slug === att.slug
+              ex.playerSlug === por.playerSlug ||
+              ex.playerSlug === dif.playerSlug ||
+              ex.playerSlug === cen.playerSlug ||
+              ex.playerSlug === att.playerSlug
             ) {
               continue;
             }
@@ -538,7 +562,7 @@ export function generateOptimalLineupNocap(
         if (usedSlugs.has(card.slug)) {
           return false;
         }
-        if (usedInLineup.has(card.slug)) {
+        if (usedInLineup.has(card.playerSlug)) {
           return false;
         }
         if (constraints.excludedSlugs?.includes(card.slug)) {
@@ -573,7 +597,7 @@ export function generateOptimalLineupNocap(
 
     const best = candidates[0];
     lineup[position] = best;
-    usedInLineup.add(best.slug);
+    usedInLineup.add(best.playerSlug);
     totalL10 += getL10(best);
     totalEffective += getEffectiveScore(best);
   }
@@ -630,7 +654,8 @@ function recursiveBranchBound(
   const candidates = cardsByPos.get(position) ?? [];
 
   for (const card of candidates) {
-    if (usedSlugs.has(card.slug)) {
+    const pSlug = card.playerSlug;
+    if (usedSlugs.has(pSlug)) {
       continue;
     }
 
@@ -643,7 +668,7 @@ function recursiveBranchBound(
     }
 
     // Segna come usata, ricorsione, rimuovi
-    usedSlugs.add(card.slug);
+    usedSlugs.add(pSlug);
     currentCards.set(position, card);
 
     best = recursiveBranchBound(
@@ -658,7 +683,7 @@ function recursiveBranchBound(
       best
     );
 
-    usedSlugs.delete(card.slug);
+    usedSlugs.delete(pSlug);
     currentCards.delete(position);
   }
 
@@ -685,11 +710,15 @@ export function completePartialLineup(
     constraints.editingFormationId
   );
 
+  // Player slugs usati nella lineup (per dedup intra-lineup)
+  const usedPlayerSlugs = new Set<string>();
+
   for (const card of Object.values(filledSlots)) {
     if (card) {
       filledL10 += getL10(card);
       filledEff += getEffectiveScore(card);
       usedSlugs.add(card.slug);
+      usedPlayerSlugs.add(card.playerSlug);
     }
   }
 
@@ -709,6 +738,9 @@ export function completePartialLineup(
     const validCards = allCards
       .filter((card) => {
         if (usedSlugs.has(card.slug)) {
+          return false;
+        }
+        if (usedPlayerSlugs.has(card.playerSlug)) {
           return false;
         }
         if (constraints.excludedSlugs?.includes(card.slug)) {
@@ -745,7 +777,7 @@ export function completePartialLineup(
     emptyPositions,
     cardsByPos,
     remainingCap,
-    new Set(usedSlugs),
+    new Set(usedPlayerSlugs),
     0,
     0,
     0,

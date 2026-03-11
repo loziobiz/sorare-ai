@@ -2,6 +2,7 @@
 
 import { useMemo } from "react";
 import type { UnifiedCard } from "@/lib/kv-types";
+import { derivePlayerSlug } from "@/lib/lineup-optimizer";
 import type { CardData } from "@/lib/sorare-api";
 import type { SlotPosition } from "./lineup-builder";
 
@@ -10,6 +11,7 @@ type Card = CardData | UnifiedCard;
 interface UseFilteredCardsOptions {
   cards: Card[];
   usedCardSlugs: Set<string | undefined>;
+  usedPlayerSlugs: Set<string>;
   leagueFilter: string;
   rarityFilter: "all" | "limited" | "rare";
   activeSlot: SlotPosition | null;
@@ -43,6 +45,7 @@ export function useFilteredCards(options: UseFilteredCardsOptions): Card[] {
   const {
     cards,
     usedCardSlugs,
+    usedPlayerSlugs,
     leagueFilter,
     rarityFilter,
     activeSlot,
@@ -60,7 +63,19 @@ export function useFilteredCards(options: UseFilteredCardsOptions): Card[] {
   } = options;
 
   return useMemo(() => {
-    let filtered = cards.filter((card) => !usedCardSlugs.has(card.slug));
+    let filtered = cards.filter((card) => {
+      if (usedCardSlugs.has(card.slug)) {
+        return false;
+      }
+      // Escludi carte di giocatori già nella lineup (dedup per player)
+      if (usedPlayerSlugs.size > 0) {
+        const pSlug = derivePlayerSlug(card);
+        if (usedPlayerSlugs.has(pSlug)) {
+          return false;
+        }
+      }
+      return true;
+    });
 
     // Esclude giocatori senza squadra o con dati incompleti
     filtered = filtered.filter((card) => {
@@ -168,6 +183,7 @@ export function useFilteredCards(options: UseFilteredCardsOptions): Card[] {
   }, [
     cards,
     usedCardSlugs,
+    usedPlayerSlugs,
     leagueFilter,
     rarityFilter,
     activeSlot,
