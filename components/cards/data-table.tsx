@@ -31,6 +31,7 @@ interface DataTableProps<TData> {
   sorting?: SortingState;
   onSortingChange?: OnChangeFn<SortingState>;
   enableSorting?: boolean;
+  rowClassName?: (row: TData) => string;
 }
 
 export function getSortIcon(
@@ -59,6 +60,7 @@ export function DataTable<TData>({
   sorting: externalSorting,
   onSortingChange: externalOnSortingChange,
   enableSorting = true,
+  rowClassName,
 }: DataTableProps<TData>) {
   const [internalSorting, setInternalSorting] = useState<SortingState>([]);
 
@@ -131,7 +133,8 @@ export function DataTable<TData>({
               className={cn(
                 "border-white/5 transition-colors",
                 onRowClick && !disabled && "cursor-pointer hover:bg-white/5",
-                disabled && "cursor-not-allowed opacity-50"
+                disabled && "cursor-not-allowed opacity-50",
+                rowClassName?.(row.original)
               )}
               key={row.id}
               onClick={() => {

@@ -22,6 +22,7 @@ export interface OptimizerConstraints {
   requiredLeague: string | null; // "MLS" o null per tutte
   editingFormationId?: string | null; // Se in edit mode, esclude questa formazione dal check "già usate"
   rarityFilter?: "all" | "limited" | "rare"; // Filtro rarità (optional)
+  excludedSlugs?: string[]; // Carte escluse manualmente dall'utente
 }
 
 export type OptimizerResult =
@@ -247,6 +248,11 @@ function prepareCardsByPosition(
     const validCards = cards.filter((card) => {
       // Non usata in altre formazioni
       if (usedSlugs.has(card.slug)) {
+        return false;
+      }
+
+      // Non esclusa manualmente dall'utente
+      if (constraints.excludedSlugs?.includes(card.slug)) {
         return false;
       }
 
@@ -535,6 +541,9 @@ export function generateOptimalLineupNocap(
         if (usedInLineup.has(card.slug)) {
           return false;
         }
+        if (constraints.excludedSlugs?.includes(card.slug)) {
+          return false;
+        }
         if (!isCardFromLeague(card, constraints.requiredLeague)) {
           return false;
         }
@@ -700,6 +709,9 @@ export function completePartialLineup(
     const validCards = allCards
       .filter((card) => {
         if (usedSlugs.has(card.slug)) {
+          return false;
+        }
+        if (constraints.excludedSlugs?.includes(card.slug)) {
           return false;
         }
         if (!isCardFromLeague(card, constraints.requiredLeague)) {

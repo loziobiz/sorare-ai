@@ -1,12 +1,13 @@
 "use client";
 
-import { Plus, X } from "lucide-react";
+import { Ban, Plus, Trash2 } from "lucide-react";
+import { useState } from "react";
 import type { UnifiedCard } from "@/lib/kv-types";
 import type { CardData } from "@/lib/sorare-api";
 
-type Card = CardData | UnifiedCard;
-
 import { cn } from "@/lib/utils";
+
+type Card = CardData | UnifiedCard;
 
 /**
  * Restituisce il colore del badge L10 in base al valore
@@ -37,80 +38,142 @@ interface PitchSlotProps {
   label: string;
   card: Card | null;
   isActive: boolean;
-  onClick: () => void;
+  onSelect: () => void;
+  onRemove?: () => void;
+  onExclude?: () => void;
 }
 
-export function PitchSlot({ label, card, isActive, onClick }: PitchSlotProps) {
+export function PitchSlot({
+  label,
+  card,
+  isActive,
+  onSelect,
+  onRemove,
+  onExclude,
+}: PitchSlotProps) {
+  const [showActions, setShowActions] = useState(false);
+
   if (card) {
-    // Slot con carta - mostra l'immagine e la banda con L10 e % titolarità
+    // Slot con carta - click seleziona, hover/tap mostra azioni
     return (
-      <button
-        aria-label={`Rimuovi ${card.name}`}
-        className="group relative flex flex-col items-center transition-transform hover:scale-105"
-        onClick={onClick}
-        type="button"
+      <div
+        className="group relative flex flex-col items-center"
+        onMouseEnter={() => setShowActions(true)}
+        onMouseLeave={() => setShowActions(false)}
       >
-        {/* Icona rimuovi al hover */}
-        <div className="absolute top-1 right-1 z-20 rounded-full bg-black/60 p-1 opacity-0 transition-opacity group-hover:opacity-100">
-          <X className="h-4 w-4 text-white" />
-        </div>
+        {/* Overlay con azioni (hover desktop, tap mobile) */}
+        <button
+          aria-label={`Azioni per ${card.name}`}
+          className={cn(
+            "absolute inset-0 z-30 flex flex-col items-center justify-center gap-3 rounded-lg bg-black/70 transition-opacity",
+            showActions ? "opacity-100" : "opacity-0"
+          )}
+          onClick={() => setShowActions(!showActions)}
+          type="button"
+        >
+          {/* Pulsante Escludi */}
+          {onExclude && (
+            <button
+              aria-label="Escludi carta dall'optimizer"
+              className="flex items-center gap-2 rounded-lg bg-red-500/80 px-3 py-2 font-medium text-sm text-white transition-colors hover:bg-red-500"
+              onClick={(e) => {
+                e.stopPropagation();
+                onExclude();
+                setShowActions(false);
+              }}
+              title="Escludi dall'optimizer"
+              type="button"
+            >
+              <Ban className="h-4 w-4" />
+              Escludi
+            </button>
+          )}
+          {/* Pulsante Rimuovi */}
+          {onRemove && (
+            <button
+              aria-label="Rimuovi carta dalla lineup"
+              className="flex items-center gap-2 rounded-lg bg-slate-500/80 px-3 py-2 font-medium text-sm text-white transition-colors hover:bg-slate-500"
+              onClick={(e) => {
+                e.stopPropagation();
+                onRemove();
+                setShowActions(false);
+              }}
+              title="Rimuovi dalla lineup"
+              type="button"
+            >
+              <Trash2 className="h-4 w-4" />
+              Rimuovi
+            </button>
+          )}
+        </button>
 
-        {/* Immagine della carta */}
-        {card.pictureUrl ? (
-          <img
-            alt={card.name}
-            className="h-40 w-24 rounded-lg object-cover shadow-lg"
-            height={160}
-            loading="lazy"
-            src={card.pictureUrl}
-            width={96}
-          />
-        ) : (
-          <div className="flex h-40 w-24 items-center justify-center rounded-lg bg-slate-700 font-bold text-white shadow-lg">
-            {card.name.charAt(0)}
-          </div>
-        )}
+        {/* Click area sottostante per selezionare lo slot */}
+        <button
+          aria-label={`Seleziona slot ${label}`}
+          className={cn(
+            "relative flex flex-col items-center transition-transform",
+            isActive && "scale-105"
+          )}
+          onClick={onSelect}
+          type="button"
+        >
+          {/* Immagine della carta */}
+          {card.pictureUrl ? (
+            <img
+              alt={card.name}
+              className="h-40 w-24 rounded-lg object-cover shadow-lg"
+              height={160}
+              loading="lazy"
+              src={card.pictureUrl}
+              width={96}
+            />
+          ) : (
+            <div className="flex h-40 w-24 items-center justify-center rounded-lg bg-slate-700 font-bold text-white shadow-lg">
+              {card.name.charAt(0)}
+            </div>
+          )}
 
-        {/* Banda con L10 e % Titolarità */}
-        <div className="flex w-24 items-center justify-center gap-1">
-          {/* L10 */}
-          {(() => {
-            const colors = getL10BadgeColor(card.l10Average);
-            return (
-              <span
-                className={`inline-flex w-11 items-center justify-center gap-0.5 rounded px-1 py-0.5 font-medium text-[9px] ${colors.bg} ${colors.text}`}
-              >
-                <span>📊</span>
-                {card.l10Average ?? "-"}
-              </span>
-            );
-          })()}
-          {/* % Titolarità */}
-          {card.anyPlayer?.nextClassicFixturePlayingStatusOdds &&
-            (() => {
-              const starterOdds = Math.round(
-                card.anyPlayer.nextClassicFixturePlayingStatusOdds
-                  .starterOddsBasisPoints / 100
-              );
-              let colorClass = "";
-              if (starterOdds < 50) {
-                colorClass = "bg-red-500/20 text-red-400";
-              } else if (starterOdds <= 70) {
-                colorClass = "bg-orange-500/20 text-orange-400";
-              } else {
-                colorClass = "bg-emerald-500/20 text-emerald-400";
-              }
+          {/* Banda con L10 e % Titolarità */}
+          <div className="flex w-24 items-center justify-center gap-1">
+            {/* L10 */}
+            {(() => {
+              const colors = getL10BadgeColor(card.l10Average);
               return (
                 <span
-                  className={`inline-flex w-11 items-center justify-center gap-0.5 rounded px-1 py-0.5 font-medium text-[9px] ${colorClass}`}
+                  className={`inline-flex w-11 items-center justify-center gap-0.5 rounded px-1 py-0.5 font-medium text-[9px] ${colors.bg} ${colors.text}`}
                 >
-                  <span>👕</span>
-                  {starterOdds}
+                  <span>📊</span>
+                  {card.l10Average ?? "-"}
                 </span>
               );
             })()}
-        </div>
-      </button>
+            {/* % Titolarità */}
+            {card.anyPlayer?.nextClassicFixturePlayingStatusOdds &&
+              (() => {
+                const starterOdds = Math.round(
+                  card.anyPlayer.nextClassicFixturePlayingStatusOdds
+                    .starterOddsBasisPoints / 100
+                );
+                let colorClass = "";
+                if (starterOdds < 50) {
+                  colorClass = "bg-red-500/20 text-red-400";
+                } else if (starterOdds <= 70) {
+                  colorClass = "bg-orange-500/20 text-orange-400";
+                } else {
+                  colorClass = "bg-emerald-500/20 text-emerald-400";
+                }
+                return (
+                  <span
+                    className={`inline-flex w-11 items-center justify-center gap-0.5 rounded px-1 py-0.5 font-medium text-[9px] ${colorClass}`}
+                  >
+                    <span>👕</span>
+                    {starterOdds}
+                  </span>
+                );
+              })()}
+          </div>
+        </button>
+      </div>
     );
   }
 
@@ -122,7 +185,7 @@ export function PitchSlot({ label, card, isActive, onClick }: PitchSlotProps) {
         "group flex flex-col items-center transition-transform hover:scale-105",
         isActive && "scale-105"
       )}
-      onClick={onClick}
+      onClick={onSelect}
       type="button"
     >
       <div

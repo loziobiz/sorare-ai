@@ -7,14 +7,18 @@ interface PitchFieldProps {
   slotCount: 5 | 7;
   formation: FormationSlot[];
   activeSlot: SlotPosition | null;
-  onSlotClick: (position: SlotPosition) => void;
+  onSlotSelect: (position: SlotPosition) => void;
+  onCardRemove?: (position: SlotPosition) => void;
+  onCardExclude?: (slug: string) => void;
 }
 
 export function PitchField({
   slotCount,
   formation,
   activeSlot,
-  onSlotClick,
+  onSlotSelect,
+  onCardRemove,
+  onCardExclude,
 }: PitchFieldProps) {
   const isProGas = slotCount === 7;
 
@@ -40,7 +44,14 @@ export function PitchField({
                 }
                 isActive={activeSlot === "ATT1"}
                 label="ATT1"
-                onClick={() => onSlotClick("ATT1")}
+                onExclude={() => {
+                  const card = formation.find(
+                    (s) => s.position === "ATT1"
+                  )?.card;
+                  if (card && onCardExclude) onCardExclude(card.slug);
+                }}
+                onRemove={() => onCardRemove?.("ATT1")}
+                onSelect={() => onSlotSelect("ATT1")}
               />
               <PitchSlot
                 card={
@@ -48,13 +59,27 @@ export function PitchField({
                 }
                 isActive={activeSlot === "CEN2"}
                 label="CEN2"
-                onClick={() => onSlotClick("CEN2")}
+                onExclude={() => {
+                  const card = formation.find(
+                    (s) => s.position === "CEN2"
+                  )?.card;
+                  if (card && onCardExclude) onCardExclude(card.slug);
+                }}
+                onRemove={() => onCardRemove?.("CEN2")}
+                onSelect={() => onSlotSelect("CEN2")}
               />
               <PitchSlot
                 card={formation.find((s) => s.position === "EXT")?.card ?? null}
                 isActive={activeSlot === "EXT"}
                 label="EXT"
-                onClick={() => onSlotClick("EXT")}
+                onExclude={() => {
+                  const card = formation.find(
+                    (s) => s.position === "EXT"
+                  )?.card;
+                  if (card && onCardExclude) onCardExclude(card.slug);
+                }}
+                onRemove={() => onCardRemove?.("EXT")}
+                onSelect={() => onSlotSelect("EXT")}
               />
             </div>
 
@@ -66,7 +91,14 @@ export function PitchField({
                 }
                 isActive={activeSlot === "DIF1"}
                 label="DIF1"
-                onClick={() => onSlotClick("DIF1")}
+                onExclude={() => {
+                  const card = formation.find(
+                    (s) => s.position === "DIF1"
+                  )?.card;
+                  if (card && onCardExclude) onCardExclude(card.slug);
+                }}
+                onRemove={() => onCardRemove?.("DIF1")}
+                onSelect={() => onSlotSelect("DIF1")}
               />
               <PitchSlot
                 card={
@@ -74,7 +106,14 @@ export function PitchField({
                 }
                 isActive={activeSlot === "CEN1"}
                 label="CEN1"
-                onClick={() => onSlotClick("CEN1")}
+                onExclude={() => {
+                  const card = formation.find(
+                    (s) => s.position === "CEN1"
+                  )?.card;
+                  if (card && onCardExclude) onCardExclude(card.slug);
+                }}
+                onRemove={() => onCardRemove?.("CEN1")}
+                onSelect={() => onSlotSelect("CEN1")}
               />
               <PitchSlot
                 card={
@@ -82,7 +121,14 @@ export function PitchField({
                 }
                 isActive={activeSlot === "DIF2"}
                 label="DIF2"
-                onClick={() => onSlotClick("DIF2")}
+                onExclude={() => {
+                  const card = formation.find(
+                    (s) => s.position === "DIF2"
+                  )?.card;
+                  if (card && onCardExclude) onCardExclude(card.slug);
+                }}
+                onRemove={() => onCardRemove?.("DIF2")}
+                onSelect={() => onSlotSelect("DIF2")}
               />
             </div>
 
@@ -92,7 +138,14 @@ export function PitchField({
                 card={formation.find((s) => s.position === "POR")?.card ?? null}
                 isActive={activeSlot === "POR"}
                 label="POR"
-                onClick={() => onSlotClick("POR")}
+                onExclude={() => {
+                  const card = formation.find(
+                    (s) => s.position === "POR"
+                  )?.card;
+                  if (card && onCardExclude) onCardExclude(card.slug);
+                }}
+                onRemove={() => onCardRemove?.("POR")}
+                onSelect={() => onSlotSelect("POR")}
               />
             </div>
           </>
@@ -105,13 +158,25 @@ export function PitchField({
                 card={formation.find((s) => s.position === "ATT")?.card ?? null}
                 isActive={activeSlot === "ATT"}
                 label="ATT"
-                onClick={() => onSlotClick("ATT")}
+                onExclude={() => {
+                  const card = formation.find(
+                    (s) => s.position === "ATT"
+                  )?.card;
+                  if (card && onCardExclude) onCardExclude(card.slug);
+                }}
+                onRemove={() => onCardRemove?.("ATT")}
+                onSelect={() => onSlotSelect("ATT")}
               />
               <PitchSlot
                 card={formation.find((s) => s.position === "EX")?.card ?? null}
                 isActive={activeSlot === "EX"}
                 label="EX"
-                onClick={() => onSlotClick("EX")}
+                onExclude={() => {
+                  const card = formation.find((s) => s.position === "EX")?.card;
+                  if (card && onCardExclude) onCardExclude(card.slug);
+                }}
+                onRemove={() => onCardRemove?.("EX")}
+                onSelect={() => onSlotSelect("EX")}
               />
             </div>
 
@@ -121,13 +186,27 @@ export function PitchField({
                 card={formation.find((s) => s.position === "DIF")?.card ?? null}
                 isActive={activeSlot === "DIF"}
                 label="DIF"
-                onClick={() => onSlotClick("DIF")}
+                onExclude={() => {
+                  const card = formation.find(
+                    (s) => s.position === "DIF"
+                  )?.card;
+                  if (card && onCardExclude) onCardExclude(card.slug);
+                }}
+                onRemove={() => onCardRemove?.("DIF")}
+                onSelect={() => onSlotSelect("DIF")}
               />
               <PitchSlot
                 card={formation.find((s) => s.position === "CEN")?.card ?? null}
                 isActive={activeSlot === "CEN"}
                 label="CEN"
-                onClick={() => onSlotClick("CEN")}
+                onExclude={() => {
+                  const card = formation.find(
+                    (s) => s.position === "CEN"
+                  )?.card;
+                  if (card && onCardExclude) onCardExclude(card.slug);
+                }}
+                onRemove={() => onCardRemove?.("CEN")}
+                onSelect={() => onSlotSelect("CEN")}
               />
             </div>
 
@@ -137,7 +216,14 @@ export function PitchField({
                 card={formation.find((s) => s.position === "POR")?.card ?? null}
                 isActive={activeSlot === "POR"}
                 label="POR"
-                onClick={() => onSlotClick("POR")}
+                onExclude={() => {
+                  const card = formation.find(
+                    (s) => s.position === "POR"
+                  )?.card;
+                  if (card && onCardExclude) onCardExclude(card.slug);
+                }}
+                onRemove={() => onCardRemove?.("POR")}
+                onSelect={() => onSlotSelect("POR")}
               />
             </div>
           </>

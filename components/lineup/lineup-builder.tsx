@@ -381,6 +381,9 @@ export function LineupBuilder() {
     Array<{ id: string; message: string; type?: "success" | "error" | "info" }>
   >([]);
 
+  // Carte escluse dall'optimizer (persiste solo durante la sessione sul builder)
+  const [excludedSlugs, setExcludedSlugs] = useState<Set<string>>(new Set());
+
   // Ref per tracciare se la formazione è già stata caricata (evita reload su cambio cards)
   const formationLoadedRef = useRef(false);
 
@@ -568,18 +571,27 @@ export function LineupBuilder() {
     loadFormation();
   }, [searchParams, cards, currentCardsMap, getFormation]);
 
-  const handleSlotClick = (position: SlotPosition) => {
-    const slot = formation.find((s) => s.position === position);
-    if (slot?.card) {
-      // Rimuovi la carta dallo slot
-      setFormation((prev) =>
-        prev.map((s) => (s.position === position ? { ...s, card: null } : s))
-      );
-      setActiveSlot(null);
-    } else {
-      // Attiva lo slot per la selezione
-      setActiveSlot(activeSlot === position ? null : position);
-    }
+  const handleSlotSelect = (position: SlotPosition) => {
+    // Seleziona lo slot per aggiungere/sostituire una carta
+    setActiveSlot(activeSlot === position ? null : position);
+  };
+
+  const handleCardRemove = (position: SlotPosition) => {
+    // Rimuove la carta dalla lineup ma NON la esclude dall'optimizer
+    setFormation((prev) =>
+      prev.map((s) => (s.position === position ? { ...s, card: null } : s))
+    );
+    setActiveSlot(null);
+  };
+
+  const handleCardExclude = (slug: string) => {
+    // Rimuove la carta dalla lineup (se presente) e la esclude dall'optimizer
+    setFormation((prev) =>
+      prev.map((s) => (s.card?.slug === slug ? { ...s, card: null } : s))
+    );
+    setExcludedSlugs((prev) => new Set([...prev, slug]));
+    setActiveSlot(null);
+    showToast(setToasts, "Carta esclusa dall'optimizer", "info");
   };
 
   const handleCardSelect = (card: Card) => {
@@ -670,6 +682,7 @@ export function LineupBuilder() {
       requiredLeague: config.requiredLeague,
       editingFormationId: editingId,
       rarityFilter: rarityFilter !== "all" ? rarityFilter : undefined,
+      excludedSlugs: Array.from(excludedSlugs),
     };
 
     // Rileva slot già compilati
@@ -944,7 +957,9 @@ export function LineupBuilder() {
           <PitchField
             activeSlot={activeSlot}
             formation={formation}
-            onSlotClick={handleSlotClick}
+            onCardExclude={handleCardExclude}
+            onCardRemove={handleCardRemove}
+            onSlotSelect={handleSlotSelect}
             slotCount={gameModeConfig.slotCount}
           />
         </div>
@@ -1201,6 +1216,7 @@ export function LineupBuilder() {
                 cards={filteredCards}
                 disabled={!activeSlot}
                 emptyMessage={getEmptyMessage(leagueFilter, activeSlot)}
+                excludedSlugs={excludedSlugs}
                 l10Remaining={l10Remaining}
                 markedCards={showUsedCards ? savedFormationsCards : undefined}
                 mode="lineup"

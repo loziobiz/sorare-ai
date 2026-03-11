@@ -76,6 +76,7 @@ export interface CardsListProps {
   markedCards?: Map<string, string>;
   mode?: "lineup" | "dashboard";
   l10Remaining?: number;
+  excludedSlugs?: Set<string>;
 }
 
 function convertSortKey(key: SortKey): string {
@@ -116,6 +117,7 @@ export function CardsList({
   markedCards,
   mode = "lineup",
   l10Remaining,
+  excludedSlugs,
 }: CardsListProps) {
   const columns = useMemo(() => {
     if (mode === "dashboard") {
@@ -177,6 +179,9 @@ export function CardsList({
       enableSorting={!!onSort}
       onRowClick={onCardClick}
       onSortingChange={handleSortingChange}
+      rowClassName={(card) =>
+        excludedSlugs?.has(card.slug) ? "opacity-30" : ""
+      }
       showEmptyMessage={showEmptyMessage}
       sorting={sorting}
     />
