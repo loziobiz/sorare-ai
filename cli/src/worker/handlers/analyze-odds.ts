@@ -214,6 +214,53 @@ export async function analyzeOddsHandler(
 
     console.log(`Found ${players.length} players to analyze`);
 
+    // ============================================================
+    // FASE 1: PULIZIA ODDS SCADUTE (su TUTTI i giocatori)
+    // ============================================================
+    console.log("\n🧹 Phase 1: Cleaning up expired odds...");
+    const now = new Date();
+    let cleanedCount = 0;
+    let cleanErrors = 0;
+
+    for (const player of players) {
+      const existingOdds = player.stats?.odds?.nextFixture;
+      if (existingOdds?.fixtureDate) {
+        const existingDate = new Date(existingOdds.fixtureDate);
+        if (existingDate < now) {
+          console.log(
+            `   🗑️ ${player.name}: Clearing expired odds (${existingOdds.fixtureDate})`
+          );
+          try {
+            await repository.updatePlayerStats(
+              player.slug,
+              {
+                odds: {
+                  calculatedAt: now.toISOString(),
+                  nextFixture: null,
+                },
+              },
+              new DefaultUpdateStrategy()
+            );
+            cleanedCount++;
+          } catch (err) {
+            console.error(
+              `   ❌ Failed to clear odds for ${player.slug}:`
+            );
+            cleanErrors++;
+          }
+        }
+      }
+    }
+
+    console.log(`✅ Cleanup complete: ${cleanedCount} cleared, ${cleanErrors} errors\n`);
+    result.updated += cleanedCount;
+    result.errors += cleanErrors;
+
+    // ============================================================
+    // FASE 2: FETCH NUOVE ODDS
+    // ============================================================
+    console.log("🎲 Phase 2: Fetching new odds...");
+    
     // Processa in batch per evitare rate limits (max 1000 subrequests per worker)
     const BATCH_SIZE = 50;
 
@@ -232,7 +279,6 @@ export async function analyzeOddsHandler(
           // --- CONTROLLO DATA EVENTO ---
           // Se l'evento è passato, cancella le odds invece di mantenerle
           const fixtureDate = odds.nextFixture?.fixtureDate;
-          const now = new Date();
           const isEventPassed = fixtureDate && new Date(fixtureDate) < now;
 
           if (isEventPassed) {

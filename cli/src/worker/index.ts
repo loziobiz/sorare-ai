@@ -16,6 +16,7 @@ import { KV_CARDS_BATCH_SIZE } from "../../../shared/kv-constants.js";
 import { analyzeAAHandler } from "./handlers/analyze-aa.js";
 import { analyzeHomeAwayHandler } from "./handlers/analyze-homeaway.js";
 import { analyzeOddsHandler } from "./handlers/analyze-odds.js";
+import { cleanupExpiredOddsHandler } from "./handlers/cleanup-expired-odds.js";
 import { extractPlayersHandler } from "./handlers/extract-players.js";
 import {
   createFormation,
@@ -64,6 +65,19 @@ async function handleCron(cron: string, env: Env): Promise<void> {
   }
 
   switch (cron) {
+    // Ogni giorno 06:00, 18:00 UTC - Sync user cards (ogni 12 ore)
+    case "0 6 * * *":
+    case "0 18 * * *":
+      console.log("🔄 Running sync-user-cards...");
+      await syncUserCardsHandler(env.SORARE_AI_DATA, client);
+      break;
+
+    // Tutti i giorni 08:30 UTC - Cleanup expired odds
+    case "30 8 * * *":
+      console.log("🧹 Running cleanup-expired-odds...");
+      await cleanupExpiredOddsHandler(repository);
+      break;
+
     // Mercoledì 08:00 UTC - Extract players (MLS)
     case "0 8 * * 3":
       console.log("📋 Running extract-players...");
@@ -82,7 +96,25 @@ async function handleCron(cron: string, env: Env): Promise<void> {
       break;
 
     // Ogni giorno alle 00:00, 08:00, 16:00 UTC - Odds (ogni 8 ore)
-    case "0 0,8,16 * * *":
+    // Cloudflare passa i cron espansi individualmente
+    case "0 0 * * *":
+    case "0 8 * * *":
+    case "0 16 * * *":
+      // Evita di eseguire alle 8 del mercoledì (già gestito sopra) e alle 16 di martedì/venerdì
+      const now = new Date();
+      const dayOfWeek = now.getUTCDay();
+      const hour = now.getUTCHours();
+      
+      // Salta se è mercoledì 8:00 (extract-players) o martedì/venerdì 16:00 (analyze-homeaway)
+      if (hour === 8 && dayOfWeek === 3) {
+        console.log("⏭️ Skipping odds analysis - extract-players slot");
+        break;
+      }
+      if (hour === 16 && (dayOfWeek === 2 || dayOfWeek === 5)) {
+        console.log("⏭️ Skipping odds analysis - homeaway/aa slot");
+        break;
+      }
+      
       console.log("🎲 Running analyze-odds...");
       await analyzeOddsHandler(repository, client);
       break;
@@ -300,13 +332,14 @@ async function handleFetch(
             "analyze-homeaway",
             "analyze-aa",
             "analyze-odds",
+            "cleanup-expired-odds",
           ].includes(job)
         )
       ) {
         return json(
           {
             error:
-              "Unknown job. Use: extract-players, sync-extra-players, sync-user-cards, analyze-homeaway, analyze-aa, analyze-odds",
+              "Unknown job. Use: extract-players, sync-extra-players, sync-user-cards, analyze-homeaway, analyze-aa, analyze-odds, cleanup-expired-odds",
           },
           headers,
           400
@@ -336,6 +369,9 @@ async function handleFetch(
           break;
         case "analyze-odds":
           result = await analyzeOddsHandler(repository, client);
+          break;
+        case "cleanup-expired-odds":
+          result = await cleanupExpiredOddsHandler(repository);
           break;
       }
 
