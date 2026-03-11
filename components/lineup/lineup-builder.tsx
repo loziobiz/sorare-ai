@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter, useSearch } from "@tanstack/react-router";
-import { Check, Search } from "lucide-react";
+import { Check, Search, Sparkles } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { SorareCard } from "@/components/cards/card";
 import {
@@ -18,6 +18,11 @@ import { showToast, ToastContainer } from "@/components/ui/toast";
 import { useKvCards } from "@/hooks/use-kv-cards";
 import { useKVFormations } from "@/hooks/use-kv-formations";
 import { calculateFormationSlotsL10Total } from "@/lib/cards-utils";
+import {
+  generateOptimalLineup,
+  generateOptimalLineupNocap,
+  type OptimizerCard,
+} from "@/lib/lineup-optimizer";
 import { KV_WORKER_URL } from "@/lib/kv-api";
 import type { UnifiedCard } from "@/lib/kv-types";
 import type { CardData } from "@/lib/sorare-api";
@@ -422,10 +427,11 @@ export function LineupBuilder() {
   );
 
   // Calcola residuo CAP L10
-  const l10Used = useMemo(
-    () => calculateFormationSlotsL10Total(formation),
-    [formation]
-  );
+  const l10Used = useMemo(() => {
+    const total = calculateFormationSlotsL10Total(formation);
+    console.log("[DEBUG] Calculated l10Used:", total, "from formation:", formation.map(s => s.card?.l10Average));
+    return total;
+  }, [formation]);
 
   const gameModeConfig = GAME_MODES[gameMode];
   const l10Cap =
@@ -602,6 +608,88 @@ export function LineupBuilder() {
       return trimmed;
     }
     return gameModeConfig.label;
+  };
+
+  /**
+   * Genera automaticamente la lineup ottimale rispettando CAP e vincoli
+   */
+  const handleGenerateOptimalLineup = () => {
+    console.log("[DEBUG] Generate lineup clicked");
+    
+    const config = GAME_MODES[gameMode];
+    console.log("[DEBUG] Game mode config:", { 
+      gameMode, 
+      slotCount: config.slotCount, 
+      cap: config.cap, 
+      requiredLeague: config.requiredLeague 
+    });
+    
+    // Solo per modalità a 5 carte con CAP (per ora)
+    if (config.slotCount !== 5) {
+      setError("Generazione automatica disponibile solo per formazioni a 5 giocatori");
+      console.log("[DEBUG] Abort: slotCount !== 5");
+      return;
+    }
+    
+    // Usa tutte le carte disponibili (UnifiedCard dal KV)
+    const allCards = cards as OptimizerCard[];
+    console.log("[DEBUG] Total cards:", allCards.length);
+    
+    if (allCards.length === 0) {
+      setError("Nessuna carta disponibile");
+      console.log("[DEBUG] Abort: no cards");
+      return;
+    }
+    
+    const constraints = {
+      cap: config.cap ?? Number.POSITIVE_INFINITY,
+      requiredLeague: config.requiredLeague,
+      editingFormationId: editingId,
+      rarityFilter: rarityFilter !== "all" ? rarityFilter : undefined,
+    };
+    console.log("[DEBUG] Constraints:", constraints);
+    console.log("[DEBUG] Saved formations count:", savedFormations.length);
+    
+    const result =
+      config.cap === null
+        ? generateOptimalLineupNocap(allCards, savedFormations, constraints)
+        : generateOptimalLineup(allCards, savedFormations, constraints);
+    
+    console.log("[DEBUG] Optimizer result:", result);
+    
+    if (!result.success) {
+      setError(`Impossibile generare formazione: ${result.reason}`);
+      console.log("[DEBUG] Failed:", result.reason);
+      return;
+    }
+    
+    console.log("[DEBUG] Success! Lineup L10:", result.totalL10);
+    
+    // Popola la formazione con il risultato
+    const newFormation: FormationSlot[] = [
+      { position: "POR", card: result.lineup.POR },
+      { position: "DIF", card: result.lineup.DIF },
+      { position: "CEN", card: result.lineup.CEN },
+      { position: "ATT", card: result.lineup.ATT },
+      { position: "EX", card: result.lineup.EX },
+    ];
+    
+    // Debug: verifica L10 delle carte
+    console.log("[DEBUG] Generated lineup L10s:", newFormation.map(s => ({
+      pos: s.position,
+      name: s.card?.name,
+      l10: s.card?.l10Average
+    })));
+    
+    setFormation(newFormation);
+    setActiveSlot(null);
+    setError("");
+    showToast(
+      setToasts,
+      `Formazione generata! L10 totale: ${result.totalL10.toFixed(0)}`,
+      "success"
+    );
+    console.log("[DEBUG] Formation set");
   };
 
   const handleConfirmFormation = async () => {
@@ -809,6 +897,22 @@ export function LineupBuilder() {
               )}
             </div>
           </div>
+
+          {/* Bottone genera lineup automatica (solo per modalità a 5 carte) */}
+          {gameModeConfig.slotCount === 5 && (
+            <Button
+              className="mb-2 h-9 gap-2 border-amber-500/30 bg-amber-500/10 font-semibold text-amber-400 text-base hover:bg-amber-500/20"
+              onClick={() => {
+                console.log("[DEBUG] Button clicked, calling handler");
+                handleGenerateOptimalLineup();
+              }}
+              type="button"
+              variant="outline"
+            >
+              <Sparkles className="h-5 w-5" />
+              Genera Lineup
+            </Button>
+          )}
 
           {/* Bottone conferma */}
           <Button
