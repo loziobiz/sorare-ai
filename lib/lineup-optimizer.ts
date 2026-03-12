@@ -23,7 +23,7 @@ export interface OptimizerConstraints {
   editingFormationId?: string | null; // Se in edit mode, esclude questa formazione dal check "già usate"
   rarityFilter?: "all" | "limited" | "rare"; // Filtro rarità (optional)
   excludedSlugs?: string[]; // Carte escluse manualmente dall'utente
-  inSeasonOnly?: boolean; // Solo carte in-season (per game mode in-season)
+  minInSeasonCount?: number | null; // Min carte in-season (4 = almeno 4 su 5, null = nessun vincolo)
 }
 
 export type OptimizerResult =
@@ -298,11 +298,6 @@ function prepareCardsByPosition(
         return false;
       }
 
-      // Solo carte in-season se richiesto dal game mode
-      if (constraints.inSeasonOnly && card.inSeasonEligible !== true) {
-        return false;
-      }
-
       return true;
     });
 
@@ -355,9 +350,11 @@ function prepareCardsByPosition(
  */
 function findBestCombination(
   byPosition: Map<string, OptimizerCard[]>,
-  cap: number
+  cap: number,
+  minInSeasonCount?: number | null
 ): OptimizerResult {
   const positions = ["POR", "DIF", "CEN", "ATT", "EX"] as const;
+  const maxClassic = minInSeasonCount != null ? 5 - minInSeasonCount : 5;
 
   // Verifica che ci siano abbastanza carte per ogni posizione
   for (const pos of positions) {
@@ -398,6 +395,10 @@ function findBestCombination(
     if (porL10 > cap) {
       continue;
     }
+    const porClassic = por.inSeasonEligible === true ? 0 : 1;
+    if (porClassic > maxClassic) {
+      continue;
+    }
     const porEff = getEffectiveScore(por);
 
     for (const dif of difCards) {
@@ -407,6 +408,10 @@ function findBestCombination(
       const difL10 = getL10(dif);
       const sum2L10 = porL10 + difL10;
       if (sum2L10 > cap) {
+        continue;
+      }
+      const classic2 = porClassic + (dif.inSeasonEligible === true ? 0 : 1);
+      if (classic2 > maxClassic) {
         continue;
       }
       const sum2Eff = porEff + getEffectiveScore(dif);
@@ -423,6 +428,10 @@ function findBestCombination(
         if (sum3L10 > cap) {
           continue;
         }
+        const classic3 = classic2 + (cen.inSeasonEligible === true ? 0 : 1);
+        if (classic3 > maxClassic) {
+          continue;
+        }
         const sum3Eff = sum2Eff + getEffectiveScore(cen);
 
         for (const att of attCards) {
@@ -436,6 +445,10 @@ function findBestCombination(
           const attL10 = getL10(att);
           const sum4L10 = sum3L10 + attL10;
           if (sum4L10 > cap) {
+            continue;
+          }
+          const classic4 = classic3 + (att.inSeasonEligible === true ? 0 : 1);
+          if (classic4 > maxClassic) {
             continue;
           }
           const sum4Eff = sum3Eff + getEffectiveScore(att);
@@ -455,6 +468,12 @@ function findBestCombination(
 
             // Vincolo CAP su L10
             if (totalL10 > cap) {
+              continue;
+            }
+
+            // Vincolo in-season
+            const classic5 = classic4 + (ex.inSeasonEligible === true ? 0 : 1);
+            if (classic5 > maxClassic) {
               continue;
             }
 
@@ -526,12 +545,58 @@ export function generateOptimalLineup(
   );
 
   // 3. Trova migliore combinazione
-  return findBestCombination(cardsByPosition, constraints.cap);
+  return findBestCombination(
+    cardsByPosition,
+    constraints.cap,
+    constraints.minInSeasonCount
+  );
 }
 
 /**
- * Versione veloce per quando non c'è CAP (nocap)
- * Semplice greedy: prende la migliore per ogni posizione
+ * Filtra candidati base per una posizione (nocap).
+ * Non include il vincolo in-season — viene gestito a livello di combinazione.
+ */
+function getNocapCandidates(
+  allCards: OptimizerCard[],
+  position: string,
+  usedSlugs: Set<string>,
+  usedPlayerSlugs: Set<string>,
+  constraints: Omit<OptimizerConstraints, "cap">
+): OptimizerCard[] {
+  return allCards.filter((card) => {
+    if (usedSlugs.has(card.slug)) {
+      return false;
+    }
+    if (usedPlayerSlugs.has(card.playerSlug)) {
+      return false;
+    }
+    if (constraints.excludedSlugs?.includes(card.slug)) {
+      return false;
+    }
+    if (!isCardFromLeague(card, constraints.requiredLeague)) {
+      return false;
+    }
+    if (!isCardOfRarity(card, constraints.rarityFilter)) {
+      return false;
+    }
+    if (!canPlayPosition(card, position)) {
+      return false;
+    }
+    if (!hasMinStarterOdds(card)) {
+      return false;
+    }
+    return true;
+  });
+}
+
+/**
+ * Versione veloce per quando non c'è CAP (nocap).
+ *
+ * Se c'è un vincolo minInSeasonCount, usa un approccio a due fasi:
+ * 1. Greedy all-in-season (baseline)
+ * 2. Per ogni posizione, prova a sostituire con la miglior carta classic
+ *    e sceglie lo swap con il guadagno più alto.
+ * Questo garantisce che lo slot classic vada alla posizione ottimale.
  */
 export function generateOptimalLineupNocap(
   allCards: OptimizerCard[],
@@ -544,16 +609,8 @@ export function generateOptimalLineupNocap(
   );
   const positions = ["POR", "DIF", "CEN", "ATT", "EX"] as const;
 
-  const lineup = {} as {
-    POR: OptimizerCard;
-    DIF: OptimizerCard;
-    CEN: OptimizerCard;
-    ATT: OptimizerCard;
-    EX: OptimizerCard;
-  };
-  const usedInLineup = new Set<string>();
-  let totalL10 = 0;
-  let totalEffective = 0;
+  const maxClassic =
+    constraints.minInSeasonCount != null ? 5 - constraints.minInSeasonCount : 5;
 
   console.log(
     "[OPTIMIZER NOCAP] Cards:",
@@ -562,40 +619,120 @@ export function generateOptimalLineupNocap(
     usedSlugs.size
   );
 
-  for (const position of positions) {
-    const candidates = allCards
-      .filter((card) => {
-        if (usedSlugs.has(card.slug)) {
-          return false;
-        }
-        if (usedInLineup.has(card.playerSlug)) {
-          return false;
-        }
-        if (constraints.excludedSlugs?.includes(card.slug)) {
-          return false;
-        }
-        if (!isCardFromLeague(card, constraints.requiredLeague)) {
-          return false;
-        }
-        if (!isCardOfRarity(card, constraints.rarityFilter)) {
-          return false;
-        }
-        if (!canPlayPosition(card, position)) {
-          return false;
-        }
-        if (!hasMinStarterOdds(card)) {
-          return false;
-        }
-        if (constraints.inSeasonOnly && card.inSeasonEligible !== true) {
-          return false;
-        }
-        return true;
-      })
+  // Se nessun vincolo in-season, greedy semplice senza restrizioni
+  if (maxClassic >= 5) {
+    return nocapGreedy(allCards, usedSlugs, positions, constraints, null);
+  }
+
+  // Fase 1: genera lineup solo in-season come baseline
+  const baseline = nocapGreedy(
+    allCards,
+    usedSlugs,
+    positions,
+    constraints,
+    true
+  );
+  if (!baseline.success) {
+    return baseline;
+  }
+
+  // Se maxClassic === 0, la baseline è già la risposta finale
+  if (maxClassic === 0) {
+    return baseline;
+  }
+
+  // Fase 2: per ogni posizione, prova a sostituire con la miglior classic
+  // e scegli lo swap con il guadagno più alto
+  let bestLineup = baseline.lineup;
+  let bestEff = baseline.projectedScore;
+  let bestL10 = baseline.totalL10;
+
+  for (const swapPos of positions) {
+    const currentCard = baseline.lineup[swapPos];
+    const usedPlayerSlugs = new Set<string>();
+    for (const pos of positions) {
+      if (pos !== swapPos) {
+        usedPlayerSlugs.add(baseline.lineup[pos].playerSlug);
+      }
+    }
+
+    // Trova la miglior carta classic per questa posizione
+    const classicCandidates = getNocapCandidates(
+      allCards,
+      swapPos,
+      usedSlugs,
+      usedPlayerSlugs,
+      constraints
+    )
+      .filter((c) => c.inSeasonEligible !== true)
       .sort((a, b) => getEffectiveScore(b) - getEffectiveScore(a));
 
-    console.log(
-      `[OPTIMIZER NOCAP] Position ${position}: ${candidates.length} candidates`
+    if (classicCandidates.length === 0) {
+      continue;
+    }
+
+    const classicCard = classicCandidates[0];
+    const gain =
+      getEffectiveScore(classicCard) - getEffectiveScore(currentCard);
+
+    if (gain > 0) {
+      const swapEff = baseline.projectedScore + gain;
+      if (swapEff > bestEff) {
+        bestEff = swapEff;
+        bestL10 = baseline.totalL10 - getL10(currentCard) + getL10(classicCard);
+        bestLineup = { ...baseline.lineup, [swapPos]: classicCard };
+      }
+    }
+  }
+
+  console.log(
+    `[OPTIMIZER NOCAP] Final L10: ${bestL10.toFixed(0)} | Eff: ${bestEff.toFixed(1)}`
+  );
+
+  return {
+    success: true,
+    lineup: bestLineup as typeof baseline.lineup,
+    totalL10: bestL10,
+    projectedScore: bestEff,
+  };
+}
+
+/**
+ * Greedy semplice per nocap: prende la miglior carta per ogni posizione.
+ * @param inSeasonFilter - true: solo in-season, null: nessun filtro
+ */
+function nocapGreedy(
+  allCards: OptimizerCard[],
+  usedSlugs: Set<string>,
+  positions: readonly ["POR", "DIF", "CEN", "ATT", "EX"],
+  constraints: Omit<OptimizerConstraints, "cap">,
+  inSeasonFilter: true | null
+): OptimizerResult {
+  const lineup = {} as {
+    POR: OptimizerCard;
+    DIF: OptimizerCard;
+    CEN: OptimizerCard;
+    ATT: OptimizerCard;
+    EX: OptimizerCard;
+  };
+  const usedPlayerSlugs = new Set<string>();
+  let totalL10 = 0;
+  let totalEffective = 0;
+
+  for (const position of positions) {
+    let candidates = getNocapCandidates(
+      allCards,
+      position,
+      usedSlugs,
+      usedPlayerSlugs,
+      constraints
     );
+
+    if (inSeasonFilter) {
+      candidates = candidates.filter((c) => c.inSeasonEligible === true);
+    }
+
+    candidates.sort((a, b) => getEffectiveScore(b) - getEffectiveScore(a));
 
     if (candidates.length === 0) {
       return {
@@ -606,7 +743,7 @@ export function generateOptimalLineupNocap(
 
     const best = candidates[0];
     lineup[position] = best;
-    usedInLineup.add(best.playerSlug);
+    usedPlayerSlugs.add(best.playerSlug);
     totalL10 += getL10(best);
     totalEffective += getEffectiveScore(best);
   }
@@ -644,7 +781,9 @@ function recursiveBranchBound(
   currentL10: number,
   currentEff: number,
   currentCards: Map<string, OptimizerCard>,
-  currentBest: RecursiveBest | null
+  currentBest: RecursiveBest | null,
+  currentClassicCount: number,
+  maxClassicCount: number
 ): RecursiveBest | null {
   // Caso base: tutte le posizioni vuote riempite
   if (depth === emptyPositions.length) {
@@ -665,6 +804,13 @@ function recursiveBranchBound(
   for (const card of candidates) {
     const pSlug = card.playerSlug;
     if (usedSlugs.has(pSlug)) {
+      continue;
+    }
+
+    // Pruning: budget carte classic (non in-season)
+    const newClassic =
+      currentClassicCount + (card.inSeasonEligible === true ? 0 : 1);
+    if (newClassic > maxClassicCount) {
       continue;
     }
 
@@ -689,7 +835,9 @@ function recursiveBranchBound(
       newL10,
       currentEff + getEffectiveScore(card),
       currentCards,
-      best
+      best,
+      newClassic,
+      maxClassicCount
     );
 
     usedSlugs.delete(pSlug);
@@ -722,16 +870,24 @@ export function completePartialLineup(
   // Player slugs usati nella lineup (per dedup intra-lineup)
   const usedPlayerSlugs = new Set<string>();
 
+  // Conta carte classic (non in-season) già piazzate
+  let filledClassicCount = 0;
+
   for (const card of Object.values(filledSlots)) {
     if (card) {
       filledL10 += getL10(card);
       filledEff += getEffectiveScore(card);
       usedSlugs.add(card.slug);
       usedPlayerSlugs.add(card.playerSlug);
+      if (card.inSeasonEligible !== true) {
+        filledClassicCount++;
+      }
     }
   }
 
   const remainingCap = constraints.cap - filledL10;
+  const maxClassic =
+    constraints.minInSeasonCount != null ? 5 - constraints.minInSeasonCount : 5;
   const emptyPositions = allPositions.filter((pos) => !filledSlots[pos]);
 
   if (emptyPositions.length === 0) {
@@ -767,9 +923,6 @@ export function completePartialLineup(
         if (!hasMinStarterOdds(card)) {
           return false;
         }
-        if (constraints.inSeasonOnly && card.inSeasonEligible !== true) {
-          return false;
-        }
         return true;
       })
       .sort((a, b) => getEffectiveScore(b) - getEffectiveScore(a))
@@ -794,7 +947,9 @@ export function completePartialLineup(
     0,
     0,
     new Map(),
-    null
+    null,
+    filledClassicCount,
+    maxClassic
   );
 
   if (!best) {
