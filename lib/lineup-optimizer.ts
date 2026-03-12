@@ -23,6 +23,7 @@ export interface OptimizerConstraints {
   editingFormationId?: string | null; // Se in edit mode, esclude questa formazione dal check "già usate"
   rarityFilter?: "all" | "limited" | "rare"; // Filtro rarità (optional)
   excludedSlugs?: string[]; // Carte escluse manualmente dall'utente
+  inSeasonOnly?: boolean; // Solo carte in-season (per game mode in-season)
 }
 
 export type OptimizerResult =
@@ -294,6 +295,11 @@ function prepareCardsByPosition(
 
       // Titolarità >= 60% (se dato disponibile)
       if (!hasMinStarterOdds(card)) {
+        return false;
+      }
+
+      // Solo carte in-season se richiesto dal game mode
+      if (constraints.inSeasonOnly && card.inSeasonEligible !== true) {
         return false;
       }
 
@@ -580,6 +586,9 @@ export function generateOptimalLineupNocap(
         if (!hasMinStarterOdds(card)) {
           return false;
         }
+        if (constraints.inSeasonOnly && card.inSeasonEligible !== true) {
+          return false;
+        }
         return true;
       })
       .sort((a, b) => getEffectiveScore(b) - getEffectiveScore(a));
@@ -756,6 +765,9 @@ export function completePartialLineup(
           return false;
         }
         if (!hasMinStarterOdds(card)) {
+          return false;
+        }
+        if (constraints.inSeasonOnly && card.inSeasonEligible !== true) {
           return false;
         }
         return true;

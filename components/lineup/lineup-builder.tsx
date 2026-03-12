@@ -715,6 +715,7 @@ export function LineupBuilder() {
       editingFormationId: editingId,
       rarityFilter: rarityFilter !== "all" ? rarityFilter : undefined,
       excludedSlugs: Array.from(excludedSlugs),
+      inSeasonOnly: config.minInSeasonCount !== null,
     };
 
     // Rileva slot già compilati
