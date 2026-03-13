@@ -19,7 +19,10 @@ import {
   type KVPlayerRepository,
   loadAllPlayersForAnalysis,
 } from "../lib/kv-repository.js";
-import { GET_PLAYER_ODDS } from "../lib/queries.js";
+import {
+  GET_PLAYER_FALLBACK_STARTING_ODDS,
+  GET_PLAYER_ODDS,
+} from "../lib/queries.js";
 import type { SorareWorkerClient } from "../lib/sorare-client.js";
 
 interface GraphQLPlayerOdds {
@@ -35,11 +38,13 @@ interface GraphQLPlayerOdds {
     homeTeam: { name: string; code?: string };
     awayTeam: { name: string; code?: string };
     homeStats: {
+      winOdds?: number | null;
       winOddsBasisPoints?: number;
       drawOddsBasisPoints?: number;
       loseOddsBasisPoints?: number;
     } | null;
     awayStats: {
+      winOdds?: number | null;
       winOddsBasisPoints?: number;
       drawOddsBasisPoints?: number;
       loseOddsBasisPoints?: number;
@@ -47,8 +52,29 @@ interface GraphQLPlayerOdds {
   } | null;
 }
 
+interface GraphQLFallbackStartingOddsResponse {
+  players: Array<{
+    slug: string;
+    nextGame: {
+      playerGameScore: {
+        projectedScore: number | null;
+        footballPlayerGameStats: {
+          footballPlayingStatusOdds: {
+            starterOddsBasisPoints: number;
+          } | null;
+        } | null;
+      } | null;
+    } | null;
+  }>;
+}
+
 interface GraphQLOddsResponse {
   players: GraphQLPlayerOdds[];
+}
+
+interface FallbackGameData {
+  projectedScore: number | null;
+  startingOdds: StartingOdds | null;
 }
 
 export interface AnalyzeOddsResult {
@@ -68,8 +94,127 @@ const DELAY_MS = 50; // 50ms per processare velocemente ~900 giocatori entro i l
 function basisPointsToPercentage(
   basisPoints: number | null | undefined
 ): number | null {
-  if (basisPoints == null) return null;
+  if (basisPoints == null) {
+    return null;
+  }
   return Math.round(basisPoints / 100);
+}
+
+function floatOddsToBasisPoints(
+  value: number | null | undefined
+): number | null {
+  if (value == null) {
+    return null;
+  }
+  return Math.round(value * 10_000);
+}
+
+function extractTeamWinOdds(
+  stats: {
+    winOdds?: number | null;
+    winOddsBasisPoints?: number;
+    drawOddsBasisPoints?: number;
+    loseOddsBasisPoints?: number;
+  } | null
+): WinOdds | null {
+  if (!stats) {
+    return null;
+  }
+
+  const winOddsBasisPoints =
+    stats.winOddsBasisPoints ?? floatOddsToBasisPoints(stats.winOdds);
+  const drawOddsBasisPoints = stats.drawOddsBasisPoints ?? null;
+  const loseOddsBasisPoints = stats.loseOddsBasisPoints ?? null;
+
+  if (
+    winOddsBasisPoints == null &&
+    drawOddsBasisPoints == null &&
+    loseOddsBasisPoints == null
+  ) {
+    return null;
+  }
+
+  return {
+    winOddsBasisPoints: winOddsBasisPoints ?? 0,
+    drawOddsBasisPoints: drawOddsBasisPoints ?? 0,
+    loseOddsBasisPoints: loseOddsBasisPoints ?? 0,
+  };
+}
+
+/**
+ * Sorare non popola sempre `nextClassicFixturePlayingStatusOdds`.
+ */
+function extractClassicStartingOdds(
+  playerData: GraphQLPlayerOdds
+): StartingOdds | null {
+  const classicStartingOdds =
+    playerData.nextClassicFixturePlayingStatusOdds?.starterOddsBasisPoints;
+  if (classicStartingOdds != null) {
+    return {
+      starterOddsBasisPoints: classicStartingOdds,
+    };
+  }
+
+  return null;
+}
+
+async function fetchFallbackStartingOdds(
+  client: SorareWorkerClient,
+  slug: string
+): Promise<FallbackGameData | null> {
+  try {
+    const data = await client.query<GraphQLFallbackStartingOddsResponse>(
+      GET_PLAYER_FALLBACK_STARTING_ODDS,
+      {
+        slug,
+      }
+    );
+    const fallbackPlayerGameScore = data.players[0]?.nextGame?.playerGameScore;
+    const fallbackStartingOdds =
+      fallbackPlayerGameScore?.footballPlayerGameStats
+        ?.footballPlayingStatusOdds?.starterOddsBasisPoints;
+    const fallbackProjectedScore =
+      fallbackPlayerGameScore?.projectedScore ?? null;
+
+    if (fallbackStartingOdds == null && fallbackProjectedScore == null) {
+      return null;
+    }
+
+    return {
+      projectedScore: fallbackProjectedScore,
+      startingOdds:
+        fallbackStartingOdds == null
+          ? null
+          : {
+              starterOddsBasisPoints: fallbackStartingOdds,
+            },
+    };
+  } catch (error) {
+    console.warn(`Error fetching fallback game data for ${slug}:`, error);
+    return null;
+  }
+}
+
+async function fetchFallbackStartingOddsMap(
+  client: SorareWorkerClient,
+  players: GraphQLPlayerOdds[]
+): Promise<Map<string, FallbackGameData | null>> {
+  const fallbackDataBySlug = new Map<string, FallbackGameData | null>();
+  const playersNeedingFallback = players.filter(
+    (playerData) =>
+      (extractClassicStartingOdds(playerData) == null ||
+        playerData.nextClassicFixtureProjectedScore == null) &&
+      playerData.nextGame
+  );
+
+  for (const playerData of playersNeedingFallback) {
+    fallbackDataBySlug.set(
+      playerData.slug,
+      await fetchFallbackStartingOdds(client, playerData.slug)
+    );
+  }
+
+  return fallbackDataBySlug;
 }
 
 /**
@@ -96,24 +241,32 @@ async function fetchPlayersOddsBatch(
       return resultMap;
     }
 
+    const fallbackGameDataBySlug = await fetchFallbackStartingOddsMap(
+      client,
+      data.players
+    );
+
     // Crea un lookup per i player records usando lo slug
     const playerLookup = new Map(playersBatch.map((p) => [p.slug, p]));
 
     for (const playerData of data.players) {
       const record = playerLookup.get(playerData.slug);
-      if (!record) continue;
+      if (!record) {
+        continue;
+      }
 
       const clubName = playerData.activeClub?.name || record.clubName;
 
       // Estrai probabilità di titolarità
-      let startingOdds: StartingOdds | null = null;
-      if (playerData.nextClassicFixturePlayingStatusOdds) {
-        startingOdds = {
-          starterOddsBasisPoints:
-            playerData.nextClassicFixturePlayingStatusOdds
-              .starterOddsBasisPoints,
-        };
-      }
+      const fallbackGameData = fallbackGameDataBySlug.get(playerData.slug);
+      const startingOdds =
+        extractClassicStartingOdds(playerData) ??
+        fallbackGameData?.startingOdds ??
+        null;
+      const projectedScore =
+        playerData.nextClassicFixtureProjectedScore ??
+        fallbackGameData?.projectedScore ??
+        null;
 
       // Estrai probabilità di vittoria
       let nextFixture: NextFixtureOdds | null = null;
@@ -126,20 +279,9 @@ async function fetchPlayersOddsBatch(
         const opponentCode = isHome ? game.awayTeam.code : game.homeTeam.code;
 
         // Prendi le probabilità della squadra corretta
-        let teamWinOdds: WinOdds | null = null;
-        if (isHome && game.homeStats) {
-          teamWinOdds = {
-            winOddsBasisPoints: game.homeStats.winOddsBasisPoints ?? 0,
-            drawOddsBasisPoints: game.homeStats.drawOddsBasisPoints ?? 0,
-            loseOddsBasisPoints: game.homeStats.loseOddsBasisPoints ?? 0,
-          };
-        } else if (!isHome && game.awayStats) {
-          teamWinOdds = {
-            winOddsBasisPoints: game.awayStats.winOddsBasisPoints ?? 0,
-            drawOddsBasisPoints: game.awayStats.drawOddsBasisPoints ?? 0,
-            loseOddsBasisPoints: game.awayStats.loseOddsBasisPoints ?? 0,
-          };
-        }
+        const teamWinOdds = isHome
+          ? extractTeamWinOdds(game.homeStats)
+          : extractTeamWinOdds(game.awayStats);
 
         nextFixture = {
           fixtureDate: game.date,
@@ -148,7 +290,7 @@ async function fetchPlayersOddsBatch(
           isHome,
           startingOdds,
           teamWinOdds,
-          projectedScore: playerData.nextClassicFixtureProjectedScore,
+          projectedScore,
         };
       }
 
@@ -242,7 +384,7 @@ export async function analyzeOddsHandler(
               new DefaultUpdateStrategy()
             );
             cleanedCount++;
-          } catch (err) {
+          } catch {
             console.error(`   ❌ Failed to clear odds for ${player.slug}:`);
             cleanErrors++;
           }

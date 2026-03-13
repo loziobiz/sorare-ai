@@ -965,6 +965,7 @@ const CACHE_CONTROL_HEADER = `public, max-age=${CACHE_TTL_SECONDS}`;
  */
 function createCacheKey(request: Request): Request {
   const url = new URL(request.url);
+  url.searchParams.sort();
   // Crea una request con SOLO l'URL e metodo GET, nessun header
   return new Request(url.toString(), { method: "GET" });
 }
@@ -1024,30 +1025,97 @@ async function getCachedOrFetch(
 
 /**
  * Invalida la cache per un utente specifico
- * Invalida SOLO /api/cards/with-players?userId={userId}
+ * Invalida le varianti piu' comuni di /api/cards/with-players
+ * sia su workers.dev che sul dominio custom.
  */
 export async function invalidateUserCache(
   kv: KVNamespace,
   userId: string
 ): Promise<string[]> {
   const cache = (caches as unknown as { default: Cache }).default;
+  const invalidatedUrls: string[] = [];
+  const hosts = [
+    "https://sorare-mls-sync.loziobiz.workers.dev",
+    "https://mls-sync.alebisi.it",
+  ];
+  const clubCodes = await getUserClubCodesForCacheInvalidation(kv, userId);
 
-  // Invalida SOLO l'URL con with-players senza filtri
-  const urlString = `https://sorare-mls-sync.loziobiz.workers.dev/api/cards/with-players?userId=${userId}`;
+  for (const host of hosts) {
+    const urlsToInvalidate = [
+      buildWithPlayersUrl(host, { userId }),
+      buildWithPlayersUrl(host, { userId, limit: "1000" }),
+    ];
 
-  // Usa la STESSA logica di createCacheKey per garantire match esatto
-  // Normalizza l'URL attraverso URL class come fa createCacheKey
-  const url = new URL(urlString);
-  const cacheKey = new Request(url.toString(), { method: "GET" });
+    for (const clubCode of clubCodes) {
+      urlsToInvalidate.push(buildWithPlayersUrl(host, { userId, clubCode }));
+      urlsToInvalidate.push(
+        buildWithPlayersUrl(host, { userId, clubCode, limit: "1000" })
+      );
+    }
 
-  try {
-    const deleted = await cache.delete(cacheKey);
-    console.log(`[CACHE INVALIDATE] ${url.toString()} - Success: ${deleted}`);
-  } catch (e) {
-    console.error(`[CACHE INVALIDATE ERROR] ${url.toString()}:`, e);
+    for (const urlString of urlsToInvalidate) {
+      try {
+        const cacheKey = createCacheKey(
+          new Request(urlString, { method: "GET" })
+        );
+        const deleted = await cache.delete(cacheKey);
+        console.log(`[CACHE INVALIDATE] ${urlString} - Success: ${deleted}`);
+        invalidatedUrls.push(urlString);
+      } catch (error) {
+        console.error(`[CACHE INVALIDATE ERROR] ${urlString}:`, error);
+      }
+    }
   }
 
-  return [url.toString()];
+  return invalidatedUrls;
+}
+
+function buildWithPlayersUrl(
+  host: string,
+  params: {
+    userId: string;
+    clubCode?: string;
+    limit?: string;
+  }
+): string {
+  const url = new URL("/api/cards/with-players", host);
+  url.searchParams.set("userId", params.userId);
+  if (params.clubCode) {
+    url.searchParams.set("clubCode", params.clubCode);
+  }
+  if (params.limit) {
+    url.searchParams.set("limit", params.limit);
+  }
+  url.searchParams.sort();
+  return url.toString();
+}
+
+async function getUserClubCodesForCacheInvalidation(
+  kv: KVNamespace,
+  userId: string
+): Promise<string[]> {
+  const clubCodes = new Set<string>();
+  const prefix = `USR_${userId}:`;
+  let cursor: string | undefined;
+
+  do {
+    const listResult = await kv.list({
+      prefix,
+      cursor,
+      limit: 1000,
+    });
+
+    for (const key of listResult.keys) {
+      const parsed = parseUserCardKey(key.name);
+      if (parsed?.clubCode) {
+        clubCodes.add(parsed.clubCode);
+      }
+    }
+
+    cursor = listResult.list_complete ? undefined : listResult.cursor;
+  } while (cursor);
+
+  return Array.from(clubCodes).sort();
 }
 
 /**

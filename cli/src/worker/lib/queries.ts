@@ -147,6 +147,7 @@ export const GET_PLAYER_ODDS = `
           starterOddsBasisPoints
         }
         nextGame(so5FixtureEligible: true) {
+          id
           date
           homeTeam {
             name
@@ -158,6 +159,7 @@ export const GET_PLAYER_ODDS = `
           }
           homeStats {
             ... on FootballTeamGameStats {
+              winOdds
               winOddsBasisPoints
               drawOddsBasisPoints
               loseOddsBasisPoints
@@ -165,9 +167,32 @@ export const GET_PLAYER_ODDS = `
           }
           awayStats {
             ... on FootballTeamGameStats {
+              winOdds
               winOddsBasisPoints
               drawOddsBasisPoints
               loseOddsBasisPoints
+            }
+          }
+        }
+      }
+    }
+  }
+`;
+
+export const GET_PLAYER_FALLBACK_STARTING_ODDS = `
+  query GetPlayerFallbackStartingOdds($slug: String!) {
+    players(slugs: [$slug]) {
+      ... on Player {
+        slug
+        nextGame(so5FixtureEligible: true) {
+          playerGameScore(playerSlug: $slug) {
+            ... on PlayerGameScore {
+              projectedScore
+              footballPlayerGameStats {
+                footballPlayingStatusOdds(newVersion: true) {
+                  starterOddsBasisPoints
+                }
+              }
             }
           }
         }
