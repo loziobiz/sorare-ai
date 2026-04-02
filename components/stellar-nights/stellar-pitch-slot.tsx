@@ -1,27 +1,28 @@
 "use client";
 
-import { Plus, Trash2 } from "lucide-react";
+import { Calendar, Home, Plane, Plus, Trash2 } from "lucide-react";
 import { useState } from "react";
 import type { StellarFlatCard } from "@/lib/stellar/types";
 import { cn } from "@/lib/utils";
 
-function getL10BadgeColor(l10: number | null): { bg: string; text: string } {
-  if (!l10 || l10 === 0) {
-    return { bg: "bg-white/10", text: "text-slate-400" };
-  }
-  if (l10 <= 30) {
-    return { bg: "bg-red-500/20", text: "text-red-400" };
-  }
-  if (l10 <= 40) {
-    return { bg: "bg-orange-500/20", text: "text-orange-400" };
-  }
-  if (l10 <= 59) {
-    return { bg: "bg-lime-500/20", text: "text-lime-400" };
-  }
-  if (l10 <= 79) {
-    return { bg: "bg-emerald-500/20", text: "text-emerald-400" };
-  }
-  return { bg: "bg-cyan-500/20", text: "text-cyan-400" };
+const SHORT_DAYS = ["dom", "lun", "mar", "mer", "gio", "ven", "sab"] as const;
+
+const POSITION_ABBR: Record<string, string> = {
+  Goalkeeper: "GK",
+  Defender: "DF",
+  Midfielder: "MD",
+  Forward: "FW",
+};
+
+function formatGameDay(isoDate: string): string {
+  const d = new Date(isoDate);
+  const day = SHORT_DAYS[d.getDay()];
+  const date = d.toLocaleString("it-IT", { day: "2-digit", month: "2-digit" });
+  const time = d.toLocaleString("it-IT", {
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+  return `${day} ${date} ${time}`;
 }
 
 interface StellarPitchSlotProps {
@@ -40,13 +41,12 @@ function FilledSlot({
   onRemove,
 }: StellarPitchSlotProps & { card: StellarFlatCard }) {
   const [showActions, setShowActions] = useState(false);
-  const colors = getL10BadgeColor(card.l10Average);
 
   return (
     // biome-ignore lint/a11y/noNoninteractiveElementInteractions: hover effect only, matches lineup/pitch-slot pattern
     // biome-ignore lint/a11y/noStaticElementInteractions: hover effect only
     <div
-      className="group relative flex flex-col items-center"
+      className="group relative"
       onMouseEnter={() => setShowActions(true)}
       onMouseLeave={() => setShowActions(false)}
     >
@@ -79,8 +79,8 @@ function FilledSlot({
       <button
         aria-label={`Seleziona slot ${label}`}
         className={cn(
-          "relative flex flex-col items-center transition-transform",
-          isActive && "scale-105"
+          "flex w-full gap-2 rounded-lg border bg-[#1E1F2A] p-2 text-left transition-colors",
+          isActive ? "border-violet-500/40 bg-[#252636]" : "border-white/10"
         )}
         onClick={onSelect}
         type="button"
@@ -88,30 +88,69 @@ function FilledSlot({
         {card.pictureUrl ? (
           <img
             alt={card.name}
-            className="h-40 w-24 rounded-lg object-cover shadow-lg"
-            height={160}
+            className="h-20 w-14 shrink-0 rounded object-cover"
+            height={80}
             loading="lazy"
             src={card.pictureUrl}
-            width={96}
+            width={56}
           />
         ) : (
-          <div className="flex h-40 w-24 items-center justify-center rounded-lg bg-slate-700 font-bold text-white shadow-lg">
+          <div className="flex h-20 w-14 shrink-0 items-center justify-center rounded bg-white/5 font-bold text-white">
             {card.name.charAt(0)}
           </div>
         )}
 
-        <div className="flex w-24 items-center justify-center gap-1">
-          <span
-            className={`inline-flex w-11 items-center justify-center gap-0.5 rounded px-1 py-0.5 font-medium text-[9px] ${colors.bg} ${colors.text}`}
-          >
-            <span>📊</span>
-            {card.l10Average == null ? "-" : card.l10Average.toFixed(0)}
-          </span>
-          {card.projectedScore != null && (
-            <span className="inline-flex w-11 items-center justify-center gap-0.5 rounded bg-emerald-500/20 px-1 py-0.5 font-medium text-[9px] text-emerald-400">
-              <span>🎯</span>
-              {card.projectedScore.toFixed(0)}
+        <div className="min-w-0 space-y-0.5">
+          <p className="truncate font-medium text-white text-xs">
+            {card.playerName}
+          </p>
+          <div className="flex items-center gap-1 text-[10px]">
+            <span className="rounded bg-violet-500/20 px-1 py-0.5 text-violet-300">
+              {card.positions.map((p) => POSITION_ABBR[p] ?? p).join("/")}
             </span>
+            <span className="truncate text-slate-500">{card.clubName}</span>
+          </div>
+          <div className="flex gap-1.5 text-[10px]">
+            <span className="text-slate-400">
+              L10:{" "}
+              <span className="text-white">
+                {card.l10Average == null ? "-" : card.l10Average.toFixed(0)}
+              </span>
+            </span>
+            <span className="text-slate-400">
+              P:{" "}
+              <span className="text-emerald-400">
+                {card.projectedScore == null
+                  ? "-"
+                  : card.projectedScore.toFixed(0)}
+              </span>
+            </span>
+            <span className="text-slate-400">
+              T:{" "}
+              <span className="text-amber-400">
+                {card.starterOdds == null
+                  ? "-"
+                  : `${card.starterOdds.toFixed(0)}%`}
+              </span>
+            </span>
+          </div>
+          {card.nextGameDate && (
+            <div className="space-y-0.5 text-[9px] text-slate-500">
+              <div className="flex items-center gap-0.5">
+                <Calendar className="h-2.5 w-2.5 shrink-0" />
+                {formatGameDay(card.nextGameDate)}
+              </div>
+              {card.nextGameOpponent && (
+                <div className="flex items-center gap-0.5">
+                  {card.nextGameOpponent.startsWith("vs") ? (
+                    <Home className="h-2.5 w-2.5 shrink-0 text-emerald-500" />
+                  ) : (
+                    <Plane className="h-2.5 w-2.5 shrink-0 text-orange-400" />
+                  )}
+                  {card.nextGameOpponent}
+                </div>
+              )}
+            </div>
           )}
         </div>
       </button>
@@ -150,30 +189,30 @@ export function StellarPitchSlot({
     >
       <div
         className={cn(
-          "flex h-40 w-24 flex-col items-center justify-center rounded-xl border-2 border-dashed transition-all",
+          "flex h-20 w-full flex-row items-center justify-center gap-3 rounded-xl border-2 border-dashed px-4 transition-all",
           isActive
             ? "border-violet-400 bg-violet-500/20"
             : "border-white/40 bg-white/10 hover:border-white/60 hover:bg-white/20"
         )}
       >
-        <span
-          className={cn(
-            "mb-2 font-semibold text-sm",
-            isActive ? "text-violet-200" : "text-white/70"
-          )}
-        >
-          {label}
-        </span>
         <div
           className={cn(
-            "flex h-10 w-10 items-center justify-center rounded-full border-2 border-dashed transition-colors",
+            "flex h-8 w-8 shrink-0 items-center justify-center rounded-full border-2 border-dashed transition-colors",
             isActive
               ? "border-violet-300 text-violet-200"
               : "border-white/40 text-white/50 group-hover:border-white/60"
           )}
         >
-          <Plus className="h-5 w-5" />
+          <Plus className="h-4 w-4" />
         </div>
+        <span
+          className={cn(
+            "font-semibold text-sm",
+            isActive ? "text-violet-200" : "text-white/70"
+          )}
+        >
+          {label}
+        </span>
       </div>
     </button>
   );
