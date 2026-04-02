@@ -1,8 +1,9 @@
 "use client";
 
 import { Calendar, Home, Plane, Search, Star } from "lucide-react";
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
+import { getCache, setCache } from "@/lib/db";
 import type { StellarFlatCard } from "@/lib/stellar/types";
 import { cn } from "@/lib/utils";
 import { ScoreHistogram } from "./score-histogram";
@@ -52,6 +53,32 @@ const INITIAL_FORMATION: StellarFormationSlot[] = [
   { position: "POR", card: null },
 ];
 
+const FORMATION_CACHE_KEY = "stellar_formation";
+
+type SavedSlots = Record<string, string>;
+
+function restoreFormation(
+  cards: StellarFlatCard[],
+  saved: SavedSlots
+): StellarFormationSlot[] {
+  const cardsBySlug = new Map(cards.map((c) => [c.slug, c]));
+  return INITIAL_FORMATION.map((slot) => {
+    const slug = saved[slot.position];
+    const card = slug ? (cardsBySlug.get(slug) ?? null) : null;
+    return { ...slot, card };
+  });
+}
+
+function formationToSaved(formation: StellarFormationSlot[]): SavedSlots {
+  const saved: SavedSlots = {};
+  for (const slot of formation) {
+    if (slot.card) {
+      saved[slot.position] = slot.card.slug;
+    }
+  }
+  return saved;
+}
+
 type SortOption = "name" | "team" | "l10" | "projected";
 
 interface StellarLineupBuilderProps {
@@ -70,6 +97,37 @@ export function StellarLineupBuilder({ cards }: StellarLineupBuilderProps) {
   const [starterOnly, setStarterOnly] = useState(false);
   const [dateFrom, setDateFrom] = useState<string | null>(null);
   const [dateTo, setDateTo] = useState<string | null>(null);
+  const restoredRef = useRef(false);
+
+  // Ripristina formazione da cache al mount
+  useEffect(() => {
+    if (restoredRef.current || cards.length === 0) {
+      return;
+    }
+    restoredRef.current = true;
+    getCache<SavedSlots>(FORMATION_CACHE_KEY).then((saved) => {
+      if (saved && Object.keys(saved).length > 0) {
+        const restored = restoreFormation(cards, saved);
+        setFormation(restored);
+        const firstEmpty = STELLAR_SLOT_ORDER.find(
+          (pos) => !restored.find((s) => s.position === pos)?.card
+        );
+        setActiveSlot(firstEmpty ?? null);
+      }
+    });
+  }, [cards]);
+
+  // Salva formazione in cache ad ogni modifica
+  useEffect(() => {
+    if (!restoredRef.current) {
+      return;
+    }
+    setCache(
+      FORMATION_CACHE_KEY,
+      formationToSaved(formation),
+      7 * 24 * 60 * 60 * 1000
+    );
+  }, [formation]);
 
   const usedCardSlugs = useMemo(
     () =>

@@ -77,7 +77,7 @@ export function StellarDashboard() {
   }
 
   return (
-    <div className="mt-6 space-y-4">
+    <div className="space-y-4">
       {error && (
         <Alert variant="destructive">
           <AlertDescription>{error}</AlertDescription>
