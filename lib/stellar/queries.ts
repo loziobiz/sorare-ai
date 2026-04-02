@@ -71,6 +71,9 @@ export const GET_COLLECTION_CARDS = `
                   pictureUrl
                 }
                 nextClassicFixtureProjectedScore
+                nextClassicFixturePlayingStatusOdds {
+                  starterOddsBasisPoints
+                }
                 nextGame(so5FixtureEligible: true) {
                   date
                   homeTeam {

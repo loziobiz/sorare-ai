@@ -127,6 +127,12 @@ function flattenCollection(collection: StellarCollection): StellarFlatCard[] {
       l10Average: anyCard.l10Average,
       projectedScore:
         anyCard.anyPlayer.nextClassicFixtureProjectedScore ?? null,
+      starterOdds:
+        anyCard.anyPlayer.nextClassicFixturePlayingStatusOdds
+          ?.starterOddsBasisPoints == null
+          ? null
+          : anyCard.anyPlayer.nextClassicFixturePlayingStatusOdds
+              .starterOddsBasisPoints / 100,
       nextGameDate: anyCard.anyPlayer.nextGame?.date ?? null,
       nextGameOpponent: formatOpponent(anyCard.anyPlayer.nextGame, clubName),
       playerName: anyCard.anyPlayer.displayName,
