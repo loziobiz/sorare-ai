@@ -194,6 +194,8 @@ export interface KvPlayerData {
   clubName: string;
   clubCode: string;
   position: string;
+  leagueName?: string;
+  l10Average?: number;
   stats: KvPlayerStats;
 }
 
@@ -463,6 +465,7 @@ export interface UnifiedCard {
         drawOddsBasisPoints?: number | null;
         loseOddsBasisPoints?: number | null;
       } | null;
+      projectedScore?: number;
     } | null;
     nextClassicFixturePlayingStatusOdds?: {
       starterOddsBasisPoints: number;

@@ -713,7 +713,7 @@ export function LineupBuilder() {
       cap: config.cap ?? Number.POSITIVE_INFINITY,
       requiredLeague: config.requiredLeague,
       editingFormationId: editingId,
-      rarityFilter: rarityFilter !== "all" ? rarityFilter : undefined,
+      rarityFilter: rarityFilter === "all" ? undefined : rarityFilter,
       excludedSlugs: Array.from(excludedSlugs),
       minInSeasonCount: config.minInSeasonCount,
     };

@@ -372,6 +372,7 @@ function buildAnyPlayer(
           },
           homeStats: nextGame.homeStats,
           awayStats: nextGame.awayStats,
+          projectedScore: nextGame.projectedScore,
         }
       : null,
     nextClassicFixturePlayingStatusOdds: starterOdds ?? null,

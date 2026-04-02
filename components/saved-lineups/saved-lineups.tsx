@@ -375,6 +375,14 @@ function FormationCard({
   }
   const capRatio = capValue ? totalL10 / capValue : null;
 
+  // Calcolo somma projected score
+  const totalProjectedScore = sortedCards.reduce((sum, card) => {
+    const proj =
+      ("nextGame" in card ? card.nextGame?.projectedScore : undefined) ??
+      card.anyPlayer?.nextGame?.projectedScore;
+    return proj ? sum + proj : sum;
+  }, 0);
+
   const isCardDragging = (card: Card) =>
     dragState.activeItem?.card.slug === card.slug;
 
@@ -393,7 +401,12 @@ function FormationCard({
           </span>
         </div>
         <div className="flex items-center gap-2">
-          {/* L10/CAP a sinistra dei pulsanti azione */}
+          {/* PROJ e L10/CAP a sinistra dei pulsanti azione */}
+          {totalProjectedScore > 0 && (
+            <span className="inline-block rounded-full bg-sky-500/20 px-2 py-0.5 font-medium text-[12px] text-sky-400">
+              PROJ: {totalProjectedScore.toFixed(0)}
+            </span>
+          )}
           {capRatio !== null && (
             <span
               className={`inline-block rounded-full px-2 py-0.5 font-medium text-[12px] ${capRatio > 1 ? "bg-orange-500/20 text-orange-400" : "bg-emerald-500/20 text-emerald-400"}`}

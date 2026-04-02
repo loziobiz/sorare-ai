@@ -32,9 +32,9 @@ export function SiteNav({ className }: SiteNavProps) {
     {
       href: "/saved-lineups",
       label:
-        savedLineupsCount !== null
-          ? `Saved Teams (${savedLineupsCount})`
-          : "Saved Teams",
+        savedLineupsCount === null
+          ? "Saved Teams"
+          : `Saved Teams (${savedLineupsCount})`,
       icon: Save,
     },
     { href: "/results", label: "Results", icon: Trophy },

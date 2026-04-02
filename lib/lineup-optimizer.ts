@@ -354,7 +354,7 @@ function findBestCombination(
   minInSeasonCount?: number | null
 ): OptimizerResult {
   const positions = ["POR", "DIF", "CEN", "ATT", "EX"] as const;
-  const maxClassic = minInSeasonCount != null ? 5 - minInSeasonCount : 5;
+  const maxClassic = minInSeasonCount == null ? 5 : 5 - minInSeasonCount;
 
   // Verifica che ci siano abbastanza carte per ogni posizione
   for (const pos of positions) {
@@ -610,7 +610,7 @@ export function generateOptimalLineupNocap(
   const positions = ["POR", "DIF", "CEN", "ATT", "EX"] as const;
 
   const maxClassic =
-    constraints.minInSeasonCount != null ? 5 - constraints.minInSeasonCount : 5;
+    constraints.minInSeasonCount == null ? 5 : 5 - constraints.minInSeasonCount;
 
   console.log(
     "[OPTIMIZER NOCAP] Cards:",
@@ -887,7 +887,7 @@ export function completePartialLineup(
 
   const remainingCap = constraints.cap - filledL10;
   const maxClassic =
-    constraints.minInSeasonCount != null ? 5 - constraints.minInSeasonCount : 5;
+    constraints.minInSeasonCount == null ? 5 : 5 - constraints.minInSeasonCount;
   const emptyPositions = allPositions.filter((pos) => !filledSlots[pos]);
 
   if (emptyPositions.length === 0) {

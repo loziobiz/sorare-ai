@@ -158,7 +158,7 @@ const POSITION_ORDER: Record<string, number> = {
 
 function getPositionOrder(appearance: So5Appearance): number {
   const pos = appearance.anyCard?.anyPositions?.[0];
-  return pos !== undefined ? (POSITION_ORDER[pos] ?? 4) : 4;
+  return pos === undefined ? 4 : (POSITION_ORDER[pos] ?? 4);
 }
 
 function LineupRow({

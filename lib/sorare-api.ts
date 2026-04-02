@@ -62,6 +62,7 @@ export interface CardData {
         drawOddsBasisPoints?: number | null;
         loseOddsBasisPoints?: number | null;
       } | null;
+      projectedScore?: number;
     } | null;
     nextClassicFixturePlayingStatusOdds?: {
       starterOddsBasisPoints: number;
