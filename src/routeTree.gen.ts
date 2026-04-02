@@ -9,6 +9,7 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as StellarNightsRouteImport } from './routes/stellar-nights'
 import { Route as SettingsRouteImport } from './routes/settings'
 import { Route as SavedLineupsRouteImport } from './routes/saved-lineups'
 import { Route as ResultsRouteImport } from './routes/results'
@@ -16,6 +17,11 @@ import { Route as LineupRouteImport } from './routes/lineup'
 import { Route as CardsRouteImport } from './routes/cards'
 import { Route as IndexRouteImport } from './routes/index'
 
+const StellarNightsRoute = StellarNightsRouteImport.update({
+  id: '/stellar-nights',
+  path: '/stellar-nights',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const SettingsRoute = SettingsRouteImport.update({
   id: '/settings',
   path: '/settings',
@@ -54,6 +60,7 @@ export interface FileRoutesByFullPath {
   '/results': typeof ResultsRoute
   '/saved-lineups': typeof SavedLineupsRoute
   '/settings': typeof SettingsRoute
+  '/stellar-nights': typeof StellarNightsRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -62,6 +69,7 @@ export interface FileRoutesByTo {
   '/results': typeof ResultsRoute
   '/saved-lineups': typeof SavedLineupsRoute
   '/settings': typeof SettingsRoute
+  '/stellar-nights': typeof StellarNightsRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -71,6 +79,7 @@ export interface FileRoutesById {
   '/results': typeof ResultsRoute
   '/saved-lineups': typeof SavedLineupsRoute
   '/settings': typeof SettingsRoute
+  '/stellar-nights': typeof StellarNightsRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -81,8 +90,16 @@ export interface FileRouteTypes {
     | '/results'
     | '/saved-lineups'
     | '/settings'
+    | '/stellar-nights'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/cards' | '/lineup' | '/results' | '/saved-lineups' | '/settings'
+  to:
+    | '/'
+    | '/cards'
+    | '/lineup'
+    | '/results'
+    | '/saved-lineups'
+    | '/settings'
+    | '/stellar-nights'
   id:
     | '__root__'
     | '/'
@@ -91,6 +108,7 @@ export interface FileRouteTypes {
     | '/results'
     | '/saved-lineups'
     | '/settings'
+    | '/stellar-nights'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -100,10 +118,18 @@ export interface RootRouteChildren {
   ResultsRoute: typeof ResultsRoute
   SavedLineupsRoute: typeof SavedLineupsRoute
   SettingsRoute: typeof SettingsRoute
+  StellarNightsRoute: typeof StellarNightsRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/stellar-nights': {
+      id: '/stellar-nights'
+      path: '/stellar-nights'
+      fullPath: '/stellar-nights'
+      preLoaderRoute: typeof StellarNightsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/settings': {
       id: '/settings'
       path: '/settings'
@@ -156,6 +182,7 @@ const rootRouteChildren: RootRouteChildren = {
   ResultsRoute: ResultsRoute,
   SavedLineupsRoute: SavedLineupsRoute,
   SettingsRoute: SettingsRoute,
+  StellarNightsRoute: StellarNightsRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

@@ -1,7 +1,7 @@
 "use client";
 
 import { Link, useLocation } from "@tanstack/react-router";
-import { CreditCard, Layers, Save, Settings, Trophy } from "lucide-react";
+import { CreditCard, Layers, Save, Settings, Star, Trophy } from "lucide-react";
 import { useKVFormations } from "@/hooks/use-kv-formations";
 import { cn } from "@/lib/utils";
 
@@ -38,6 +38,7 @@ export function SiteNav({ className }: SiteNavProps) {
       icon: Save,
     },
     { href: "/results", label: "Results", icon: Trophy },
+    { href: "/stellar-nights", label: "Stellar", icon: Star },
     { href: "/settings", label: "Settings", icon: Settings },
   ];
 
