@@ -28,6 +28,9 @@ interface GraphQLClub {
   slug: string;
   name: string;
   code?: string;
+  domesticLeague?: {
+    displayName: string;
+  } | null;
   activePlayers?: {
     edges: {
       node: GraphQLPlayer;
@@ -175,7 +178,8 @@ export async function extractPlayersHandler(
               hasChanges =
                 metadata.name !== player.displayName ||
                 metadata.clubSlug !== club.slug ||
-                metadata.position !== position;
+                metadata.position !== position ||
+                !metadata.leagueName;
             } else {
               // Non abbiamo metadati (vecchia versione), dobbiamo fare fetch
               hasChanges = true;
@@ -193,6 +197,7 @@ export async function extractPlayersHandler(
                   clubName: club.name,
                   clubCode,
                   position,
+                  leagueName: club.domesticLeague?.displayName,
                 };
 
                 // Se il club è cambiato, eliminiamo la vecchia chiave
@@ -226,6 +231,7 @@ export async function extractPlayersHandler(
               clubName: club.name,
               clubCode,
               position,
+              leagueName: club.domesticLeague?.displayName,
             };
 
             const added = await repository.addPlayer(newPlayer);

@@ -352,6 +352,7 @@ export class KVPlayerRepository implements PlayerRepository {
           name: merged.name,
           clubSlug: merged.clubSlug,
           position: merged.position,
+          leagueName: merged.leagueName,
           hasAA,
         },
       });
@@ -433,6 +434,7 @@ export class KVPlayerRepository implements PlayerRepository {
         name: player.name,
         clubSlug: player.clubSlug,
         position: player.position,
+        leagueName: player.leagueName,
         hasAA,
       },
     });

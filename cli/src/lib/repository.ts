@@ -23,6 +23,8 @@ export interface PlayerBaseData {
   clubName: string;
   clubCode?: string; // Codice a 3 lettere del club (es. "ATL", "MIA")
   position?: string;
+  leagueName?: string; // Nome della lega domestica (es. "MLS", "Premier League")
+  l10Average?: number; // Media ultimi 10 SO5 score (LAST_TEN_PLAYED_SO5_AVERAGE_SCORE)
 }
 
 /**

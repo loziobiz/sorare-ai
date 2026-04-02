@@ -30,6 +30,9 @@ const GET_PLAYER_BASIC_INFO = `
             slug
             name
             code
+            domesticLeague {
+              displayName
+            }
           }
         }
       }
@@ -47,6 +50,9 @@ interface GraphQLPlayerBasicInfo {
         slug: string;
         name: string;
         code?: string;
+        domesticLeague?: {
+          displayName: string;
+        } | null;
       } | null;
     } | null;
   } | null;
@@ -60,7 +66,7 @@ export interface SyncExtraPlayersResult {
   errors: string[];
 }
 
-const DELAY_MS = 1000; // 1 secondo tra le query = 60/min
+const DELAY_MS = 200; // 200ms tra le query — API token ha rate limit permissivo
 
 /**
  * Fetch dati base di un giocatore da Sorare
@@ -75,6 +81,7 @@ async function fetchPlayerBasicInfo(
   clubName: string;
   clubCode: string;
   position: string;
+  leagueName?: string;
 } | null> {
   try {
     const data = await client.query<GraphQLPlayerBasicInfo>(
@@ -102,6 +109,7 @@ async function fetchPlayerBasicInfo(
       clubName: player.activeClub.name,
       clubCode: player.activeClub.code || "UNK",
       position: player.anyPositions?.[0] || "Unknown",
+      leagueName: player.activeClub.domesticLeague?.displayName,
     };
   } catch (error) {
     console.error(`[SyncExtra] Error fetching ${slug}:`, error);
@@ -169,6 +177,7 @@ export async function syncExtraPlayersHandler(
             clubName: playerData.clubName,
             clubCode: playerData.clubCode,
             position: playerData.position,
+            leagueName: playerData.leagueName,
             isExtra: true, // Flag per identificare giocatori extra-MLS
           });
 

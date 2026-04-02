@@ -302,15 +302,15 @@ async function main() {
       errors++;
     } else {
       const aaDisplay = [
-        result.aaAnalysis.AA5 !== null
-          ? `AA5:${result.aaAnalysis.AA5}`
-          : "AA5:-",
-        result.aaAnalysis.AA15 !== null
-          ? `AA15:${result.aaAnalysis.AA15}`
-          : "AA15:-",
-        result.aaAnalysis.AA25 !== null
-          ? `AA25:${result.aaAnalysis.AA25}`
-          : "AA25:-",
+        result.aaAnalysis.AA5 === null
+          ? "AA5:-"
+          : `AA5:${result.aaAnalysis.AA5}`,
+        result.aaAnalysis.AA15 === null
+          ? "AA15:-"
+          : `AA15:${result.aaAnalysis.AA15}`,
+        result.aaAnalysis.AA25 === null
+          ? "AA25:-"
+          : `AA25:${result.aaAnalysis.AA25}`,
       ].join(" | ");
       console.log(`   ✅ ${aaDisplay}`);
       state.completed.push(player.slug);

@@ -3,9 +3,10 @@
  *
  * Schedulazione:
  * - Tutti i giorni 06:00, 18:00 UTC: sync-user-cards (sync carte ogni 12 ore)
- * - Mercoledì 08:00 UTC: extract-players (nuovi giocatori MLS)
+ * - Tutti i giorni 08:30 UTC: cleanup-expired-odds
+ * - Mercoledì 08:00 UTC: extract-players + sync-extra-players (nuovi giocatori MLS)
  * - Martedì e Venerdì 16:00 UTC: analyze-homeaway + analyze-aa
- * - Tutti i giorni 00:00, 08:00, 16:00 UTC: analyze-odds (ogni 8 ore)
+ * - Tutti i giorni 07:00, 11:00, 15:00, 19:00, 22:00 UTC: analyze-odds (5x/giorno)
  *
  * Environment:
  * - SORARE_AI_DATA: KV Namespace per i dati giocatori
@@ -27,6 +28,7 @@ import {
 } from "./handlers/formations.js";
 import { syncExtraPlayersHandler } from "./handlers/sync-extra-players.js";
 import { syncUserCardsHandler } from "./handlers/sync-user-cards.js";
+import { updatePlayerStatsHandler } from "./handlers/update-player-stats.js";
 import {
   countUserCards,
   deleteUserCard,
@@ -65,28 +67,32 @@ async function handleCron(cron: string, env: Env): Promise<void> {
   }
 
   switch (cron) {
-    // Ogni giorno 06:00, 18:00 UTC - Sync user cards (ogni 12 ore)
+    // Ogni giorno 06:00, 18:00 UTC - Sync user cards
+    case "0 6,18 * * *":
     case "0 6 * * *":
     case "0 18 * * *":
       console.log("🔄 Running sync-user-cards...");
       await syncUserCardsHandler(env.SORARE_AI_DATA, client);
       break;
 
-    // Tutti i giorni 08:30 UTC - Cleanup expired odds
+    // Ogni giorno 08:30 UTC - Cleanup expired odds
     case "30 8 * * *":
       console.log("🧹 Running cleanup-expired-odds...");
       await cleanupExpiredOddsHandler(repository);
       break;
 
-    // Mercoledì 08:00 UTC - Extract players (MLS)
+    // Mercoledì 08:00 UTC - Extract players + sync extra
     case "0 8 * * 3":
       console.log("📋 Running extract-players...");
       await extractPlayersHandler(repository, client);
       console.log("🌐 Running sync-extra-players...");
       await syncExtraPlayersHandler(repository, client);
+      console.log("📊 Running update-player-stats...");
+      await updatePlayerStatsHandler(repository, client);
       break;
 
     // Martedì e Venerdì 16:00 UTC - Analyze home/away + AA
+    case "0 16 * * 2,5":
     case "0 16 * * 2":
     case "0 16 * * 5":
       console.log("📊 Running analyze-homeaway...");
@@ -95,30 +101,16 @@ async function handleCron(cron: string, env: Env): Promise<void> {
       await analyzeAAHandler(repository, client);
       break;
 
-    // Ogni giorno alle 00:00, 08:00, 16:00 UTC - Odds (ogni 8 ore)
-    // Cloudflare passa i cron espansi individualmente
-    case "0 0 * * *":
-    case "0 8 * * *":
-    case "0 16 * * *": {
-      // Evita di eseguire alle 8 del mercoledì (già gestito sopra) e alle 16 di martedì/venerdì
-      const now = new Date();
-      const dayOfWeek = now.getUTCDay();
-      const hour = now.getUTCHours();
-
-      // Salta se è mercoledì 8:00 (extract-players) o martedì/venerdì 16:00 (analyze-homeaway)
-      if (hour === 8 && dayOfWeek === 3) {
-        console.log("⏭️ Skipping odds analysis - extract-players slot");
-        break;
-      }
-      if (hour === 16 && (dayOfWeek === 2 || dayOfWeek === 5)) {
-        console.log("⏭️ Skipping odds analysis - homeaway/aa slot");
-        break;
-      }
-
+    // Ogni giorno 07:00, 11:00, 15:00, 19:00, 22:00 UTC - Analyze odds
+    case "0 7,11,15,19,22 * * *":
+    case "0 7 * * *":
+    case "0 11 * * *":
+    case "0 15 * * *":
+    case "0 19 * * *":
+    case "0 22 * * *":
       console.log("🎲 Running analyze-odds...");
       await analyzeOddsHandler(repository, client);
       break;
-    }
 
     default:
       console.log(`⚠️ Unknown cron: ${cron}`);
@@ -189,6 +181,94 @@ async function handleFetch(
                 aaAnalysis: player.stats?.aaAnalysis || null,
               }
             : null,
+        },
+        headers
+      );
+    }
+
+    // GET /api/players?slug=xxx o ?slugs=a,b,c
+    if (path === "/api/players" && request.method === "GET") {
+      const slug = url.searchParams.get("slug");
+      const slugsParam = url.searchParams.get("slugs");
+      const repository = createKVRepository(env.SORARE_AI_DATA);
+
+      if (slug) {
+        const player = await repository.findBySlug(slug);
+        if (!player) {
+          return json({ error: "Player not found", slug }, headers, 404);
+        }
+        return json({ player }, headers);
+      }
+
+      if (slugsParam) {
+        const slugs = slugsParam.split(",").slice(0, 50);
+        const players = [];
+        for (const s of slugs) {
+          const p = await repository.findBySlug(s.trim());
+          if (p) players.push(p);
+        }
+        return json({ players, count: players.length }, headers);
+      }
+
+      return json({ error: "Required: slug or slugs parameter" }, headers, 400);
+    }
+
+    // GET /api/players/analysis/proj-vs-l10 - Giocatori con proj > l10, ordinati per l10 crescente
+    if (
+      path === "/api/players/analysis/proj-vs-l10" &&
+      request.method === "GET"
+    ) {
+      const league = url.searchParams.get("league");
+      const limit = Math.min(
+        Number.parseInt(url.searchParams.get("limit") || "50", 10),
+        200
+      );
+
+      const repository = createKVRepository(env.SORARE_AI_DATA);
+      const db = await repository.load();
+
+      const players = db.players
+        .filter((p) => {
+          if (league && p.leagueName !== league) return false;
+          const proj = p.stats?.odds?.nextFixture?.projectedScore;
+          const l10 = p.l10Average;
+          const starterOdds =
+            p.stats?.odds?.nextFixture?.startingOdds?.starterOddsBasisPoints;
+          return (
+            proj != null &&
+            l10 != null &&
+            l10 > 0 &&
+            proj > l10 &&
+            starterOdds != null &&
+            starterOdds > 5000
+          );
+        })
+        .map((p) => {
+          const proj = p.stats!.odds!.nextFixture!.projectedScore!;
+          const l10 = p.l10Average!;
+          const starterPct =
+            p.stats!.odds!.nextFixture!.startingOdds!.starterOddsBasisPoints /
+            100;
+          return {
+            slug: p.slug,
+            name: p.name,
+            clubCode: p.clubCode || "UNK",
+            position: p.position || "Unknown",
+            l10,
+            proj,
+            diff: proj - l10,
+            starterPct,
+          };
+        })
+        .sort((a, b) => a.l10 - b.l10)
+        .slice(0, limit);
+
+      return json(
+        {
+          analysis: "proj-vs-l10",
+          league: league || "all",
+          count: players.length,
+          players,
         },
         headers
       );
@@ -334,13 +414,14 @@ async function handleFetch(
             "analyze-aa",
             "analyze-odds",
             "cleanup-expired-odds",
+            "update-player-stats",
           ].includes(job)
         )
       ) {
         return json(
           {
             error:
-              "Unknown job. Use: extract-players, sync-extra-players, sync-user-cards, analyze-homeaway, analyze-aa, analyze-odds, cleanup-expired-odds",
+              "Unknown job. Use: extract-players, sync-extra-players, sync-user-cards, analyze-homeaway, analyze-aa, analyze-odds, cleanup-expired-odds, update-player-stats",
           },
           headers,
           400
@@ -373,6 +454,9 @@ async function handleFetch(
           break;
         case "cleanup-expired-odds":
           result = await cleanupExpiredOddsHandler(repository);
+          break;
+        case "update-player-stats":
+          result = await updatePlayerStatsHandler(repository, client);
           break;
       }
 

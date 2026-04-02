@@ -11,6 +11,7 @@
     "analyze-mls": "tsx src/commands/analyze-all-mls.ts",
     "analyze-mls-aa": "tsx src/commands/analyze-mls-aa.ts",
     "analyze-odds": "tsx src/commands/analyze-odds.ts",
+    "mls-l10-vs-proj": "tsx src/commands/mls-l10-vs-proj.ts",
     "import-token": "tsx src/commands/import-token.ts",
     "import-kv": "tsx src/commands/import-players-kv.ts",
     "clear-kv": "tsx src/commands/clear-kv.ts",

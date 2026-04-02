@@ -55,7 +55,7 @@ export interface AnalyzeHomeAwayResult {
 }
 
 const GAMES_COUNT = 50;
-const DELAY_MS = 50; // 50ms per processare velocemente ~900 giocatori entro i limiti HTTP
+const DELAY_MS = 100; // 100ms tra i batch — API token ha rate limit permissivo
 
 /**
  * Analizza home/away per un batch di giocatori
@@ -163,7 +163,7 @@ export async function analyzeHomeAwayHandler(
 
     console.log(`Found ${players.length} players to analyze`);
 
-    const BATCH_SIZE = 50;
+    const BATCH_SIZE = 100;
     for (let i = 0; i < players.length; i += BATCH_SIZE) {
       const batch = players.slice(i, i + BATCH_SIZE);
       console.log(

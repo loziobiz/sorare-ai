@@ -33,6 +33,9 @@ export const GET_CLUB_PLAYERS = `
         slug
         name
         code
+        domesticLeague {
+          displayName
+        }
         activePlayers(first: 50) {
           edges {
             node {
@@ -159,7 +162,6 @@ export const GET_PLAYER_ODDS = `
           }
           homeStats {
             ... on FootballTeamGameStats {
-              winOdds
               winOddsBasisPoints
               drawOddsBasisPoints
               loseOddsBasisPoints
@@ -167,13 +169,27 @@ export const GET_PLAYER_ODDS = `
           }
           awayStats {
             ... on FootballTeamGameStats {
-              winOdds
               winOddsBasisPoints
               drawOddsBasisPoints
               loseOddsBasisPoints
             }
           }
         }
+      }
+    }
+  }
+`;
+
+// ============================================================================
+// PLAYER STATS QUERIES (L10 average)
+// ============================================================================
+
+export const GET_PLAYERS_STATS = `
+  query GetPlayersStats($slugs: [String!]!) {
+    players(slugs: $slugs) {
+      ... on Player {
+        slug
+        averageScore(type: LAST_TEN_PLAYED_SO5_AVERAGE_SCORE)
       }
     }
   }

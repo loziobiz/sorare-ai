@@ -33,7 +33,7 @@ export class SorareClient {
     };
 
     if (this.apiKey) {
-      headers["API-KEY"] = this.apiKey;
+      headers["APIKEY"] = this.apiKey;
     }
 
     if (this.jwtToken) {

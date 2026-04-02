@@ -38,13 +38,11 @@ interface GraphQLPlayerOdds {
     homeTeam: { name: string; code?: string };
     awayTeam: { name: string; code?: string };
     homeStats: {
-      winOdds?: number | null;
       winOddsBasisPoints?: number;
       drawOddsBasisPoints?: number;
       loseOddsBasisPoints?: number;
     } | null;
     awayStats: {
-      winOdds?: number | null;
       winOddsBasisPoints?: number;
       drawOddsBasisPoints?: number;
       loseOddsBasisPoints?: number;
@@ -86,7 +84,7 @@ export interface AnalyzeOddsResult {
   withWinOdds: number;
 }
 
-const DELAY_MS = 50; // 50ms per processare velocemente ~900 giocatori entro i limiti HTTP
+const DELAY_MS = 100; // 100ms tra i batch — API token ha rate limit permissivo
 
 /**
  * Converte basis points in percentuale
@@ -100,18 +98,8 @@ function basisPointsToPercentage(
   return Math.round(basisPoints / 100);
 }
 
-function floatOddsToBasisPoints(
-  value: number | null | undefined
-): number | null {
-  if (value == null) {
-    return null;
-  }
-  return Math.round(value * 10_000);
-}
-
 function extractTeamWinOdds(
   stats: {
-    winOdds?: number | null;
     winOddsBasisPoints?: number;
     drawOddsBasisPoints?: number;
     loseOddsBasisPoints?: number;
@@ -121,8 +109,7 @@ function extractTeamWinOdds(
     return null;
   }
 
-  const winOddsBasisPoints =
-    stats.winOddsBasisPoints ?? floatOddsToBasisPoints(stats.winOdds);
+  const winOddsBasisPoints = stats.winOddsBasisPoints ?? null;
   const drawOddsBasisPoints = stats.drawOddsBasisPoints ?? null;
   const loseOddsBasisPoints = stats.loseOddsBasisPoints ?? null;
 
@@ -195,6 +182,8 @@ async function fetchFallbackStartingOdds(
   }
 }
 
+const FALLBACK_CONCURRENCY = 10;
+
 async function fetchFallbackStartingOddsMap(
   client: SorareWorkerClient,
   players: GraphQLPlayerOdds[]
@@ -207,11 +196,21 @@ async function fetchFallbackStartingOddsMap(
       playerData.nextGame
   );
 
-  for (const playerData of playersNeedingFallback) {
-    fallbackDataBySlug.set(
-      playerData.slug,
-      await fetchFallbackStartingOdds(client, playerData.slug)
+  for (
+    let i = 0;
+    i < playersNeedingFallback.length;
+    i += FALLBACK_CONCURRENCY
+  ) {
+    const chunk = playersNeedingFallback.slice(i, i + FALLBACK_CONCURRENCY);
+    const results = await Promise.all(
+      chunk.map((p) => fetchFallbackStartingOdds(client, p.slug))
     );
+    for (let j = 0; j < chunk.length; j++) {
+      fallbackDataBySlug.set(chunk[j].slug, results[j]);
+    }
+    if (i + FALLBACK_CONCURRENCY < playersNeedingFallback.length) {
+      await new Promise((resolve) => setTimeout(resolve, DELAY_MS));
+    }
   }
 
   return fallbackDataBySlug;
@@ -404,7 +403,7 @@ export async function analyzeOddsHandler(
     console.log("🎲 Phase 2: Fetching new odds...");
 
     // Processa in batch per evitare rate limits (max 1000 subrequests per worker)
-    const BATCH_SIZE = 50;
+    const BATCH_SIZE = 100;
 
     for (let i = 0; i < players.length; i += BATCH_SIZE) {
       const batch = players.slice(i, i + BATCH_SIZE);
@@ -415,7 +414,7 @@ export async function analyzeOddsHandler(
       const batchOddsMap = await fetchPlayersOddsBatch(client, batch);
 
       for (const player of batch) {
-        const odds = batchOddsMap.get(player.slug);
+        const odds = batchOddsMap.get(player.slug) ?? null;
 
         if (odds) {
           // --- CONTROLLO DATA EVENTO ---

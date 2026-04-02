@@ -72,15 +72,15 @@ export class SorareWorkerClient {
     const headers: Record<string, string> = {
       "Content-Type": "application/json",
       Accept: "application/json",
-      "JWT-AUD": this.jwtAud,
     };
 
     if (this.apiKey) {
-      headers["API-KEY"] = this.apiKey;
+      headers["APIKEY"] = this.apiKey;
     }
 
     if (this.jwtToken) {
       headers["Authorization"] = `Bearer ${this.jwtToken}`;
+      headers["JWT-AUD"] = this.jwtAud;
     }
 
     const response = await fetch(this.baseUrl, {
@@ -124,7 +124,6 @@ export function createSorareClient(env: {
   SORARE_API_KEY?: string;
 }): SorareWorkerClient {
   return new SorareWorkerClient({
-    jwtToken: env.SORARE_API_KEY, // Usa come JWT (Authorization: Bearer)
-    jwtAud: "sorare-ai",
+    apiKey: env.SORARE_API_KEY,
   });
 }
