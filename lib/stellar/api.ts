@@ -133,6 +133,7 @@ function flattenCollection(collection: StellarCollection): StellarFlatCard[] {
           ? null
           : anyCard.anyPlayer.nextClassicFixturePlayingStatusOdds
               .starterOddsBasisPoints / 100,
+      lastScores: anyCard.anyPlayer.rawPlayerGameScores ?? [],
       nextGameDate: anyCard.anyPlayer.nextGame?.date ?? null,
       nextGameOpponent: formatOpponent(anyCard.anyPlayer.nextGame, clubName),
       playerName: anyCard.anyPlayer.displayName,

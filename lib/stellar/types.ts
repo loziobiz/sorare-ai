@@ -19,6 +19,7 @@ export interface StellarNextGame {
 export interface StellarPlayer {
   displayName: string;
   activeClub?: StellarPlayerClub;
+  rawPlayerGameScores?: number[];
   nextClassicFixtureProjectedScore?: number | null;
   nextClassicFixturePlayingStatusOdds?: {
     starterOddsBasisPoints: number;
@@ -79,6 +80,7 @@ export interface StellarFlatCard {
   l10Average: number | null;
   projectedScore: number | null;
   starterOdds: number | null;
+  lastScores: number[];
   nextGameDate: string | null;
   nextGameOpponent: string | null;
   playerName: string;

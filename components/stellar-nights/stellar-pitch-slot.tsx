@@ -4,6 +4,7 @@ import { Calendar, Home, Plane, Plus, Trash2 } from "lucide-react";
 import { useState } from "react";
 import type { StellarFlatCard } from "@/lib/stellar/types";
 import { cn } from "@/lib/utils";
+import { ScoreHistogram } from "./score-histogram";
 
 const SHORT_DAYS = ["dom", "lun", "mar", "mer", "gio", "ven", "sab"] as const;
 
@@ -46,7 +47,7 @@ function FilledSlot({
     // biome-ignore lint/a11y/noNoninteractiveElementInteractions: hover effect only, matches lineup/pitch-slot pattern
     // biome-ignore lint/a11y/noStaticElementInteractions: hover effect only
     <div
-      className="group relative"
+      className="group relative min-w-0 flex-1"
       onMouseEnter={() => setShowActions(true)}
       onMouseLeave={() => setShowActions(false)}
     >
@@ -85,32 +86,35 @@ function FilledSlot({
         onClick={onSelect}
         type="button"
       >
-        {card.pictureUrl ? (
-          <img
-            alt={card.name}
-            className="h-20 w-14 shrink-0 rounded object-cover"
-            height={80}
-            loading="lazy"
-            src={card.pictureUrl}
-            width={56}
-          />
-        ) : (
-          <div className="flex h-20 w-14 shrink-0 items-center justify-center rounded bg-white/5 font-bold text-white">
-            {card.name.charAt(0)}
-          </div>
-        )}
+        <div className="flex shrink-0 flex-col items-center gap-1">
+          {card.pictureUrl ? (
+            <img
+              alt={card.name}
+              className="h-20 w-14 rounded object-cover"
+              height={80}
+              loading="lazy"
+              src={card.pictureUrl}
+              width={56}
+            />
+          ) : (
+            <div className="flex h-20 w-14 items-center justify-center rounded bg-white/5 font-bold text-white">
+              {card.name.charAt(0)}
+            </div>
+          )}
+          <ScoreHistogram scores={card.lastScores} />
+        </div>
 
         <div className="min-w-0 space-y-0.5">
           <p className="truncate font-medium text-white text-xs">
             {card.playerName}
           </p>
-          <div className="flex items-center gap-1 text-[10px]">
+          <div className="flex items-center gap-1 text-[11px]">
             <span className="rounded bg-violet-500/20 px-1 py-0.5 text-violet-300">
               {card.positions.map((p) => POSITION_ABBR[p] ?? p).join("/")}
             </span>
             <span className="truncate text-slate-500">{card.clubName}</span>
           </div>
-          <div className="flex gap-1.5 text-[10px]">
+          <div className="flex items-center gap-1.5 text-[11px]">
             <span className="text-slate-400">
               L10:{" "}
               <span className="text-white">
@@ -135,7 +139,7 @@ function FilledSlot({
             </span>
           </div>
           {card.nextGameDate && (
-            <div className="space-y-0.5 text-[9px] text-slate-500">
+            <div className="space-y-0.5 text-[10px] text-slate-500">
               <div className="flex items-center gap-0.5">
                 <Calendar className="h-2.5 w-2.5 shrink-0" />
                 {formatGameDay(card.nextGameDate)}
@@ -181,7 +185,7 @@ export function StellarPitchSlot({
     <button
       aria-label={`Seleziona ${label}`}
       className={cn(
-        "group flex flex-col items-center transition-transform hover:scale-105",
+        "group flex min-w-0 flex-1 flex-col items-center transition-transform hover:scale-105",
         isActive && "scale-105"
       )}
       onClick={onSelect}

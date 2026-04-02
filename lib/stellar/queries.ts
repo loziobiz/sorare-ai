@@ -70,6 +70,7 @@ export const GET_COLLECTION_CARDS = `
                   name
                   pictureUrl
                 }
+                rawPlayerGameScores(last: 5)
                 nextClassicFixtureProjectedScore
                 nextClassicFixturePlayingStatusOdds {
                   starterOddsBasisPoints
