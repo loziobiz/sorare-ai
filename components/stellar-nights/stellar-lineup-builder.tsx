@@ -13,6 +13,7 @@ import {
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { DataTable } from "@/components/cards/data-table";
 import { Button } from "@/components/ui/button";
+import { useKVFormations } from "@/hooks/use-kv-formations";
 import { getCache, setCache } from "@/lib/db";
 import type { StellarFlatCard } from "@/lib/stellar/types";
 import { cn } from "@/lib/utils";
@@ -258,7 +259,7 @@ export function StellarLineupBuilder({ cards }: StellarLineupBuilderProps) {
         stellarCards: filledSlots.map((s) => s.card as StellarFlatCard),
         slots: filledSlots.map((s) => ({
           position: s.position,
-          cardSlug: s.card!.slug,
+          cardSlug: s.card?.slug ?? "",
         })),
         gameMode: "gas_classic",
         source: "stellar",

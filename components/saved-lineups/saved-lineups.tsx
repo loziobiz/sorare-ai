@@ -945,7 +945,8 @@ export function SavedLineups() {
               : "Crea una nuova formazione stellar"}
           </Button>
         </div>
-      ) : activeTab === "lineup" ? (
+      ) : null}
+      {activeFormations.length > 0 && activeTab === "lineup" && (
         <SavedLineupsDnDProvider onSwap={handleSwapCards}>
           <div className="space-y-8">
             {Object.entries(groupedFormations)
@@ -971,7 +972,8 @@ export function SavedLineups() {
               ))}
           </div>
         </SavedLineupsDnDProvider>
-      ) : (
+      )}
+      {activeFormations.length > 0 && activeTab === "stellar" && (
         <div className="flex flex-wrap items-start gap-5">
           {stellarFormations.map((formation) => (
             <StellarFormationCard
