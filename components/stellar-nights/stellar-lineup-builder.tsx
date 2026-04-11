@@ -101,7 +101,7 @@ export function StellarLineupBuilder({ cards }: StellarLineupBuilderProps) {
   const [activeSlot, setActiveSlot] = useState<StellarSlotPosition | null>(
     "POR"
   );
-  const [viewMode, setViewMode] = useState<"card" | "list">("card");
+  const [viewMode, setViewMode] = useState<"card" | "list">("list");
   const [searchQuery, setSearchQuery] = useState("");
   const [sortBy, setSortBy] = useState<SortOption>("l10");
   const [homeOnly, setHomeOnly] = useState(false);
