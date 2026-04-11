@@ -41,8 +41,7 @@ function getStarterColor(odds: number): string {
 }
 
 export const STELLAR_LIST_COLUMN_WIDTHS = {
-  player: 200,
-  club: 130,
+  player: 240,
   forma: 60,
   l10: 58,
   proj: 58,
@@ -83,27 +82,22 @@ export function getStellarColumns(
                 <Star className="h-3 w-3 text-slate-600" />
               </div>
             )}
-            <div className="min-w-0">
+            <div className="min-w-0 space-y-0.5">
               <p className="truncate font-medium text-white text-xs">
                 {card.playerName}
               </p>
-              <span className="rounded bg-violet-500/20 px-1 py-0.5 font-medium text-[10px] text-violet-300">
-                {posAbbr}
-              </span>
+              <div className="flex items-center gap-1">
+                <span className="rounded bg-violet-500/20 px-1 py-0.5 font-medium text-[10px] text-violet-300">
+                  {posAbbr}
+                </span>
+                <span className="truncate text-[10px] text-slate-400">
+                  {card.clubName ?? "-"}
+                </span>
+              </div>
             </div>
           </button>
         );
       },
-    },
-    {
-      accessorKey: "clubName",
-      header: "Squadra",
-      size: STELLAR_LIST_COLUMN_WIDTHS.club,
-      cell: ({ row }) => (
-        <span className="truncate text-slate-300 text-xs">
-          {row.original.clubName ?? "-"}
-        </span>
-      ),
     },
     {
       id: "forma",

@@ -8,191 +8,191 @@
 // You should NOT make any changes in this file as it will be overwritten.
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
-import { Route as rootRouteImport } from "./routes/__root";
-import { Route as CardsRouteImport } from "./routes/cards";
-import { Route as IndexRouteImport } from "./routes/index";
-import { Route as LineupRouteImport } from "./routes/lineup";
-import { Route as ResultsRouteImport } from "./routes/results";
-import { Route as SavedLineupsRouteImport } from "./routes/saved-lineups";
-import { Route as SettingsRouteImport } from "./routes/settings";
-import { Route as StellarNightsRouteImport } from "./routes/stellar-nights";
+import { Route as rootRouteImport } from './routes/__root'
+import { Route as StellarNightsRouteImport } from './routes/stellar-nights'
+import { Route as SettingsRouteImport } from './routes/settings'
+import { Route as SavedLineupsRouteImport } from './routes/saved-lineups'
+import { Route as ResultsRouteImport } from './routes/results'
+import { Route as LineupRouteImport } from './routes/lineup'
+import { Route as CardsRouteImport } from './routes/cards'
+import { Route as IndexRouteImport } from './routes/index'
 
 const StellarNightsRoute = StellarNightsRouteImport.update({
-  id: "/stellar-nights",
-  path: "/stellar-nights",
+  id: '/stellar-nights',
+  path: '/stellar-nights',
   getParentRoute: () => rootRouteImport,
-} as any);
+} as any)
 const SettingsRoute = SettingsRouteImport.update({
-  id: "/settings",
-  path: "/settings",
+  id: '/settings',
+  path: '/settings',
   getParentRoute: () => rootRouteImport,
-} as any);
+} as any)
 const SavedLineupsRoute = SavedLineupsRouteImport.update({
-  id: "/saved-lineups",
-  path: "/saved-lineups",
+  id: '/saved-lineups',
+  path: '/saved-lineups',
   getParentRoute: () => rootRouteImport,
-} as any);
+} as any)
 const ResultsRoute = ResultsRouteImport.update({
-  id: "/results",
-  path: "/results",
+  id: '/results',
+  path: '/results',
   getParentRoute: () => rootRouteImport,
-} as any);
+} as any)
 const LineupRoute = LineupRouteImport.update({
-  id: "/lineup",
-  path: "/lineup",
+  id: '/lineup',
+  path: '/lineup',
   getParentRoute: () => rootRouteImport,
-} as any);
+} as any)
 const CardsRoute = CardsRouteImport.update({
-  id: "/cards",
-  path: "/cards",
+  id: '/cards',
+  path: '/cards',
   getParentRoute: () => rootRouteImport,
-} as any);
+} as any)
 const IndexRoute = IndexRouteImport.update({
-  id: "/",
-  path: "/",
+  id: '/',
+  path: '/',
   getParentRoute: () => rootRouteImport,
-} as any);
+} as any)
 
 export interface FileRoutesByFullPath {
-  "/": typeof IndexRoute;
-  "/cards": typeof CardsRoute;
-  "/lineup": typeof LineupRoute;
-  "/results": typeof ResultsRoute;
-  "/saved-lineups": typeof SavedLineupsRoute;
-  "/settings": typeof SettingsRoute;
-  "/stellar-nights": typeof StellarNightsRoute;
+  '/': typeof IndexRoute
+  '/cards': typeof CardsRoute
+  '/lineup': typeof LineupRoute
+  '/results': typeof ResultsRoute
+  '/saved-lineups': typeof SavedLineupsRoute
+  '/settings': typeof SettingsRoute
+  '/stellar-nights': typeof StellarNightsRoute
 }
 export interface FileRoutesByTo {
-  "/": typeof IndexRoute;
-  "/cards": typeof CardsRoute;
-  "/lineup": typeof LineupRoute;
-  "/results": typeof ResultsRoute;
-  "/saved-lineups": typeof SavedLineupsRoute;
-  "/settings": typeof SettingsRoute;
-  "/stellar-nights": typeof StellarNightsRoute;
+  '/': typeof IndexRoute
+  '/cards': typeof CardsRoute
+  '/lineup': typeof LineupRoute
+  '/results': typeof ResultsRoute
+  '/saved-lineups': typeof SavedLineupsRoute
+  '/settings': typeof SettingsRoute
+  '/stellar-nights': typeof StellarNightsRoute
 }
 export interface FileRoutesById {
-  __root__: typeof rootRouteImport;
-  "/": typeof IndexRoute;
-  "/cards": typeof CardsRoute;
-  "/lineup": typeof LineupRoute;
-  "/results": typeof ResultsRoute;
-  "/saved-lineups": typeof SavedLineupsRoute;
-  "/settings": typeof SettingsRoute;
-  "/stellar-nights": typeof StellarNightsRoute;
+  __root__: typeof rootRouteImport
+  '/': typeof IndexRoute
+  '/cards': typeof CardsRoute
+  '/lineup': typeof LineupRoute
+  '/results': typeof ResultsRoute
+  '/saved-lineups': typeof SavedLineupsRoute
+  '/settings': typeof SettingsRoute
+  '/stellar-nights': typeof StellarNightsRoute
 }
 export interface FileRouteTypes {
-  fileRoutesByFullPath: FileRoutesByFullPath;
+  fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
-    | "/"
-    | "/cards"
-    | "/lineup"
-    | "/results"
-    | "/saved-lineups"
-    | "/settings"
-    | "/stellar-nights";
-  fileRoutesByTo: FileRoutesByTo;
+    | '/'
+    | '/cards'
+    | '/lineup'
+    | '/results'
+    | '/saved-lineups'
+    | '/settings'
+    | '/stellar-nights'
+  fileRoutesByTo: FileRoutesByTo
   to:
-    | "/"
-    | "/cards"
-    | "/lineup"
-    | "/results"
-    | "/saved-lineups"
-    | "/settings"
-    | "/stellar-nights";
+    | '/'
+    | '/cards'
+    | '/lineup'
+    | '/results'
+    | '/saved-lineups'
+    | '/settings'
+    | '/stellar-nights'
   id:
-    | "__root__"
-    | "/"
-    | "/cards"
-    | "/lineup"
-    | "/results"
-    | "/saved-lineups"
-    | "/settings"
-    | "/stellar-nights";
-  fileRoutesById: FileRoutesById;
+    | '__root__'
+    | '/'
+    | '/cards'
+    | '/lineup'
+    | '/results'
+    | '/saved-lineups'
+    | '/settings'
+    | '/stellar-nights'
+  fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
-  IndexRoute: typeof IndexRoute;
-  CardsRoute: typeof CardsRoute;
-  LineupRoute: typeof LineupRoute;
-  ResultsRoute: typeof ResultsRoute;
-  SavedLineupsRoute: typeof SavedLineupsRoute;
-  SettingsRoute: typeof SettingsRoute;
-  StellarNightsRoute: typeof StellarNightsRoute;
+  IndexRoute: typeof IndexRoute
+  CardsRoute: typeof CardsRoute
+  LineupRoute: typeof LineupRoute
+  ResultsRoute: typeof ResultsRoute
+  SavedLineupsRoute: typeof SavedLineupsRoute
+  SettingsRoute: typeof SettingsRoute
+  StellarNightsRoute: typeof StellarNightsRoute
 }
 
-declare module "@tanstack/react-router" {
+declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
-    "/stellar-nights": {
-      id: "/stellar-nights";
-      path: "/stellar-nights";
-      fullPath: "/stellar-nights";
-      preLoaderRoute: typeof StellarNightsRouteImport;
-      parentRoute: typeof rootRouteImport;
-    };
-    "/settings": {
-      id: "/settings";
-      path: "/settings";
-      fullPath: "/settings";
-      preLoaderRoute: typeof SettingsRouteImport;
-      parentRoute: typeof rootRouteImport;
-    };
-    "/saved-lineups": {
-      id: "/saved-lineups";
-      path: "/saved-lineups";
-      fullPath: "/saved-lineups";
-      preLoaderRoute: typeof SavedLineupsRouteImport;
-      parentRoute: typeof rootRouteImport;
-    };
-    "/results": {
-      id: "/results";
-      path: "/results";
-      fullPath: "/results";
-      preLoaderRoute: typeof ResultsRouteImport;
-      parentRoute: typeof rootRouteImport;
-    };
-    "/lineup": {
-      id: "/lineup";
-      path: "/lineup";
-      fullPath: "/lineup";
-      preLoaderRoute: typeof LineupRouteImport;
-      parentRoute: typeof rootRouteImport;
-    };
-    "/cards": {
-      id: "/cards";
-      path: "/cards";
-      fullPath: "/cards";
-      preLoaderRoute: typeof CardsRouteImport;
-      parentRoute: typeof rootRouteImport;
-    };
-    "/": {
-      id: "/";
-      path: "/";
-      fullPath: "/";
-      preLoaderRoute: typeof IndexRouteImport;
-      parentRoute: typeof rootRouteImport;
-    };
+    '/stellar-nights': {
+      id: '/stellar-nights'
+      path: '/stellar-nights'
+      fullPath: '/stellar-nights'
+      preLoaderRoute: typeof StellarNightsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/settings': {
+      id: '/settings'
+      path: '/settings'
+      fullPath: '/settings'
+      preLoaderRoute: typeof SettingsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/saved-lineups': {
+      id: '/saved-lineups'
+      path: '/saved-lineups'
+      fullPath: '/saved-lineups'
+      preLoaderRoute: typeof SavedLineupsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/results': {
+      id: '/results'
+      path: '/results'
+      fullPath: '/results'
+      preLoaderRoute: typeof ResultsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/lineup': {
+      id: '/lineup'
+      path: '/lineup'
+      fullPath: '/lineup'
+      preLoaderRoute: typeof LineupRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/cards': {
+      id: '/cards'
+      path: '/cards'
+      fullPath: '/cards'
+      preLoaderRoute: typeof CardsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/': {
+      id: '/'
+      path: '/'
+      fullPath: '/'
+      preLoaderRoute: typeof IndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
 const rootRouteChildren: RootRouteChildren = {
-  IndexRoute,
-  CardsRoute,
-  LineupRoute,
-  ResultsRoute,
-  SavedLineupsRoute,
-  SettingsRoute,
-  StellarNightsRoute,
-};
+  IndexRoute: IndexRoute,
+  CardsRoute: CardsRoute,
+  LineupRoute: LineupRoute,
+  ResultsRoute: ResultsRoute,
+  SavedLineupsRoute: SavedLineupsRoute,
+  SettingsRoute: SettingsRoute,
+  StellarNightsRoute: StellarNightsRoute,
+}
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
-  ._addFileTypes<FileRouteTypes>();
+  ._addFileTypes<FileRouteTypes>()
 
-import type { getRouter } from "./router.tsx";
-
-declare module "@tanstack/react-start" {
+import type { getRouter } from './router.tsx'
+import type { createStart } from '@tanstack/react-start'
+declare module '@tanstack/react-start' {
   interface Register {
-    ssr: true;
-    router: Awaited<ReturnType<typeof getRouter>>;
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
   }
 }
