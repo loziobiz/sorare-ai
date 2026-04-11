@@ -1,12 +1,22 @@
 "use client";
 
-import { Calendar, Home, Plane, Search, Star } from "lucide-react";
+import {
+  Calendar,
+  Home,
+  LayoutGrid,
+  List,
+  Plane,
+  Search,
+  Star,
+} from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { DataTable } from "@/components/cards/data-table";
 import { Button } from "@/components/ui/button";
 import { getCache, setCache } from "@/lib/db";
 import type { StellarFlatCard } from "@/lib/stellar/types";
 import { cn } from "@/lib/utils";
 import { ScoreHistogram } from "./score-histogram";
+import { getStellarColumns } from "./stellar-columns";
 import {
   STELLAR_SLOT_ORDER,
   type StellarFormationSlot,
@@ -91,6 +101,7 @@ export function StellarLineupBuilder({ cards }: StellarLineupBuilderProps) {
   const [activeSlot, setActiveSlot] = useState<StellarSlotPosition | null>(
     "POR"
   );
+  const [viewMode, setViewMode] = useState<"card" | "list">("card");
   const [searchQuery, setSearchQuery] = useState("");
   const [sortBy, setSortBy] = useState<SortOption>("l10");
   const [homeOnly, setHomeOnly] = useState(false);
@@ -252,55 +263,87 @@ export function StellarLineupBuilder({ cards }: StellarLineupBuilderProps) {
       <div className="flex min-w-0 flex-1 flex-col">
         {/* Filtri */}
         <div className="sticky top-0 z-20 space-y-3 bg-[#131317] pt-1 pb-3">
-          {/* Ricerca + Ordina + Filtri toggle */}
-          <div className="flex items-center gap-2">
-            <div className="relative min-w-0 flex-1">
-              <Search className="absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-slate-500" />
-              <input
-                className="h-8 w-full rounded-md border border-white/10 bg-[#1E1F2A] pr-3 pl-9 text-sm text-white placeholder:text-slate-500 focus:border-violet-500 focus:outline-none"
-                onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="Cerca..."
-                type="text"
-                value={searchQuery}
-              />
+          {/* Ricerca + Ordina + Filtri toggle + View toggle */}
+          <div className="flex items-center justify-between gap-2">
+            <div className="flex flex-1 items-center gap-2">
+              <div className="relative min-w-0 flex-1">
+                <Search className="absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-slate-500" />
+                <input
+                  className="h-8 w-full rounded-md border border-white/10 bg-[#1E1F2A] pr-3 pl-9 text-sm text-white placeholder:text-slate-500 focus:border-violet-500 focus:outline-none"
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  placeholder="Cerca..."
+                  type="text"
+                  value={searchQuery}
+                />
+              </div>
+
+              <select
+                className="h-8 rounded-md border border-white/10 bg-[#1E1F2A] px-2 text-sm text-white focus:border-violet-500 focus:outline-none"
+                onChange={(e) => setSortBy(e.target.value as SortOption)}
+                value={sortBy}
+              >
+                <option value="l10">L10 ↓</option>
+                <option value="projected">Proj ↓</option>
+                <option value="name">Nome</option>
+                <option value="team">Squadra</option>
+              </select>
+
+              <button
+                className={cn(
+                  "flex h-8 items-center gap-1.5 rounded-md border px-3 text-xs transition-colors",
+                  homeOnly
+                    ? "border-violet-500 bg-violet-500/20 text-violet-300"
+                    : "border-white/10 text-slate-400 hover:text-white"
+                )}
+                onClick={() => setHomeOnly(!homeOnly)}
+                type="button"
+              >
+                🏠 Casa
+              </button>
+
+              <button
+                className={cn(
+                  "flex h-8 items-center gap-1.5 rounded-md border px-3 text-xs transition-colors",
+                  starterOnly
+                    ? "border-violet-500 bg-violet-500/20 text-violet-300"
+                    : "border-white/10 text-slate-400 hover:text-white"
+                )}
+                onClick={() => setStarterOnly(!starterOnly)}
+                type="button"
+              >
+                👕 Titolare
+              </button>
             </div>
 
-            <select
-              className="h-8 rounded-md border border-white/10 bg-[#1E1F2A] px-2 text-sm text-white focus:border-violet-500 focus:outline-none"
-              onChange={(e) => setSortBy(e.target.value as SortOption)}
-              value={sortBy}
-            >
-              <option value="l10">L10 ↓</option>
-              <option value="projected">Proj ↓</option>
-              <option value="name">Nome</option>
-              <option value="team">Squadra</option>
-            </select>
-
-            <button
-              className={cn(
-                "flex h-8 items-center gap-1.5 rounded-md border px-3 text-xs transition-colors",
-                homeOnly
-                  ? "border-violet-500 bg-violet-500/20 text-violet-300"
-                  : "border-white/10 text-slate-400 hover:text-white"
-              )}
-              onClick={() => setHomeOnly(!homeOnly)}
-              type="button"
-            >
-              🏠 Casa
-            </button>
-
-            <button
-              className={cn(
-                "flex h-8 items-center gap-1.5 rounded-md border px-3 text-xs transition-colors",
-                starterOnly
-                  ? "border-violet-500 bg-violet-500/20 text-violet-300"
-                  : "border-white/10 text-slate-400 hover:text-white"
-              )}
-              onClick={() => setStarterOnly(!starterOnly)}
-              type="button"
-            >
-              👕 Titolare
-            </button>
+            {/* View mode toggle */}
+            <div className="flex h-8 items-center gap-1 rounded-md border border-white/10 bg-[#1E1F2A] p-1">
+              <button
+                className={cn(
+                  "flex h-6 w-6 items-center justify-center rounded transition-colors",
+                  viewMode === "card"
+                    ? "bg-violet-500/30 text-violet-300"
+                    : "text-slate-500 hover:text-slate-300"
+                )}
+                onClick={() => setViewMode("card")}
+                title="Vista griglia"
+                type="button"
+              >
+                <LayoutGrid className="h-4 w-4" />
+              </button>
+              <button
+                className={cn(
+                  "flex h-6 w-6 items-center justify-center rounded transition-colors",
+                  viewMode === "list"
+                    ? "bg-violet-500/30 text-violet-300"
+                    : "text-slate-500 hover:text-slate-300"
+                )}
+                onClick={() => setViewMode("list")}
+                title="Vista lista"
+                type="button"
+              >
+                <List className="h-4 w-4" />
+              </button>
+            </div>
           </div>
 
           {/* Filtro date */}
@@ -360,22 +403,32 @@ export function StellarLineupBuilder({ cards }: StellarLineupBuilderProps) {
           )}
         </div>
 
-        {/* Lista carte */}
-        <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-4">
-          {filteredCards.map((card) => (
-            <StellarCardRow
-              card={card}
-              disabled={!activeSlot}
-              key={card.slug}
-              onSelect={() => handleCardPlace(card)}
-            />
-          ))}
-          {filteredCards.length === 0 && (
-            <div className="col-span-full py-12 text-center text-slate-500">
-              Nessuna carta trovata
-            </div>
-          )}
-        </div>
+        {/* Lista carte o Tabella */}
+        {viewMode === "card" ? (
+          <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-4">
+            {filteredCards.map((card) => (
+              <StellarCardRow
+                card={card}
+                disabled={!activeSlot}
+                key={card.slug}
+                onSelect={() => handleCardPlace(card)}
+              />
+            ))}
+            {filteredCards.length === 0 && (
+              <div className="col-span-full py-12 text-center text-slate-500">
+                Nessuna carta trovata
+              </div>
+            )}
+          </div>
+        ) : (
+          <DataTable
+            columns={getStellarColumns(handleCardPlace)}
+            data={filteredCards}
+            disabled={!activeSlot}
+            emptyMessage="Nessuna carta trovata"
+            showEmptyMessage
+          />
+        )}
       </div>
     </div>
   );
