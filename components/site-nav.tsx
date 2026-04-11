@@ -29,6 +29,7 @@ export function SiteNav({ className }: SiteNavProps) {
   const navItems: NavItem[] = [
     { href: "/cards", label: "My Cards", icon: CreditCard },
     { href: "/lineup", label: "Create Team", icon: Layers },
+    { href: "/stellar-nights", label: "Stellar", icon: Star },
     {
       href: "/saved-lineups",
       label:
@@ -38,7 +39,6 @@ export function SiteNav({ className }: SiteNavProps) {
       icon: Save,
     },
     { href: "/results", label: "Results", icon: Trophy },
-    { href: "/stellar-nights", label: "Stellar", icon: Star },
     { href: "/settings", label: "Settings", icon: Settings },
   ];
 
