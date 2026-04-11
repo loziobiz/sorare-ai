@@ -108,6 +108,9 @@ export function StellarLineupBuilder({ cards }: StellarLineupBuilderProps) {
   const [starterOnly, setStarterOnly] = useState(false);
   const [dateFrom, setDateFrom] = useState<string | null>(null);
   const [dateTo, setDateTo] = useState<string | null>(null);
+  const [tableSorting, setTableSorting] = useState<SortingState>([
+    { id: "starterOdds", desc: true },
+  ]);
   const restoredRef = useRef(false);
 
   // Ripristina formazione da cache al mount
@@ -426,7 +429,9 @@ export function StellarLineupBuilder({ cards }: StellarLineupBuilderProps) {
             data={filteredCards}
             disabled={!activeSlot}
             emptyMessage="Nessuna carta trovata"
+            onSortingChange={setTableSorting}
             showEmptyMessage
+            sorting={tableSorting}
           />
         )}
       </div>

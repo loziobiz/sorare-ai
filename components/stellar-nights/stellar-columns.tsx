@@ -100,6 +100,22 @@ export function getStellarColumns(
       },
     },
     {
+      accessorKey: "starterOdds",
+      header: "Tit%",
+      size: STELLAR_LIST_COLUMN_WIDTHS.starter,
+      cell: ({ row }) => {
+        const val = row.original.starterOdds;
+        if (val == null) return <span className="text-slate-500">-</span>;
+        return (
+          <span
+            className={`inline-flex rounded px-1.5 py-0.5 font-medium text-xs ${getStarterColor(val)}`}
+          >
+            {val.toFixed(0)}%
+          </span>
+        );
+      },
+    },
+    {
       id: "forma",
       header: "Forma",
       size: STELLAR_LIST_COLUMN_WIDTHS.forma,
@@ -136,22 +152,6 @@ export function getStellarColumns(
         return (
           <span className="font-medium text-emerald-400 text-xs">
             {val.toFixed(1)}
-          </span>
-        );
-      },
-    },
-    {
-      accessorKey: "starterOdds",
-      header: "Tit%",
-      size: STELLAR_LIST_COLUMN_WIDTHS.starter,
-      cell: ({ row }) => {
-        const val = row.original.starterOdds;
-        if (val == null) return <span className="text-slate-500">-</span>;
-        return (
-          <span
-            className={`inline-flex rounded px-1.5 py-0.5 font-medium text-xs ${getStarterColor(val)}`}
-          >
-            {val.toFixed(0)}%
           </span>
         );
       },
