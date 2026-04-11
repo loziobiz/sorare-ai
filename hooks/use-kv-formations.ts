@@ -4,6 +4,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import type { GameMode } from "@/lib/db";
 import { KV_WORKER_URL } from "@/lib/kv-api";
 import type { CardData } from "@/lib/sorare-api";
+import type { StellarFlatCard } from "@/lib/stellar/types";
 import { getCurrentUserId } from "@/lib/user-id";
 
 // Formation data structure from KV API
@@ -18,6 +19,8 @@ export interface KVFormation {
     cards: CardData[];
     slots: Array<{ position: string; cardSlug: string }>;
     gameMode: GameMode;
+    source?: "lineup" | "stellar";
+    stellarCards?: StellarFlatCard[];
   };
 }
 
@@ -30,6 +33,8 @@ export interface SavedFormation {
   slots: Array<{ position: string; cardSlug: string }>;
   gameMode: GameMode;
   createdAt: number; // timestamp for sorting
+  source?: "lineup" | "stellar";
+  stellarCards?: StellarFlatCard[];
 }
 
 interface UseKVFormationsReturn {
@@ -69,6 +74,8 @@ function convertKVToSavedFormation(kvFormation: KVFormation): SavedFormation {
     slots: kvFormation.data.slots,
     gameMode: kvFormation.data.gameMode,
     createdAt: new Date(kvFormation.createdAt).getTime(),
+    source: kvFormation.data.source,
+    stellarCards: kvFormation.data.stellarCards,
   };
 }
 
@@ -187,6 +194,8 @@ export function useKVFormations(): UseKVFormationsReturn {
             cards: formation.cards, // Keep both for compatibility
             slots: formation.slots,
             gameMode: formation.gameMode,
+            source: formation.source,
+            stellarCards: formation.stellarCards,
           },
         }),
       });
@@ -249,6 +258,8 @@ export function useKVFormations(): UseKVFormationsReturn {
             cards: formation.cards ?? existing.cards,
             slots: formation.slots ?? existing.slots,
             gameMode: formation.gameMode ?? existing.gameMode,
+            source: formation.source ?? existing.source,
+            stellarCards: formation.stellarCards ?? existing.stellarCards,
           },
         }),
       });

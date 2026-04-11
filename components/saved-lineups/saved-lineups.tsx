@@ -475,6 +475,190 @@ function FormationCard({
   );
 }
 
+interface StellarFormationCardProps {
+  formation: SavedFormation;
+  onDelete: (id: string) => void;
+}
+
+const STELLAR_POSITION_ORDER: Record<string, number> = {
+  POR: 0,
+  DIF: 1,
+  CEN: 2,
+  ATT: 3,
+  EX: 4,
+};
+
+function StellarFormationCard({
+  formation,
+  onDelete,
+}: StellarFormationCardProps) {
+  const stellarCards = formation.stellarCards ?? [];
+
+  // Sort cards by position order
+  const sortedCards = [...stellarCards].sort((a, b) => {
+    const slotA = formation.slots.find((s) => s.cardSlug === a.slug);
+    const slotB = formation.slots.find((s) => s.cardSlug === b.slug);
+
+    if (!(slotA && slotB)) {
+      return 0;
+    }
+
+    const orderA = STELLAR_POSITION_ORDER[slotA.position] ?? 999;
+    const orderB = STELLAR_POSITION_ORDER[slotB.position] ?? 999;
+
+    return orderA - orderB;
+  });
+
+  // Calculate total L10
+  const totalL10 = sortedCards.reduce((sum, card) => {
+    return sum + (card.l10Average ?? 0);
+  }, 0);
+
+  // Calculate total projected score
+  const totalProjectedScore = sortedCards.reduce((sum, card) => {
+    return sum + (card.projectedScore ?? 0);
+  }, 0);
+
+  return (
+    <div className="min-w-0 max-w-full space-y-2 rounded-lg border border-white/10 bg-white/5 p-2 text-slate-200 shadow-sm">
+      {/* Formation name and badges */}
+      <div className="flex items-start justify-between">
+        <div className="flex flex-col">
+          <h3 className="font-bold text-lg text-slate-200 leading-tight">
+            {formation.name}
+          </h3>
+          <span className="inline-block w-fit rounded bg-violet-500/20 px-1 py-[1px] font-medium text-[10px] text-violet-300">
+            Stellar
+          </span>
+        </div>
+        <div className="flex items-center gap-2">
+          {/* Badges */}
+          {totalProjectedScore > 0 && (
+            <span className="inline-block rounded-full bg-sky-500/20 px-2 py-0.5 font-medium text-[12px] text-sky-400">
+              PROJ: {totalProjectedScore.toFixed(0)}
+            </span>
+          )}
+          {totalL10 > 0 && (
+            <span className="inline-block rounded-full bg-emerald-500/20 px-2 py-0.5 font-medium text-[12px] text-emerald-400">
+              L10: {totalL10.toFixed(0)}
+            </span>
+          )}
+          {/* Delete button */}
+          <Button
+            className="h-8 w-8 p-0 hover:bg-white/10 hover:text-red-400"
+            onClick={() => onDelete(formation.id)}
+            size="icon"
+            variant="ghost"
+          >
+            <Trash2 className="h-4 w-4 text-rose-500" />
+          </Button>
+        </div>
+      </div>
+
+      {/* Cards grid */}
+      <div
+        className="no-scrollbar flex gap-1 overflow-x-auto pb-0"
+        style={{
+          scrollbarWidth: "none",
+          msOverflowStyle: "none",
+        }}
+      >
+        {sortedCards.map((card) => {
+          const slot = formation.slots.find((s) => s.cardSlug === card.slug);
+          const slotPosition = slot?.position ?? "";
+
+          return (
+            <div
+              className="flex w-[85px] flex-col items-center gap-1"
+              key={card.slug}
+            >
+              <div className="relative">
+                {card.pictureUrl && (
+                  <img
+                    alt={card.playerName}
+                    className="h-auto max-w-[85px] rounded-lg"
+                    height={100}
+                    loading="lazy"
+                    src={card.pictureUrl}
+                    width={85}
+                  />
+                )}
+              </div>
+              {/* Badges */}
+              <div className="flex w-full items-center justify-center gap-2">
+                {/* L10 */}
+                {(() => {
+                  const colors = getL10BadgeColor(card.l10Average);
+                  return (
+                    <span
+                      className={`inline-flex w-10 items-center justify-center gap-0.5 rounded px-1 py-0.5 font-medium text-[9px] ${colors.bg} ${colors.text}`}
+                    >
+                      <span>📊</span>
+                      {card.l10Average ?? "-"}
+                    </span>
+                  );
+                })()}
+                {/* Tit% */}
+                {card.starterOdds !== null &&
+                  card.starterOdds !== undefined &&
+                  (() => {
+                    let colorClass = "";
+                    if (card.starterOdds < 50) {
+                      colorClass = "bg-red-500/20 text-red-400";
+                    } else if (card.starterOdds <= 70) {
+                      colorClass = "bg-orange-500/20 text-orange-400";
+                    } else {
+                      colorClass = "bg-emerald-500/20 text-emerald-400";
+                    }
+                    return (
+                      <span
+                        className={`inline-flex w-10 items-center justify-center gap-0.5 rounded px-1 py-0.5 font-medium text-[9px] ${colorClass}`}
+                      >
+                        <span>👕</span>
+                        {Math.round(card.starterOdds)}
+                      </span>
+                    );
+                  })()}
+              </div>
+              {/* Next game info */}
+              {card.nextGameDate && (
+                <div className="flex flex-col items-center gap-0.5 text-[10px] text-slate-400">
+                  <div className="text-[9px]">
+                    {(() => {
+                      const d = new Date(card.nextGameDate);
+                      const days = [
+                        "DOM",
+                        "LUN",
+                        "MAR",
+                        "MER",
+                        "GIO",
+                        "VEN",
+                        "SAB",
+                      ];
+                      const day = days[d.getDay()];
+                      return day;
+                    })()}
+                  </div>
+                  {card.nextGameOpponent && (
+                    <div className="truncate text-[9px]">
+                      {card.nextGameOpponent.replace("vs ", "").slice(0, 10)}
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+          );
+        })}
+      </div>
+      <style>{`
+        .no-scrollbar::-webkit-scrollbar {
+          display: none;
+        }
+      `}</style>
+    </div>
+  );
+}
+
 export function SavedLineups() {
   const router = useRouter();
   const { cards } = useKvCards();
@@ -487,12 +671,27 @@ export function SavedLineups() {
   } = useKVFormations();
   const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null);
   const [deleteAllConfirm, setDeleteAllConfirm] = useState(false);
+  const [activeTab, setActiveTab] = useState<"lineup" | "stellar">("lineup");
 
   // Create a map of current cards for quick lookup
   const currentCardsMap = useMemo(
     () => new Map(cards.map((card): [string, Card] => [card.slug, card])),
     [cards]
   );
+
+  // Filter formations by source
+  const lineupFormations = useMemo(
+    () => formations.filter((f) => !f.source || f.source === "lineup"),
+    [formations]
+  );
+
+  const stellarFormations = useMemo(
+    () => formations.filter((f) => f.source === "stellar"),
+    [formations]
+  );
+
+  const activeFormations =
+    activeTab === "lineup" ? lineupFormations : stellarFormations;
 
   const handleEdit = (formation: SavedFormation) => {
     // Pass the formation data to the edit page via router state
@@ -517,7 +716,10 @@ export function SavedLineups() {
 
   const handleConfirmDeleteAll = async () => {
     try {
-      await deleteAllFormations();
+      // Delete only formations in the active tab
+      const formationsToDelete =
+        activeTab === "lineup" ? lineupFormations : stellarFormations;
+      await Promise.all(formationsToDelete.map((f) => deleteFormation(f.id)));
       setDeleteAllConfirm(false);
     } catch (err) {
       console.error("Error deleting all formations:", err);
@@ -638,7 +840,7 @@ export function SavedLineups() {
   const groupedFormations = useMemo(() => {
     const groups: Record<string, SavedFormation[]> = {};
 
-    for (const formation of formations) {
+    for (const formation of lineupFormations) {
       const gameModeLabel =
         GAME_MODE_LABELS[formation.gameMode] ?? formation.gameMode ?? "Altro";
 
@@ -667,7 +869,7 @@ export function SavedLineups() {
     }
 
     return groups;
-  }, [formations, getFormationNextGameDate]);
+  }, [lineupFormations, getFormationNextGameDate]);
 
   if (isLoading) {
     return (
@@ -679,35 +881,72 @@ export function SavedLineups() {
 
   return (
     <div className="space-y-6">
-      {/* Header con pulsante Cancella tutte */}
+      {/* Header con tab e pulsante Cancella tutte */}
       {formations.length > 0 && (
-        <div className="flex items-center justify-between">
-          <h1 className="font-bold text-2xl text-slate-200">
-            Formazioni salvate
-          </h1>
-          <Button
-            className="border-white/10 bg-white/5 text-rose-400 hover:bg-rose-500/20 hover:text-rose-300"
-            onClick={() => setDeleteAllConfirm(true)}
-            variant="outline"
-          >
-            <Trash className="mr-2 h-4 w-4" />
-            Cancella tutte
-          </Button>
-        </div>
-      )}
-
-      <SavedLineupsDnDProvider onSwap={handleSwapCards}>
-        {formations.length === 0 ? (
-          <div className="py-12 text-center text-slate-400">
-            <p>Nessuna formazione salvata.</p>
+        <>
+          <div className="flex items-center justify-between">
+            <h1 className="font-bold text-2xl text-slate-200">
+              Formazioni salvate
+            </h1>
             <Button
-              className="mt-4"
-              onClick={() => router.navigate({ to: "/lineup" })}
+              className="border-white/10 bg-white/5 text-rose-400 hover:bg-rose-500/20 hover:text-rose-300"
+              onClick={() => setDeleteAllConfirm(true)}
+              variant="outline"
             >
-              Crea una nuova formazione
+              <Trash className="mr-2 h-4 w-4" />
+              Cancella tutte
             </Button>
           </div>
-        ) : (
+          {/* Tab navigation */}
+          <div className="flex gap-2 border-white/10 border-b">
+            <button
+              className={`border-b-2 px-4 py-2 font-medium text-sm transition-colors ${
+                activeTab === "lineup"
+                  ? "border-violet-500 text-violet-400"
+                  : "border-transparent text-slate-400 hover:text-slate-200"
+              }`}
+              onClick={() => setActiveTab("lineup")}
+              type="button"
+            >
+              Team ({lineupFormations.length})
+            </button>
+            <button
+              className={`border-b-2 px-4 py-2 font-medium text-sm transition-colors ${
+                activeTab === "stellar"
+                  ? "border-violet-500 text-violet-400"
+                  : "border-transparent text-slate-400 hover:text-slate-200"
+              }`}
+              onClick={() => setActiveTab("stellar")}
+              type="button"
+            >
+              Stellar ({stellarFormations.length})
+            </button>
+          </div>
+        </>
+      )}
+
+      {activeFormations.length === 0 ? (
+        <div className="py-12 text-center text-slate-400">
+          <p>
+            {activeTab === "lineup"
+              ? "Nessuna formazione di team salvata."
+              : "Nessuna formazione stellar salvata."}
+          </p>
+          <Button
+            className="mt-4"
+            onClick={() =>
+              router.navigate({
+                to: activeTab === "lineup" ? "/lineup" : "/stellar-nights",
+              })
+            }
+          >
+            {activeTab === "lineup"
+              ? "Crea una nuova formazione di team"
+              : "Crea una nuova formazione stellar"}
+          </Button>
+        </div>
+      ) : activeTab === "lineup" ? (
+        <SavedLineupsDnDProvider onSwap={handleSwapCards}>
           <div className="space-y-8">
             {Object.entries(groupedFormations)
               .filter(([, items]) => items.length > 0)
@@ -719,7 +958,7 @@ export function SavedLineups() {
                   <div className="flex flex-wrap items-start gap-5">
                     {items.map((formation) => (
                       <FormationCard
-                        allFormations={formations}
+                        allFormations={lineupFormations}
                         currentCardsMap={currentCardsMap}
                         formation={formation}
                         key={formation.id}
@@ -731,8 +970,18 @@ export function SavedLineups() {
                 </div>
               ))}
           </div>
-        )}
-      </SavedLineupsDnDProvider>
+        </SavedLineupsDnDProvider>
+      ) : (
+        <div className="flex flex-wrap items-start gap-5">
+          {stellarFormations.map((formation) => (
+            <StellarFormationCard
+              formation={formation}
+              key={formation.id}
+              onDelete={handleDeleteClick}
+            />
+          ))}
+        </div>
+      )}
 
       {/* Modale conferma cancellazione singola */}
       {deleteConfirm !== null && (
@@ -797,8 +1046,11 @@ export function SavedLineups() {
             {/* Contenuto */}
             <div className="px-6 py-5">
               <p className="text-center text-slate-300 text-sm leading-relaxed">
-                Stai per cancellare <strong>{formations.length}</strong>{" "}
-                formazioni salvate.
+                Stai per cancellare <strong>{activeFormations.length}</strong>{" "}
+                {activeTab === "lineup"
+                  ? "formazioni di team"
+                  : "formazioni stellar"}{" "}
+                salvate.
               </p>
               <div className="mt-4 rounded-lg border border-red-500/30 bg-red-500/10 p-3">
                 <p className="text-center font-medium text-red-400 text-sm">
@@ -806,7 +1058,9 @@ export function SavedLineups() {
                 </p>
               </div>
               <p className="mt-4 text-center text-slate-500 text-xs">
-                Tutte le tue formazioni andranno perse permanentemente.
+                {activeTab === "lineup"
+                  ? "Tutte le tue formazioni di team andranno perse permanentemente."
+                  : "Tutte le tue formazioni stellar andranno perse permanentemente."}
               </p>
             </div>
 

@@ -1,5 +1,6 @@
 "use client";
 
+import type { SortingState } from "@tanstack/react-table";
 import {
   Calendar,
   Home,
@@ -111,6 +112,9 @@ export function StellarLineupBuilder({ cards }: StellarLineupBuilderProps) {
   const [tableSorting, setTableSorting] = useState<SortingState>([
     { id: "starterOdds", desc: true },
   ]);
+  const [formationName, setFormationName] = useState("");
+  const [isSaving, setIsSaving] = useState(false);
+  const { saveFormation: hookSaveFormation } = useKVFormations();
   const restoredRef = useRef(false);
 
   // Ripristina formazione da cache al mount
@@ -240,6 +244,33 @@ export function StellarLineupBuilder({ cards }: StellarLineupBuilderProps) {
     setActiveSlot("POR");
   }, []);
 
+  const handleSaveFormation = useCallback(async () => {
+    const filledSlots = formation.filter((s) => s.card !== null);
+    if (filledSlots.length !== 5) {
+      return;
+    }
+    try {
+      setIsSaving(true);
+      await hookSaveFormation({
+        name: formationName || "Stellar Formation",
+        league: "",
+        cards: [],
+        stellarCards: filledSlots.map((s) => s.card as StellarFlatCard),
+        slots: filledSlots.map((s) => ({
+          position: s.position,
+          cardSlug: s.card!.slug,
+        })),
+        gameMode: "gas_classic",
+        source: "stellar",
+      });
+      setFormationName("");
+    } catch (err) {
+      console.error("Error saving formation:", err);
+    } finally {
+      setIsSaving(false);
+    }
+  }, [formation, formationName, hookSaveFormation]);
+
   return (
     <div className="flex gap-6">
       {/* Colonna sinistra: Campo */}
@@ -251,14 +282,36 @@ export function StellarLineupBuilder({ cards }: StellarLineupBuilderProps) {
           onSlotSelect={handleSlotSelect}
         />
         {formation.some((s) => s.card) && (
-          <Button
-            className="mt-3 w-full"
-            onClick={handleClearAll}
-            size="sm"
-            variant="ghost"
-          >
-            Svuota formazione
-          </Button>
+          <>
+            {formation.every((s) => s.card) && (
+              <div className="mt-3 space-y-2">
+                <input
+                  className="h-8 w-full rounded-md border border-white/10 bg-[#1E1F2A] px-3 text-sm text-white placeholder:text-slate-500 focus:border-violet-500 focus:outline-none"
+                  disabled={isSaving}
+                  onChange={(e) => setFormationName(e.target.value)}
+                  placeholder="Nome formazione..."
+                  type="text"
+                  value={formationName}
+                />
+                <Button
+                  className="w-full"
+                  disabled={isSaving}
+                  onClick={handleSaveFormation}
+                  size="sm"
+                >
+                  {isSaving ? "Salvataggio..." : "Salva formazione"}
+                </Button>
+              </div>
+            )}
+            <Button
+              className="mt-3 w-full"
+              onClick={handleClearAll}
+              size="sm"
+              variant="ghost"
+            >
+              Svuota formazione
+            </Button>
+          </>
         )}
       </div>
 
